@@ -19,6 +19,9 @@ public struct PoTokenError: Error, CustomStringConvertible {
 @MainActor
 public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigationDelegate {
     // Constantes de PoTokenWebView4.kt
+    /// Clave pública del servicio antibots de Google (BotGuard, `jnn-pa.googleapis.com`) que usa la web de YouTube; la
+    /// usan también SmartTube, LibreTube y BgUtils. No es una credencial de este proyecto ni se puede rotar: es de
+    /// Google. El escaneo de secretos de GitHub la marca por la forma `AIza…`.
     static let googleAPIKey = "AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw"
     static let requestKey = "O43z0dpjhgX20SCx4KAo"
     static let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)"

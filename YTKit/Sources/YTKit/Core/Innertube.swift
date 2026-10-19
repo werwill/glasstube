@@ -10,6 +10,9 @@ public struct AppInfo: Sendable {
 /// Cliente de Innertube con URLSession. Reproduce `VideoInfoApi` + `QueryBuilder` + el interceptor de
 /// `RetrofitOkHttpHelper` (key, prettyPrint, Referer, X-Goog-Visitor-Id).
 public struct Innertube: Sendable {
+    /// Clave pública de InnerTube: la que trae la web de YouTube en cada página y usan muchos clientes libres
+    /// (yt-dlp, NewPipe, SmartTube). No es una credencial de este proyecto ni de nadie que lo use, y no se puede
+    /// revocar ni rotar: es de Google. El escaneo de secretos de GitHub la marca por la forma `AIza…`.
     public static let apiKey = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
     public static let tvUserAgent = "Mozilla/5.0 (Linux armeabi-v7a; Android 7.1.2; Fire OS 6.0) Cobalt/22.lts.3.306369-gold (unlike Gecko) v8/8.8.278.8-jit gles Starboard/13, Amazon_ATV_mediatek8695_2019/NS6294 (Amazon, AFTMM, Wireless) com.amazon.firetv.youtube/22.3.r2.v66.0"
     static let apiReferer = "https://www.youtube.com/tv"
