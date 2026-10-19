@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Los tres puntos de la ventana del frente. -->
+  <circle cx="238" cy="448" r="15" fill="#FF8A7A"/>
+  <circle cx="282" cy="448" r="15" fill="#FFD36B"/>
+  <circle cx="326" cy="448" r="15" fill="#7BE3A0"/>
+</svg>

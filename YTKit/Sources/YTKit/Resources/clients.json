@@ -1,0 +1,122 @@
+{
+  "version": 2,
+  "source": "SmartTube 32.67 (eb3713b): AppClient.kt, innertube/utils/Constants.kt, DefaultHeaders.kt, VideoInfoService.java; orden de glasstube-spike/RESULTADOS.md (TV_DOWNGRADED y VISIONOS primero)",
+  "rotation": [
+    "TV_DOWNGRADED",
+    "VISIONOS",
+    "TV",
+    "WEB",
+    "WEB_EMBED",
+    "WEB_SAFARI",
+    "IOS",
+    "GEO",
+    "MWEB",
+    "ANDROID_VR"
+  ],
+  "defaultStart": "TV_DOWNGRADED",
+  "clients": [
+    {
+      "id": "TV",
+      "clientName": "TVHTML5",
+      "clientVersion": "7.20260901.15.00",
+      "clientNameId": "7",
+      "userAgent": "Mozilla/5.0 (Linux armeabi-v7a; Android 7.1.2; Fire OS 6.0) Cobalt/22.lts.3.306369-gold (unlike Gecko) v8/8.8.278.8-jit gles Starboard/13, Amazon_ATV_mediatek8695_2019/NS6294 (Amazon, AFTMM, Wireless) com.amazon.firetv.youtube/22.3.r2.v66.0",
+      "referer": "https://www.youtube.com/tv",
+      "poToken": "tv",
+      "playerVariant": "tcl",
+      "note": "Supports auth. Fixes 'please sign in' bug (the best for Premium users). TCL player: n distinto."
+    },
+    {
+      "id": "VISIONOS",
+      "clientName": "VISIONOS",
+      "clientVersion": "1.02",
+      "clientNameId": "101",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+      "deviceModel": "RealityDevice17,1",
+      "osVersion": "26.5.23O471",
+      "note": "no url formats"
+    },
+    {
+      "id": "TV_DOWNGRADED",
+      "clientName": "TVHTML5",
+      "clientVersion": "5.20260901",
+      "clientNameId": "7",
+      "userAgent": "Mozilla/5.0 (DirectFB; Linux x86_64) Cobalt/4.13031-qa (unlike Gecko) Starboard/1",
+      "referer": "https://www.youtube.com/tv",
+      "note": "works with old UAs like old Cobalt and old Xbox (non-tcl players)"
+    },
+    {
+      "id": "WEB",
+      "clientName": "WEB",
+      "clientVersion": "2.20260907.06.00",
+      "clientNameId": "1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "referer": "https://www.youtube.com",
+      "poToken": "web",
+      "note": "Fix video clip blocked in current location"
+    },
+    {
+      "id": "WEB_EMBED",
+      "clientName": "WEB_EMBEDDED_PLAYER",
+      "clientVersion": "2.20260908.01.00",
+      "clientNameId": "56",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15,gzip(gfe)",
+      "referer": "https://www.youtube.com",
+      "embedded": true,
+      "poToken": "web",
+      "note": "Restricted (18+) videos (not working)"
+    },
+    {
+      "id": "WEB_SAFARI",
+      "clientName": "WEB",
+      "clientVersion": "2.20260907.06.00",
+      "clientNameId": "1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15,gzip(gfe)",
+      "referer": "https://www.youtube.com",
+      "poToken": "web"
+    },
+    {
+      "id": "IOS",
+      "clientName": "iOS",
+      "clientVersion": "21.26.4",
+      "clientNameId": "5",
+      "userAgent": "com.google.ios.youtube/21.26.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)",
+      "deviceModel": "iPhone16,2",
+      "osVersion": "18.3.2.22D82"
+    },
+    {
+      "id": "GEO",
+      "clientName": "WEB",
+      "clientVersion": "2.20260907.06.00",
+      "clientNameId": "1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "referer": "https://www.youtube.com",
+      "params": "CgIQBg%3D%3D",
+      "poToken": "web",
+      "note": "Fix video clip blocked in current location (protobuf params)"
+    },
+    {
+      "id": "MWEB",
+      "clientName": "MWEB",
+      "clientVersion": "2.20260907.05.00",
+      "clientNameId": "2",
+      "userAgent": "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)",
+      "referer": "https://m.youtube.com",
+      "poToken": "web",
+      "note": "single audio language"
+    },
+    {
+      "id": "ANDROID_VR",
+      "clientName": "ANDROID_VR",
+      "clientVersion": "1.65.10",
+      "clientNameId": "28",
+      "userAgent": "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
+      "androidSdkVersion": "32",
+      "osName": "Android",
+      "osVersion": "12",
+      "deviceModel": "Quest 3",
+      "deviceMake": "Oculus",
+      "note": "doesn't require pot and cipher (often hangs?). clientVersion>1.65 may return SABR only; no 'made for kids'"
+    }
+  ]
+}

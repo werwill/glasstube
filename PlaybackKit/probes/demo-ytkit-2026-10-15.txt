@@ -1,0 +1,31 @@
+
+PlaybackDemo — aqz-KE-bpKQ (aqz-KE-bpKQ)
+Motor: mpv, salida metal
+Video: vp9 1920x1080@60 · videotoolbox · decodificadores vistos: videotoolbox · muestras reproduciendo con hardware 48, sin hardware 1
+Cuadros descartados (último archivo): VO 0, decodificador 0
+SABR: URL renovada 0 veces, PoToken renovado 0, cambios de CDN 0, player pedido tras errores 0, recuperaciones 0, recargas del servidor 0 · URL caduca en 5 h 59 min, PoToken caduca en 11 h 59 min
+mpv: current-ao avfoundation · hwdec-current videotoolbox · vo-delayed-frame-count 0 · frame-drop-count 0 · decoder-frame-drop-count 0 · current-vo gpu-next · gpu-api vulkan · display-fps - · estimated-display-fps - · vsync-jitter - · video-sync audio
+Tramos continuos (posición, duración en reloj):
+  0.0 → 12.0 s (12.0 s de video en 13.2 s)
+Acciones:
+  búsqueda 12.0 → 200.0 s: en 200.00 s tras 0.60 s
+Tramo continuo más largo: 12.0 s · pausas por falta de datos: 0 · fin: se llegó a 30 s
+Bitácora:
+  [+   1.0 s] MPVEngine (metal), fuente SABR aqz-KE-bpKQ
+  [+   1.1 s] estado: cargando
+  [+   3.6 s] SABR aqz-KE-bpKQ: video 303 vp9 1920x1080@60 · audio 258 aac 389k 48kHz · PoToken de TV
+  [+   3.6 s] carga g1 (inicio) desde 0.0 s
+  [+   3.7 s] estado: reproduciendo
+  [+   3.8 s] ▶ 0.0 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante - s · caídos 0/0
+  [+   3.9 s] [mpv/ao/coreaudio] error: unable to set the input channel layout on the audio unit ([206][255][255][255]/-50)
+  [+  14.1 s] ▶ 9.9 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.7 s · caídos 0/0
+  [+  16.2 s] plan: búsqueda 12.0 → 200.0 s
+  [+  16.2 s] búsqueda a 200.0 s fuera de la caché de mpv [0.0–24.4] → carga nueva
+  [+  16.2 s] retención: el cuadro actual (1920x1080) queda en pantalla hasta llegar a T
+  [+  16.3 s] carga g2 (búsqueda) desde 200.0 s, en pausa hasta el seek exacto
+  [+  16.3 s] estado: esperando datos
+  [+  16.8 s] g2 en 200.0 s a los 0.48 s de la carga
+  [+  16.8 s] plan: búsqueda 12.0 → 200.0 s: en 200.00 s tras 0.60 s
+  [+  16.8 s] búsqueda terminada en 200.00 s
+  [+  16.8 s] estado: reproduciendo
+  [+  17.0 s] fin: se llegó a 30 s

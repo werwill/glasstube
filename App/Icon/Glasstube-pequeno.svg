@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Variante para 16 y 32 px: una sola ventana y el triángulo más grande (sin puntos ni ventana trasera). -->
+  <defs>
+    <linearGradient id="s-bg" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#34D3BE"/>
+      <stop offset="0.5" stop-color="#0F8A86"/>
+      <stop offset="1" stop-color="#073F4A"/>
+    </linearGradient>
+    <linearGradient id="s-glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.22"/>
+    </linearGradient>
+    <clipPath id="s-sq"><rect x="0" y="0" width="1024" height="1024"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#s-bg)"/>
+  <g clip-path="url(#s-sq)"><g transform="translate(512 512) scale(1.16) translate(-512 -512)">
+    <rect x="200" y="290" width="624" height="444" rx="84" fill="url(#s-glass)"/>
+    <rect x="206" y="296" width="612" height="432" rx="78" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="12"/>
+    <path d="M444 414 L444 610 L612 512 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="44" stroke-linejoin="round"/>
+  </g></g>
+</svg>

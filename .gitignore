@@ -1,0 +1,38 @@
+# Compilación de SwiftPM (los tres paquetes) y la app empaquetada.
+.build/
+.swiftpm/
+App/build/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+
+# Versiones para descargar: App/Scripts/release.sh deja ahí el .dmg, su suma y las notas (se suben a GitHub Releases,
+# no al repositorio).
+dist/
+
+# libmpv: lo descarga PlaybackKit/Scripts/fetch-libmpv.sh y lo arma link-libmpv.sh (ver PlaybackKit/NOTAS.md).
+PlaybackKit/Vendor/
+
+# Proyectos de video (HyperFrames) con datos de quien los hizo; el demo público va en docs/.
+videos/
+*.hyperframes/
+.hyperframes/
+
+# Capturas de desarrollo: las rehace App/Scripts/capturas.sh. Muestran contenido de YouTube real (caras de creadores) y,
+# las de sesión, la cuenta de quien las tomó. Las públicas van en docs/capturas/.
+App/capturas/
+sesion-*.png
+cuenta-*.png
+ajustes-cuentas-*.png
+
+# Respuestas crudas de `ytkit record-account --crudo` (sin anonimizar) y cachés locales.
+crudas/
+*.crudo.json
+.cache/
+*.log
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes

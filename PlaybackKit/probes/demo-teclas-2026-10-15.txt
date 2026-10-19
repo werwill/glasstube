@@ -1,0 +1,71 @@
+
+PlaybackDemo — aqz-KE-bpKQ (aqz-KE-bpKQ)
+Motor: mpv, salida metal
+Video: vp9 1920x1080@60 · videotoolbox · decodificadores vistos: videotoolbox · muestras reproduciendo con hardware 159, sin hardware 1
+Cuadros descartados (último archivo): VO 0, decodificador 0
+SABR: URL renovada 0 veces, PoToken renovado 0, cambios de CDN 0, player pedido tras errores 0, recuperaciones 0, recargas del servidor 0 · URL caduca en 5 h 59 min, PoToken caduca en 11 h 59 min
+mpv: current-ao avfoundation · hwdec-current videotoolbox · vo-delayed-frame-count 0 · frame-drop-count 0 · decoder-frame-drop-count 0 · current-vo gpu-next · gpu-api vulkan · display-fps - · estimated-display-fps - · vsync-jitter - · video-sync audio
+Tramos continuos (posición, duración en reloj):
+  0.0 → 8.0 s (8.0 s de video en 8.6 s)
+  8.3 → 12.2 s (3.8 s de video en 4.2 s)
+  22.2 → 26.1 s (3.9 s de video en 4.4 s)
+  26.1 → 34.2 s (8.0 s de video en 8.3 s)
+  34.3 → 42.1 s (7.8 s de video en 8.1 s)
+  102.1 → 110.1 s (7.9 s de video en 7.9 s)
+Acciones:
+  tecla space en 8.0 s (reproduciendo) → a los 1,5 s: en pausa, 8.0 s, 1080p60 · vp9
+  tecla space en 8.0 s (en pausa) → a los 1,5 s: reproduciendo, 9.5 s, 1080p60 · vp9
+  tecla right en 12.2 s (reproduciendo) → a los 1,5 s: reproduciendo, 23.2 s, 1080p60 · vp9
+  tecla - en 26.1 s (reproduciendo) → a los 1,5 s: reproduciendo, 27.2 s, 720p60 · vp9
+  tecla = en 34.2 s (reproduciendo) → a los 1,5 s: reproduciendo, 34.2 s, 1080p60 · vp9
+  tecla up en 42.1 s (reproduciendo) → a los 1,5 s: reproduciendo, 103.2 s, 1080p60 · vp9
+Tramo continuo más largo: 8.0 s · pausas por falta de datos: 0 · fin: se llegó a 110 s
+Bitácora:
+  [+   1.0 s] MPVEngine (metal), fuente SABR aqz-KE-bpKQ
+  [+   1.1 s] estado: cargando
+  [+   3.7 s] SABR aqz-KE-bpKQ: video 303 vp9 1920x1080@60 · audio 258 aac 389k 48kHz · PoToken de TV
+  [+   3.7 s] carga g1 (inicio) desde 0.0 s
+  [+   3.8 s] estado: reproduciendo
+  [+   4.0 s] ▶ 0.0 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante - s · caídos 0/0
+  [+   4.0 s] [mpv/ao/coreaudio] error: unable to set the input channel layout on the audio unit ([206][255][255][255]/-50)
+  [+  12.3 s] plan: tecla space en 8.0 s (reproduciendo)
+  [+  12.3 s] estado: en pausa
+  [+  13.9 s] plan: tecla space en 8.0 s (reproduciendo) → a los 1,5 s: en pausa, 8.0 s, 1080p60 · vp9
+  [+  14.1 s] ▶ 8.0 / 635 s · en pausa · vp9 1920x1080@60 · videotoolbox · por delante 12.1 s · caídos 0/0
+  [+  15.4 s] plan: tecla space en 8.0 s (en pausa)
+  [+  15.5 s] estado: reproduciendo
+  [+  17.0 s] plan: tecla space en 8.0 s (en pausa) → a los 1,5 s: reproduciendo, 9.5 s, 1080p60 · vp9
+  [+  19.7 s] plan: tecla right en 12.2 s (reproduciendo)
+  [+  20.1 s] búsqueda terminada en 22.18 s
+  [+  21.2 s] plan: tecla right en 12.2 s (reproduciendo) → a los 1,5 s: reproduciendo, 23.2 s, 1080p60 · vp9
+  [+  24.1 s] plan: tecla - en 26.1 s (reproduciendo)
+  [+  24.1 s] cambio de pista en 26.1 s: itag:303 → 720p60 · vp9
+  [+  24.1 s] retención: el cuadro actual (1920x1080) queda en pantalla hasta llegar a T
+  [+  24.2 s] estado: esperando datos
+  [+  24.2 s] carga g2 (pista 720p60 · vp9) desde 26.1 s, en pausa hasta el seek exacto
+  [+  24.3 s] ▶ 0.0 / 635 s · esperando datos · vp9 1920x1080@60 · videotoolbox · por delante 13.6 s · caídos 0/0
+  [+  24.5 s] g2 en 26.1 s a los 0.33 s de la carga
+  [+  24.5 s] búsqueda terminada en 26.12 s
+  [+  24.5 s] estado: reproduciendo
+  [+  25.6 s] plan: tecla - en 26.1 s (reproduciendo) → a los 1,5 s: reproduciendo, 27.2 s, 720p60 · vp9
+  [+  32.6 s] plan: tecla = en 34.2 s (reproduciendo)
+  [+  32.6 s] cambio de pista en 34.2 s: itag:302 → 1080p60 · vp9
+  [+  32.7 s] retención: el cuadro actual (1280x720) queda en pantalla hasta llegar a T
+  [+  32.7 s] carga g3 (pista 1080p60 · vp9) desde 34.2 s, en pausa hasta el seek exacto
+  [+  32.7 s] estado: esperando datos
+  [+  34.0 s] g3 en 34.2 s a los 1.34 s de la carga
+  [+  34.0 s] búsqueda terminada en 34.17 s
+  [+  34.1 s] estado: reproduciendo
+  [+  34.1 s] plan: tecla = en 34.2 s (reproduciendo) → a los 1,5 s: reproduciendo, 34.2 s, 1080p60 · vp9
+  [+  34.4 s] ▶ 34.5 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.6 s · caídos 0/0
+  [+  42.1 s] plan: tecla up en 42.1 s (reproduciendo)
+  [+  42.1 s] búsqueda a 102.1 s fuera de la caché de mpv [27.4–52.1] → carga nueva
+  [+  42.1 s] retención: el cuadro actual (1920x1080) queda en pantalla hasta llegar a T
+  [+  42.2 s] carga g4 (búsqueda) desde 102.1 s, en pausa hasta el seek exacto
+  [+  42.2 s] estado: esperando datos
+  [+  42.5 s] g4 en 102.1 s a los 0.35 s de la carga
+  [+  42.5 s] búsqueda terminada en 102.13 s
+  [+  42.5 s] estado: reproduciendo
+  [+  43.6 s] plan: tecla up en 42.1 s (reproduciendo) → a los 1,5 s: reproduciendo, 103.2 s, 1080p60 · vp9
+  [+  44.7 s] ▶ 104.3 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 12.8 s · caídos 0/0
+  [+  50.4 s] fin: se llegó a 110 s

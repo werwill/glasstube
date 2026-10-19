@@ -1,0 +1,31 @@
+
+PlaybackDemo — aqz-KE-bpKQ (aqz-KE-bpKQ)
+Motor: mpv, salida openGL
+Video: vp9 1920x1080@60 · videotoolbox · decodificadores vistos: videotoolbox · muestras reproduciendo con hardware 461, sin hardware 1
+Cuadros descartados (último archivo): VO 25, decodificador 0
+SABR: URL renovada 0 veces, PoToken renovado 0, cambios de CDN 0, player pedido tras errores 0, recuperaciones 0, recargas del servidor 0 · URL caduca en 5 h 57 min, PoToken caduca en 11 h 57 min
+mpv: current-ao avfoundation · hwdec-current videotoolbox · vo-delayed-frame-count 0 · frame-drop-count 25 · decoder-frame-drop-count 0 · current-vo libmpv · gpu-api  · display-fps - · estimated-display-fps - · vsync-jitter - · video-sync audio
+Tramos continuos (posición, duración en reloj):
+  0.0 → 120.1 s (120.1 s de video en 120.2 s)
+Acciones:
+Tramo continuo más largo: 120.1 s · pausas por falta de datos: 0 · fin: se llegó a 120 s
+Bitácora:
+  [+   0.4 s] MPVEngine (openGL), fuente SABR aqz-KE-bpKQ
+  [+   0.5 s] estado: cargando
+  [+   2.8 s] SABR aqz-KE-bpKQ: video 303 vp9 1920x1080@60 · audio 258 aac 389k 48kHz · PoToken de TV
+  [+   2.9 s] carga g1 (inicio) desde 0.0 s
+  [+   2.9 s] estado: reproduciendo
+  [+   3.1 s] ▶ 0.0 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante - s · caídos 0/0
+  [+   3.2 s] [mpv/ao/coreaudio] error: unable to set the input channel layout on the audio unit ([206][255][255][255]/-50)
+  [+  13.3 s] ▶ 10.1 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.5 s · caídos 24/0
+  [+  23.5 s] ▶ 20.2 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.4 s · caídos 24/0
+  [+  33.6 s] ▶ 30.4 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 11.0 s · caídos 24/0
+  [+  43.8 s] ▶ 40.5 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 11.7 s · caídos 24/0
+  [+  53.9 s] ▶ 50.7 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.4 s · caídos 24/0
+  [+  64.1 s] ▶ 60.9 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.0 s · caídos 24/0
+  [+  74.2 s] ▶ 71.0 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.7 s · caídos 24/0
+  [+  84.4 s] ▶ 81.1 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.2 s · caídos 24/0
+  [+  94.6 s] ▶ 91.3 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.0 s · caídos 25/0
+  [+ 104.8 s] ▶ 101.5 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 12.3 s · caídos 25/0
+  [+ 115.0 s] ▶ 111.8 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.8 s · caídos 25/0
+  [+ 123.3 s] fin: se llegó a 120 s

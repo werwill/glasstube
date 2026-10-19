@@ -1,0 +1,20 @@
+
+PlaybackDemo — 24/7 halloween ambience 🎃 spooky lofi to get chills to (1-LpQekNa9g)
+Motor: avPlayer
+Video: HLS 640x360 · 1.2 Mb/s · decodificadores vistos:  · muestras reproduciendo con hardware 0, sin hardware 108
+Cuadros descartados (último archivo): VO 0, decodificador 0
+Tramos continuos (posición, duración en reloj):
+  3585.0 → 3612.8 s (27.8 s de video en 27.7 s)
+Acciones:
+  calidad en 3585.0 s: Auto → 360p: reanudó tras 0.04 s; mpv muestra HLS 640x360 · 1.2 Mb/s (la altura pedida)
+Tramo continuo más largo: 27.8 s · pausas por falta de datos: 0 · fin: 30 s de reloj
+Bitácora:
+  [+   1.2 s] AVEngine: HLS manifest.googlevideo.com (directo: sí)
+  [+   1.2 s] estado: cargando
+  [+   1.5 s] ▶ 0.0 / - s · cargando · - · por delante - s · caídos 0/0
+  [+   2.2 s] estado: reproduciendo
+  [+   2.3 s] plan: calidad en 3585.0 s: Auto → 360p
+  [+   4.3 s] plan: calidad en 3585.0 s: Auto → 360p: reanudó tras 0.04 s; mpv muestra HLS 640x360 · 1.2 Mb/s (la altura pedida)
+  [+  11.6 s] ▶ 3594.3 / - s · reproduciendo · HLS 640x360 · 1.2 Mb/s · por delante 15.7 s · caídos 0/0
+  [+  21.7 s] ▶ 3604.3 / - s · reproduciendo · HLS 640x360 · 1.2 Mb/s · por delante 15.7 s · caídos 0/0
+  [+  30.0 s] fin: 30 s de reloj

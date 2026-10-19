@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Triángulo de reproducir (esquinas redondeadas con el trazo). -->
+  <path d="M432 548 L432 668 L536 608 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="34" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,5 @@
+.build/
+# Binarios de MPVKit y lo que arma Scripts/link-libmpv.sh (se regeneran con los scripts; ver NOTAS.md).
+Vendor/downloads/
+Vendor/extracted/
+Vendor/work/

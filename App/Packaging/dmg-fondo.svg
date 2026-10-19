@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="400" viewBox="0 0 660 400">
+  <!-- Fondo de la ventana del DMG. Scripts/release.sh lo rasteriza a 660×400 y 1320×800 (si cambias el tamaño,
+       cámbialo también allí) y pone los íconos centrados en (165, 180) y (495, 180). Los tonos son el verde azulado del
+       ícono con luminancia ~0,17–0,22: las etiquetas de Finder (negras en modo claro, blancas en el oscuro) se leen en
+       los dos (contraste ≥ 3,9:1). -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2E8F89"/>
+      <stop offset="1" stop-color="#26807B"/>
+    </linearGradient>
+    <radialGradient id="brillo" cx="0.82" cy="0.05" r="0.75">
+      <stop offset="0" stop-color="#D9FFF6" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#D9FFF6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="660" height="400" fill="url(#fondo)"/>
+  <rect width="660" height="400" fill="url(#brillo)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M262 180 H392"/>
+    <path d="M374 162 L396 180 L374 198"/>
+  </g>
+  <g fill="#FFFFFF" text-anchor="middle" font-family="-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif">
+    <text x="330" y="322" font-size="16" font-weight="600">Arrastra Glasstube a Applications</text>
+    <text x="330" y="346" font-size="12.5" fill-opacity="0.78">Drag Glasstube to Applications</text>
+  </g>
+</svg>

@@ -1,0 +1,163 @@
+
+PlaybackDemo — aqz-KE-bpKQ (aqz-KE-bpKQ)
+Motor: mpv, salida metal
+Video: vp9 1920x1080@60 · videotoolbox · decodificadores vistos: videotoolbox · muestras reproduciendo con hardware 1230, sin hardware 1
+Cuadros descartados (último archivo): VO 65, decodificador 0
+SABR: URL renovada 6 veces, PoToken renovado 2, cambios de CDN 2, player pedido tras errores 3, recuperaciones 4, recargas del servidor 0 · URL caduca en 52 s, PoToken caduca en 1 min 36 s
+mpv: current-ao avfoundation · hwdec-current videotoolbox · vo-delayed-frame-count 0 · frame-drop-count 65 · decoder-frame-drop-count 0 · current-vo gpu-next · gpu-api vulkan
+Tramos continuos (posición, duración en reloj):
+  0.0 → 320.1 s (320.1 s de video en 320.7 s)
+Acciones:
+  fallo 403 en 80.1 s
+  ventana a 960x540 en 110.1 s
+  fallo cdn en 140.2 s
+  ventana a 1280x720 en 170.1 s
+  fallo stall en 200.2 s
+  fallo 403pot en 260.2 s
+Tramo continuo más largo: 320.1 s · pausas por falta de datos: 0 · fin: se llegó a 320 s
+Bitácora:
+  [+   0.8 s] MPVEngine (metal), fuente SABR aqz-KE-bpKQ
+  [+   0.9 s] estado: cargando
+  [+   7.7 s] SABR aqz-KE-bpKQ: video 303 vp9 1920x1080@60 · audio 258 aac 389k 48kHz · PoToken de TV
+  [+   7.7 s] carga g1 (inicio) desde 0.0 s
+  [+   7.8 s] estado: reproduciendo
+  [+   8.0 s] ▶ 0.0 / 635 s · reproduciendo · - · por delante - s · caídos 0/0
+  [+   8.0 s] SABR rn=0 t=0.0 s → HTTP 200, 1.70 MB en 0.30 s · +3 seg · búfer v 0.0–8.4 a 0.0–10.0 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+   8.2 s] [mpv/ao/coreaudio] error: unable to set the input channel layout on the audio unit ([206][255][255][255]/-50)
+  [+   8.3 s] SABR rn=1 t=0.0 s → HTTP 200, 6.29 MB en 0.38 s · +3 seg · búfer v 0.0–20.1 a 0.0–20.0 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  13.7 s] SABR rn=2 t=5.1 s → HTTP 200, 0.46 MB en 0.13 s · +1 seg · búfer v 0.0–20.1 a 0.0–30.0 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  13.9 s] SABR rn=3 t=5.2 s → HTTP 200, 0.73 MB en 0.19 s · +1 seg · búfer v 0.0–24.4 a 0.0–30.0 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  18.1 s] ▶ 9.6 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 10.7 s · caídos 0/0
+  [+  18.2 s] SABR rn=4 t=9.6 s → HTTP 200, 0.45 MB en 0.12 s · +1 seg · búfer v 0.0–27.4 a 0.0–30.0 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  21.8 s] SABR rn=5 t=12.6 s → HTTP 200, 3.46 MB en 0.78 s · +2 seg · búfer v 0.0–34.4 a 0.0–39.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  28.3 s] ▶ 19.8 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.8 s · caídos 7/0
+  [+  28.5 s] SABR rn=6 t=19.4 s → HTTP 200, 2.98 MB en 0.68 s · +1 seg · búfer v 0.0–41.2 a 0.0–39.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  33.6 s] SABR rn=7 t=25.1 s → HTTP 200, 0.46 MB en 0.12 s · +1 seg · búfer v 0.0–41.2 a 0.0–49.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  35.2 s] SABR rn=8 t=26.5 s → HTTP 200, 1.17 MB en 0.28 s · +1 seg · búfer v 0.0–48.1 a 0.0–49.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  38.5 s] ▶ 30.0 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 11.5 s · caídos 7/0
+  [+  42.0 s] SABR rn=9 t=33.3 s → HTTP 200, 1.26 MB en 0.29 s · +2 seg · búfer v 0.0–52.1 a 0.0–59.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  46.2 s] SABR rn=10 t=37.3 s → HTTP 200, 2.01 MB en 0.45 s · +1 seg · búfer v 0.0–59.1 a 0.0–59.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  48.6 s] ▶ 40.2 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 12.2 s · caídos 7/0
+  [+  53.1 s] player pedido de nuevo (la URL caduca en 15 s) en 0.4 s: expire 1792106861 → 1792106910, firma nueva, n nuevo, config nuevo (1500 B), mismo PoToken, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+  53.4 s] SABR rn=11 t=44.7 s → HTTP 200, 1.28 MB en 0.31 s · +2 seg · búfer v 0.0–62.2 a 0.0–69.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  56.0 s] SABR rn=12 t=47.4 s → HTTP 200, 0.74 MB en 0.19 s · +1 seg · búfer v 0.0–68.2 a 0.0–69.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  58.8 s] ▶ 50.4 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 15.3 s · caídos 37/0
+  [+  62.1 s] SABR rn=13 t=53.3 s → HTTP 200, 1.59 MB en 0.37 s · +2 seg · búfer v 0.0–72.4 a 0.0–79.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  66.2 s] SABR rn=14 t=57.6 s → HTTP 200, 0.75 MB en 0.19 s · +1 seg · búfer v 0.0–75.7 a 0.0–79.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  69.0 s] ▶ 60.5 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.5 s · caídos 37/0
+  [+  69.7 s] SABR rn=15 t=60.9 s → HTTP 200, 1.40 MB en 0.40 s · +2 seg · búfer v 0.0–79.4 a 0.0–89.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  73.5 s] SABR rn=16 t=64.4 s → HTTP 200, 2.77 MB en 0.62 s · +1 seg · búfer v 0.0–84.4 a 0.0–89.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  78.2 s] SABR rn=17 t=69.5 s → HTTP 200, 1.20 MB en 0.28 s · +1 seg · búfer v 0.0–91.3 a 0.0–89.9 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  79.2 s] ▶ 70.7 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.9 s · caídos 45/0
+  [+  83.5 s] SABR rn=18 t=75.0 s → HTTP 200, 0.46 MB en 0.12 s · +1 seg · búfer v 0.0–91.3 a 0.0–99.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  85.1 s] SABR rn=19 t=76.4 s → HTTP 200, 0.87 MB en 0.21 s · +1 seg · búfer v 0.0–95.8 a 0.0–99.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  88.6 s] fallo 403 en 80.1 s
+  [+  88.7 s] prueba 403: n sin transformar en la URL (7LBipQ0jfSv-…)
+  [+  89.3 s] ▶ 80.9 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.5 s · caídos 45/0
+  [+  89.5 s] SABR rn=20 t=81.0 s → HTTP 403, 0.00 MB en 0.02 s · +0 seg · búfer v 0.0–95.8 a 0.0–99.8 · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  89.5 s] fallo 1 en rr3---sn-j5caxh5n-hpq6.googlevideo.com: googlevideo HTTP 403 (rr3---sn-j5caxh5n-hpq6.googlevideo.com) sin cuerpo → player nuevo
+  [+  89.7 s] player pedido de nuevo (tras un error) en 0.2 s: expire 1792106910 → 1792106947, firma nueva, n nuevo, config nuevo (1500 B), mismo PoToken, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+  90.0 s] SABR rn=21 t=81.3 s → HTTP 200, 0.99 MB en 0.24 s · +2 seg · búfer v 0.0–101.1 a 0.0–109.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  90.0 s] recuperado: rn=21 HTTP 200 en rr3---sn-j5caxh5n-hpq6.googlevideo.com tras 1 fallo(s) y 0.5 s sin datos nuevos
+  [+  94.8 s] SABR rn=22 t=86.2 s → HTTP 200, 0.32 MB en 0.16 s · +1 seg · búfer v 0.0–104.1 a 0.0–109.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  97.9 s] SABR rn=23 t=89.3 s → HTTP 200, 0.96 MB en 0.24 s · +1 seg · búfer v 0.0–108.3 a 0.0–109.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+  99.5 s] ▶ 91.0 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.4 s · caídos 45/0
+  [+ 102.2 s] SABR rn=24 t=93.5 s → HTTP 200, 1.50 MB en 0.35 s · +2 seg · búfer v 0.0–113.6 a 0.0–119.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 107.3 s] SABR rn=25 t=98.8 s → HTTP 200, 0.63 MB en 0.17 s · +1 seg · búfer v 0.0–116.6 a 0.0–119.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 109.6 s] ▶ 101.2 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 12.6 s · caídos 53/0
+  [+ 110.6 s] SABR rn=26 t=101.8 s → HTTP 200, 1.85 MB en 0.43 s · +2 seg · búfer v 0.0–122.4 a 0.0–129.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 117.3 s] player pedido de nuevo (el PoToken caduca en 37 s) en 1.4 s: expire 1792106947 → 1792106975, firma nueva, n nuevo, config nuevo (1498 B), PoToken nuevo, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 117.7 s] SABR rn=27 t=108.9 s → HTTP 200, 2.00 MB en 0.46 s · +1 seg · búfer v 0.0–127.9 a 0.0–129.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 118.6 s] ventana a 960x540 en 110.1 s
+  [+ 119.9 s] ▶ 111.4 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.0 s · caídos 54/0
+  [+ 121.6 s] SABR rn=28 t=113.0 s → HTTP 200, 0.94 MB en 0.22 s · +2 seg · búfer v 0.0–131.3 a 0.0–139.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 125.1 s] SABR rn=29 t=116.3 s → HTTP 200, 1.50 MB en 0.35 s · +1 seg · búfer v 0.0–138.3 a 0.0–139.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 130.1 s] ▶ 121.6 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 9.9 s · caídos 54/0
+  [+ 132.4 s] SABR rn=30 t=123.5 s → HTTP 200, 1.93 MB en 0.50 s · +2 seg · búfer v 0.0–143.8 a 0.0–149.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 137.6 s] SABR rn=31 t=128.9 s → HTTP 200, 1.21 MB en 0.28 s · +1 seg · búfer v 0.0–147.9 a 0.0–149.8 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 140.2 s] ▶ 131.7 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 12.2 s · caídos 54/0
+  [+ 142.0 s] SABR rn=32 t=133.2 s → HTTP 200, 1.60 MB en 0.36 s · +2 seg · búfer v 0.0–153.5 a 0.0–159.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 147.6 s] SABR rn=33 t=138.7 s → HTTP 200, 1.75 MB en 0.41 s · +1 seg · búfer v 0.0–160.4 a 0.0–159.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 148.6 s] fallo cdn en 140.2 s
+  [+ 148.9 s] prueba cdn: la CDN actual deja de existir → rr1---sn-glasstube-falla1.googlevideo.invalid, rr2---sn-u1hp55-5h.googlevideo.com
+  [+ 150.5 s] ▶ 141.9 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 11.7 s · caídos 54/0
+  [+ 153.4 s] fallo 1 en rr1---sn-glasstube-falla1.googlevideo.invalid: URLError -1003 (A server with the specified hostname could not be found.) → reintento en el mismo host
+  [+ 153.9 s] fallo 2 en rr1---sn-glasstube-falla1.googlevideo.invalid: URLError -1003 (A server with the specified hostname could not be found.) → otra CDN: rr2---sn-u1hp55-5h.googlevideo.com
+  [+ 154.1 s] SABR rn=36 t=145.4 s → HTTP 200, 0.00 MB en 0.20 s · +0 seg · búfer v 0.0–160.4 a 0.0–159.7 · @rr2---sn-u1hp55-5h.googlevideo.com
+  [+ 154.1 s] recuperado: rn=36 HTTP 200 en rr2---sn-q4fzenll.googlevideo.com tras 2 fallo(s) y 0.7 s sin datos nuevos
+  [+ 154.9 s] SABR rn=37 t=145.6 s → HTTP 200, 1.53 MB en 0.88 s · +2 seg · búfer v 0.0–166.7 a 0.0–169.7 · OK · @rr2---sn-q4fzenll.googlevideo.com
+  [+ 160.6 s] SABR rn=38 t=151.8 s → HTTP 200, 1.49 MB en 0.39 s · +2 seg · búfer v 0.0–170.6 a 0.0–179.7 · OK · @rr2---sn-q4fzenll.googlevideo.com
+  [+ 160.6 s] ▶ 152.2 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 15.7 s · caídos 54/0
+  [+ 162.7 s] player pedido de nuevo (la URL caduca en 15 s) en 0.3 s: expire 1792106975 → 1792107020, firma nueva, n nuevo, config nuevo (1500 B), mismo PoToken, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 164.6 s] SABR rn=39 t=155.8 s → HTTP 200, 0.72 MB en 0.37 s · +1 seg · búfer v 0.0–174.0 a 0.0–179.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 167.7 s] SABR rn=40 t=159.0 s → HTTP 200, 0.76 MB en 0.19 s · +1 seg · búfer v 0.0–180.5 a 0.0–179.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 170.8 s] ▶ 162.3 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 11.8 s · caídos 54/0
+  [+ 173.3 s] SABR rn=41 t=164.7 s → HTTP 200, 0.46 MB en 0.13 s · +1 seg · búfer v 0.0–180.5 a 0.0–189.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 175.0 s] SABR rn=42 t=165.7 s → HTTP 200, 1.37 MB en 0.88 s · +1 seg · búfer v 0.0–184.9 a 0.0–189.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 178.6 s] ventana a 1280x720 en 170.1 s
+  [+ 178.9 s] SABR rn=43 t=169.9 s → HTTP 200, 2.51 MB en 0.57 s · +2 seg · búfer v 0.0–190.4 a 0.0–199.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 181.0 s] ▶ 172.5 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 12.6 s · caídos 54/0
+  [+ 184.2 s] SABR rn=44 t=175.4 s → HTTP 200, 1.44 MB en 0.34 s · +1 seg · búfer v 0.0–193.7 a 0.0–199.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 187.8 s] SABR rn=45 t=178.9 s → HTTP 200, 2.01 MB en 0.46 s · +1 seg · búfer v 0.0–200.5 a 0.0–199.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 191.2 s] ▶ 182.7 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 17.6 s · caídos 54/0
+  [+ 193.4 s] SABR rn=46 t=184.8 s → HTTP 200, 0.46 MB en 0.12 s · +1 seg · búfer v 0.0–200.5 a 0.0–209.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 194.4 s] SABR rn=47 t=185.8 s → HTTP 200, 0.70 MB en 0.18 s · +1 seg · búfer v 0.0–204.2 a 0.0–209.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 198.0 s] SABR rn=48 t=189.3 s → HTTP 200, 0.92 MB en 0.22 s · +1 seg · búfer v 0.0–210.3 a 0.0–209.7 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 201.4 s] ▶ 192.9 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 15.8 s · caídos 54/0
+  [+ 203.4 s] SABR rn=49 t=194.8 s → HTTP 200, 0.46 MB en 0.14 s · +1 seg · búfer v 0.0–210.3 a 0.0–219.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 204.4 s] SABR rn=50 t=195.4 s → HTTP 200, 2.06 MB en 0.55 s · +1 seg · búfer v 0.0–216.0 a 0.0–219.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 208.1 s] player pedido de nuevo (la URL caduca en 15 s) en 0.3 s: expire 1792107020 → 1792107066, firma nueva, n nuevo, config nuevo (1499 B), mismo PoToken, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 208.7 s] fallo stall en 200.2 s
+  [+ 208.9 s] prueba stall: la CDN actual no contesta → 192.0.2.1, rr2---sn-hp57knks.googlevideo.com
+  [+ 211.5 s] ▶ 203.1 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 10.3 s · caídos 55/0
+  [+ 217.7 s] fallo 1 en 192.0.2.1: URLError -1001 (The request timed out.) → otra CDN: rr2---sn-hp57knks.googlevideo.com
+  [+ 217.9 s] SABR rn=52 t=209.2 s → HTTP 200, 0.00 MB en 0.23 s · +0 seg · búfer v 0.0–216.0 a 0.0–219.6 · @rr2---sn-hp57knks.googlevideo.com
+  [+ 217.9 s] recuperado: rn=52 HTTP 200 en rr2---sn-q4fzenll.googlevideo.com tras 1 fallo(s) y 8.2 s sin datos nuevos
+  [+ 218.6 s] SABR rn=53 t=209.5 s → HTTP 200, 2.97 MB en 0.66 s · +3 seg · búfer v 0.0–224.9 a 0.0–229.6 · OK · @rr2---sn-q4fzenll.googlevideo.com
+  [+ 219.0 s] SABR rn=54 t=210.1 s → HTTP 200, 1.81 MB en 0.47 s · +2 seg · búfer v 0.0–230.7 a 0.0–239.6 · OK · @rr2---sn-q4fzenll.googlevideo.com
+  [+ 221.7 s] ▶ 213.2 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.9 s · caídos 55/0
+  [+ 224.6 s] SABR rn=55 t=215.8 s → HTTP 200, 1.34 MB en 0.37 s · +1 seg · búfer v 0.0–236.9 a 0.0–239.6 · OK · @rr2---sn-q4fzenll.googlevideo.com
+  [+ 230.7 s] player pedido de nuevo (el PoToken caduca en 37 s) en 1.1 s: expire 1792107066 → 1792107088, firma nueva, n nuevo, config nuevo (1498 B), PoToken nuevo, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 231.0 s] SABR rn=56 t=222.2 s → HTTP 200, 1.06 MB en 0.29 s · +2 seg · búfer v 0.0–241.0 a 0.0–249.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 231.9 s] ▶ 223.4 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.7 s · caídos 55/0
+  [+ 234.8 s] SABR rn=57 t=226.2 s → HTTP 200, 0.56 MB en 0.15 s · +1 seg · búfer v 0.0–246.4 a 0.0–249.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 240.8 s] SABR rn=58 t=231.6 s → HTTP 200, 3.54 MB en 0.79 s · +2 seg · búfer v 0.0–253.4 a 0.0–259.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 242.1 s] ▶ 233.6 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 14.6 s · caídos 55/0
+  [+ 247.2 s] SABR rn=59 t=238.6 s → HTTP 200, 0.63 MB en 0.16 s · +1 seg · búfer v 0.0–256.4 a 0.0–259.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 250.5 s] SABR rn=60 t=241.6 s → HTTP 200, 2.16 MB en 0.49 s · +2 seg · búfer v 0.0–263.1 a 0.0–269.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 252.2 s] ▶ 243.8 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 17.8 s · caídos 55/0
+  [+ 256.9 s] SABR rn=61 t=248.1 s → HTTP 200, 1.44 MB en 0.34 s · +1 seg · búfer v 0.0–268.9 a 0.0–269.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 262.4 s] ▶ 253.9 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.7 s · caídos 65/0
+  [+ 262.7 s] SABR rn=62 t=253.9 s → HTTP 200, 1.54 MB en 0.35 s · +2 seg · búfer v 0.0–274.7 a 0.0–279.6 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 268.6 s] fallo 403pot en 260.2 s
+  [+ 269.0 s] SABR rn=63 t=259.9 s → HTTP 200, 2.80 MB en 0.63 s · +2 seg · búfer v 0.0–280.4 a 0.0–289.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 269.0 s] prueba 403pot (y en cada player nuevo hasta que haya PoToken nuevo): n sin transformar en la URL (UrMT2cKfeeMh…)
+  [+ 272.5 s] ▶ 264.1 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 10.9 s · caídos 65/0
+  [+ 273.9 s] SABR rn=64 t=265.5 s → HTTP 403, 0.00 MB en 0.02 s · +0 seg · búfer v 0.0–280.4 a 0.0–289.5 · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 273.9 s] fallo 1 en rr3---sn-j5caxh5n-hpq6.googlevideo.com: googlevideo HTTP 403 (rr3---sn-j5caxh5n-hpq6.googlevideo.com) sin cuerpo → player nuevo
+  [+ 274.2 s] prueba 403pot: el player nuevo también: n sin transformar en la URL (gZdvmJjsL_tG…)
+  [+ 274.2 s] player pedido de nuevo (tras un error) en 0.3 s: expire 1792107088 → 1792107132, firma nueva, n nuevo, config nuevo (1500 B), mismo PoToken, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 274.2 s] SABR rn=65 t=265.8 s → HTTP 403, 0.00 MB en 0.02 s · +0 seg · búfer v 0.0–280.4 a 0.0–289.5 · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 274.2 s] fallo 2 en rr3---sn-j5caxh5n-hpq6.googlevideo.com: googlevideo HTTP 403 (rr3---sn-j5caxh5n-hpq6.googlevideo.com) sin cuerpo → player nuevo y PoToken nuevo
+  [+ 275.0 s] prueba 403pot: hay PoToken nuevo; el player siguiente trae la URL bien
+  [+ 275.3 s] player pedido de nuevo (tras un error) en 1.1 s: expire 1792107132 → 1792107133, firma nueva, n nuevo, config nuevo (1498 B), PoToken nuevo, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 275.5 s] SABR rn=66 t=266.8 s → HTTP 200, 1.23 MB en 0.29 s · +1 seg · búfer v 0.0–284.1 a 0.0–289.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 275.5 s] recuperado: rn=66 HTTP 200 en rr3---sn-j5caxh5n-hpq6.googlevideo.com tras 2 fallo(s) y 1.6 s sin datos nuevos
+  [+ 278.0 s] SABR rn=67 t=269.2 s → HTTP 200, 1.54 MB en 0.36 s · +1 seg · búfer v 0.0–289.1 a 0.0–289.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 282.7 s] ▶ 274.1 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 11.8 s · caídos 65/0
+  [+ 282.9 s] SABR rn=68 t=274.2 s → HTTP 200, 1.18 MB en 0.28 s · +2 seg · búfer v 0.0–293.3 a 0.0–299.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 286.9 s] SABR rn=69 t=278.4 s → HTTP 200, 0.51 MB en 0.13 s · +1 seg · búfer v 0.0–296.6 a 0.0–299.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 290.6 s] SABR rn=70 t=281.6 s → HTTP 200, 2.51 MB en 0.58 s · +2 seg · búfer v 0.0–303.5 a 0.0–309.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 292.8 s] ▶ 284.3 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 17.5 s · caídos 65/0
+  [+ 297.5 s] SABR rn=71 t=288.7 s → HTTP 200, 1.71 MB en 0.40 s · +1 seg · búfer v 0.0–309.6 a 0.0–309.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 302.9 s] ▶ 294.5 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 10.3 s · caídos 65/0
+  [+ 303.1 s] SABR rn=72 t=294.6 s → HTTP 200, 0.46 MB en 0.12 s · +1 seg · búfer v 0.0–309.6 a 0.0–319.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 303.4 s] SABR rn=73 t=294.7 s → HTTP 200, 1.31 MB en 0.30 s · +1 seg · búfer v 0.0–312.7 a 0.0–319.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 306.8 s] SABR rn=74 t=297.8 s → HTTP 200, 2.11 MB en 0.49 s · +1 seg · búfer v 0.0–318.8 a 0.0–319.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 313.0 s] SABR rn=75 t=304.1 s → HTTP 200, 2.28 MB en 0.51 s · +2 seg · búfer v 0.0–323.6 a 0.0–329.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 313.1 s] ▶ 304.6 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 17.2 s · caídos 65/0
+  [+ 317.5 s] SABR rn=76 t=308.8 s → HTTP 200, 1.38 MB en 0.32 s · +1 seg · búfer v 0.0–328.1 a 0.0–329.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 320.6 s] player pedido de nuevo (la URL caduca en 15 s) en 0.3 s: expire 1792107133 → 1792107178, firma nueva, n nuevo, config nuevo (1499 B), mismo PoToken, host rr3---sn-j5caxh5n-hpq6.googlevideo.com (+1 CDN de respaldo); caduca en 1 min 00 s
+  [+ 322.4 s] SABR rn=77 t=313.2 s → HTTP 200, 3.28 MB en 0.75 s · +2 seg · búfer v 0.0–335.1 a 0.0–339.5 · OK · @rr3---sn-j5caxh5n-hpq6.googlevideo.com
+  [+ 323.2 s] ▶ 314.8 / 635 s · reproduciendo · vp9 1920x1080@60 · videotoolbox · por delante 13.7 s · caídos 65/0
+  [+ 328.6 s] fin: se llegó a 320 s

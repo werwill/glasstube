@@ -1,0 +1,7 @@
+{
+  "fecha": "2026-10-15T17:24:06Z",
+  "gl": "MX",
+  "hl": "es-419",
+  "nota": "Grabado con `ytkit record`, sin sesión. Listas [\"contents\", \"continuationItems\", \"items\", \"results\"] recortadas a 10 elementos (más el continuationItemRenderer final). Claves quitadas: adPlacements, attachmentRuns, buttonViewModel, clickTrackingParams, commandMetadata, darkColorPalette, hotkeyDialog, inlinePlaybackEndpoint, itemPlayback, loggingContext, loggingDirectives, mainAppWebResponseContext, microformat, playerAds, playerParams, prefetchTime, richThumbnail, sampledThumbnailColor, sequenceParams, serializedShareEntity, serviceTrackingParams, styleRuns, themedPalette, thumbnailHoverOverlayViewModel, thumbnailOverlayLoadingPreviewRenderer, thumbnailOverlayNowPlayingRenderer, thumbnailOverlayToggleButtonRenderer, topbar, trackingParams, unifiedSharePanelRenderer, ustreamerConfig, vibrantColorPalette, watchEndpointSupportedOnesieConfig, watchEndpointSupportedPrefetchConfig, webResponseContextExtensionData",
+  "nota_listas": "playlist-web, playlist-web-cont y playlist-tv se grabaron después (15-oct-2026, 17:35 UTC) con `ytkit record … playlist-web playlist-web-cont playlist-tv`; además se quitaron toggleButtonViewModel, listItemViewModel y playlistSidebarRenderer."
+}

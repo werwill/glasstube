@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements de Glasstube.app. Los pone Scripts/package-app.sh al firmar la app, con o sin hardened runtime.
+
+  com.apple.security.cs.allow-jit: el JIT de JavaScriptCore para el solver de los desafíos n y de firma (yt-dlp/ejs).
+  En macOS 27, JavaScriptCore solo compila a código máquina si el proceso tiene este entitlement, haya o no hardened
+  runtime; sin él no falla, pero todo corre en el intérprete. Medido (ver NOTAS.md, «Distribución»): preprocesar un
+  player nuevo de YouTube tarda 2,2 s sin él y 0,45 s con él; con la caché del player, 0,06 s en los dos casos.
+
+  No hacen falta otros (ver NOTAS.md, «Distribución», con lo que se probó):
+  - com.apple.security.cs.disable-library-validation: no. Con hardened runtime, dyld solo carga Libmpv.framework si lleva
+    el mismo Team ID que la app, y con Developer ID los dos van firmados con el mismo. Ad hoc o con el certificado propio
+    (sin Team ID) no carga, por eso package-app.sh solo usa hardened runtime con Developer ID. Quien reemplace la
+    biblioteca (LGPL) vuelve a firmar la app ad hoc, y esa firma nueva no lleva hardened runtime.
+  - allow-unsigned-executable-memory: no, porque PlaybackKit no deja que mpv cargue ningún script de Lua (load-scripts y
+    load-stats-overlay, load-console, load-select… en no). Con los scripts internos de mpv, el LuaJIT de libmpv ejecuta
+    memoria sin firmar y macOS mata el proceso con hardened runtime (SIGKILL, Code Signature Invalid; comprobado).
+  - Red, Llavero, audio de salida, WKWebView (PoToken): la app no está en el sandbox, y el hardened runtime solo pide
+    entitlements para cámara, micrófono, ubicación, contactos, calendarios, fotos y eventos de Apple, que no usa.
+-->
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+</dict>
+</plist>
