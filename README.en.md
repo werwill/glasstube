@@ -6,6 +6,13 @@
 
 <p align="center"><a href="README.md">Español</a> · <b>English</b></p>
 
+<p align="center">
+  <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/badge/Download_for_macOS-0F8A86?style=for-the-badge" alt="Download for macOS"></a>
+  <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/github/v/release/werwill/glasstube?style=for-the-badge&label=version&color=073F4A" alt="Latest version"></a>
+</p>
+
+<p align="center"><sub>macOS 26 or later · Apple Silicon · preview · <a href="#download">how to open it the first time</a></sub></p>
+
 <p align="center"><img src="docs/glasstube.gif" alt="Glasstube: search, player, comments and phone pairing" width="880"></p>
 
 > [!IMPORTANT]
