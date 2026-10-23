@@ -197,8 +197,11 @@ Antes, una vez: `../PlaybackKit/Scripts/fetch-libmpv.sh && ../PlaybackKit/Script
      botón de arriba entra al panel. Las demás teclas (espacio, J/K/L…) siguen yendo al video.
 4. **Minirreproductor** (`Player/MiniPlayer.swift`): botón PiP de la cápsula, I o «Minirreproductor» en Más acciones.
    Con mpv es un `NSPanel` sin marco de 448×252 pt, siempre visible y en todos los Spaces, con esquinas redondeadas y
-   proporción 16:9, que recuerda dónde se dejó; al pasar el puntero muestra título, volver a la ventana, cerrar, ±10 s,
-   play/pausa, siguiente y el progreso (todo en un `GlassEffectContainer`). Doble clic o Retorno vuelven, Esc cierra,
+   proporción 16:9, que recuerda dónde se dejó. Se arrastra desde el video y, al soltarlo, se pega al borde de la
+   pantalla más cercano en el punto donde quedó (cerca de una esquina, a los dos bordes; también al abrirlo y tras
+   cambiarle el tamaño). Al pasar el puntero muestra título, volver a la ventana, cerrar, ±10 s, play/pausa, siguiente y
+   el progreso (todo en un `GlassEffectContainer`, que entran y salen del árbol: a opacidad 0 el vidrio seguía a la
+   vista), y se ocultan con el puntero quieto tras el tiempo de Ajustes. Doble clic o Retorno vuelven, Esc cierra,
    espacio/K/J/L/M funcionan con él enfocado. La ventana principal vuelve a la navegación y el video no se corta (la
    vista del motor se pasa de una a otra). Con `AVEngine` (directos) es el **PiP del sistema**; al restaurarlo o
    cerrarlo, el video vuelve a la ventana. Reproducir otro video desde la navegación lo devuelve a la ventana.

@@ -11,6 +11,7 @@ import YTKit
 final class MiniPlayerController {
     private var panel: MiniPanel?
     private var pictureInPicture: PictureInPicture?
+    private var resizeObserver: NSObjectProtocol?
 
     static let defaultSize = NSSize(width: 448, height: 252)
     static let margin: CGFloat = 20
@@ -27,7 +28,8 @@ final class MiniPlayerController {
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.isMovableByWindowBackground = true
+        // Se mueve con el arrastre de `MiniPlayerView` (el de AppKit no llega: la vista de mpv se queda con los clics).
+        panel.isMovableByWindowBackground = false
         panel.hasShadow = true
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -35,11 +37,13 @@ final class MiniPlayerController {
         panel.minSize = NSSize(width: 288, height: 162)
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
-        let root = MiniPlayerView(player: player)
+        let root = MiniPlayerView(player: player,
+                                  onDrag: { [weak panel] in panel?.drag(translation: $0) },
+                                  onDragEnd: { [weak panel] in panel?.endDrag() })
             .environment(app)
             .environment(app.settings)
             .environment(\.colorScheme, .dark)
-        let host = NSHostingView(rootView: root)
+        let host = MiniHostingView(rootView: root)
         host.wantsLayer = true
         host.layer?.cornerRadius = 16
         host.layer?.cornerCurve = .continuous
@@ -52,9 +56,15 @@ final class MiniPlayerController {
                 panel.setFrameOrigin(NSPoint(x: visible.maxX - Self.defaultSize.width - Self.margin, y: visible.minY + Self.margin))
             }
         }
+        // Si la pantalla cambió desde la última vez, vuelve a quedar dentro y pegado a un borde.
+        panel.snapToEdge(animated: false)
         panel.setFrameAutosaveName(Self.autosaveName)
         panel.orderFrontRegardless()
         self.panel = panel
+        resizeObserver = NotificationCenter.default.addObserver(forName: NSWindow.didEndLiveResizeNotification, object: panel,
+                                                                queue: .main) { [weak panel] _ in
+            MainActor.assumeIsolated { panel?.snapToEdge(animated: true) }
+        }
         if let path = UserDefaults.standard.string(forKey: "GTMiniWindowFile") {
             try? String(panel.windowNumber).write(toFile: path, atomically: true, encoding: .utf8)
         }
@@ -67,6 +77,8 @@ final class MiniPlayerController {
         pictureInPicture?.onRestore = nil
         pictureInPicture?.stop()
         pictureInPicture = nil
+        if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
+        resizeObserver = nil
         guard let panel else { return }
         panel.saveFrame(usingName: Self.autosaveName)
         // Primero se suelta la vista del video, para que el reproductor de la ventana la pueda tomar.
@@ -90,21 +102,91 @@ final class MiniPlayerController {
     }
 }
 
-/// Panel sin marco que sí acepta el teclado (espacio, Retorno para volver, Esc para cerrar).
+/// Panel sin marco que sí acepta el teclado (espacio, Retorno para volver, Esc para cerrar). Se arrastra desde el video y,
+/// al soltarlo, se pega al borde de la pantalla más cercano en el punto donde quedó (cerca de una esquina, a los dos).
 final class MiniPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    /// Del puntero a la esquina del panel al empezar a arrastrar.
+    private var dragOffset: NSPoint?
+
+    /// El puntero en la pantalla según el evento en curso (sirve también para los eventos de las pruebas automáticas).
+    private var pointer: NSPoint {
+        if let event = NSApp.currentEvent, event.window === self { return convertPoint(toScreen: event.locationInWindow) }
+        return NSEvent.mouseLocation
+    }
+
+    /// `translation`: lo que lleva el arrastre en la vista (y hacia abajo); con él se sabe dónde empezó, aunque el gesto
+    /// llegue unos puntos después del clic.
+    func drag(translation: CGSize) {
+        let pointer = pointer
+        let offset = dragOffset ?? NSPoint(x: pointer.x - translation.width - frame.minX, y: pointer.y + translation.height - frame.minY)
+        dragOffset = offset
+        setFrameOrigin(NSPoint(x: pointer.x - offset.x, y: pointer.y - offset.y))
+    }
+
+    func endDrag() {
+        guard dragOffset != nil else { return }
+        dragOffset = nil
+        snapToEdge(animated: true)
+    }
+
+    func snapToEdge(animated: Bool) {
+        guard let screen = screen ?? NSScreen.main else { return }
+        let bounds = screen.visibleFrame.insetBy(dx: MiniPlayerController.margin, dy: MiniPlayerController.margin)
+        let target = Self.snapped(frame, in: bounds)
+        guard target != frame else { return }
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                animator().setFrame(target, display: true)
+            }
+        } else {
+            setFrame(target, display: true)
+        }
+    }
+
+    /// `frame` dentro de `bounds` y pegado a su borde más cercano, sin moverlo a lo largo de ese borde; si además queda a
+    /// menos de `cornerReach` del otro eje, se pega también a ese (la esquina).
+    static func snapped(_ frame: NSRect, in bounds: NSRect, cornerReach: CGFloat = 80) -> NSRect {
+        var origin = NSPoint(x: min(max(frame.minX, bounds.minX), bounds.maxX - frame.width),
+                             y: min(max(frame.minY, bounds.minY), bounds.maxY - frame.height))
+        let left = origin.x - bounds.minX, right = bounds.maxX - frame.width - origin.x
+        let bottom = origin.y - bounds.minY, top = bounds.maxY - frame.height - origin.y
+        let toSide = min(left, right), toTopOrBottom = min(bottom, top)
+        if toSide <= toTopOrBottom || toSide < cornerReach {
+            origin.x = left <= right ? bounds.minX : bounds.maxX - frame.width
+        }
+        if toTopOrBottom < toSide || toTopOrBottom < cornerReach {
+            origin.y = bottom <= top ? bounds.minY : bounds.maxY - frame.height
+        }
+        return NSRect(origin: origin, size: frame.size)
+    }
+}
+
+/// El primer clic en el panel (sin ser la ventana activa) ya llega a los controles y al arrastre, como en el PiP del sistema.
+final class MiniHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 /// Contenido del minirreproductor: video y, al pasar el puntero, título, volver a la ventana, cerrar, ±10 s,
 /// play/pausa y el progreso, en un solo `GlassEffectContainer`.
 struct MiniPlayerView: View {
     let player: PlayerModel
+    /// Arrastre desde el video: lo mueve `MiniPanel`, que al soltar lo pega al borde.
+    var onDrag: (CGSize) -> Void = { _ in }
+    var onDragEnd: () -> Void = {}
     @Environment(AppModel.self) private var app
+    @Environment(AppSettings.self) private var settings
     @ViewState private var hovering = false
+    /// Con el puntero quieto encima, los controles se ocultan tras el mismo tiempo que en la ventana.
+    @ViewState private var idle = false
+    @ViewState private var hideTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
-    private var showsControls: Bool { hovering || !player.isPlaying || Automation.shared.keepControls }
+    private var showsControls: Bool { (hovering && !idle) || !player.isPlaying || Automation.shared.keepControls }
 
     var body: some View {
         ZStack {
@@ -113,44 +195,41 @@ struct MiniPlayerView: View {
                 PlayerVideoView(engine: engine, isActive: app.playerPresentation == .mini)
                     .accessibilityLabel("Video: \(player.title)")
             }
+            // Capa de clics sobre el video (la vista de mpv se quedaría con ellos): arrastrar mueve el panel y el doble clic
+            // vuelve a la ventana.
+            Color.clear
+                .contentShape(.rect)
+                .gesture(DragGesture(minimumDistance: 3)
+                    .onChanged { onDrag($0.translation) }
+                    .onEnded { _ in onDragEnd() })
+                .onTapGesture(count: 2) { app.expandPlayer() }
             LinearGradient(colors: [.black.opacity(0.55), .clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
                 .opacity(showsControls ? 1 : 0)
                 .allowsHitTesting(false)
             if player.isLoading {
                 ProgressView().controlSize(.small)
             }
+            // Los controles entran y salen del árbol en vez de ir a opacidad 0: el contenedor dibuja el vidrio de sus
+            // piezas y no respeta la opacidad de la vista que las envuelve (los botones se quedaban a la vista).
             GlassEffectContainer(spacing: 10) {
-                VStack(spacing: 0) {
-                    HStack(alignment: .top, spacing: 8) {
-                        Text(player.title)
-                            .font(.system(size: 12.5, weight: .semibold))
-                            .lineLimit(2)
-                            .shadow(color: .black.opacity(0.5), radius: 2)
-                        Spacer(minLength: 6)
-                        MiniButton(symbol: "arrow.up.left.and.arrow.down.right", label: "Volver a la ventana (Retorno)") { app.expandPlayer() }
-                        MiniButton(symbol: "xmark", label: "Cerrar (Esc)") { app.closePlayer() }
-                    }
-                    Spacer(minLength: 0)
-                    HStack(spacing: 6) {
-                        MiniButton(symbol: "gobackward.10", label: "Atrás 10 s") { player.seek(by: -10) }
-                        MiniButton(symbol: player.isPlaying ? "pause.fill" : "play.fill", label: player.isPlaying ? "Pausar" : "Reproducir",
-                                   size: 40) { player.togglePause() }
-                        MiniButton(symbol: "goforward.10", label: "Adelante 10 s") { player.seek(by: 10) }
-                        if player.nextItem != nil {
-                            MiniButton(symbol: "forward.end.fill", label: "Siguiente") { player.playNext() }
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    MiniProgress(player: player)
+                if showsControls {
+                    controls
+                        .transition(.opacity)
                 }
-                .padding(10)
-                .opacity(showsControls ? 1 : 0)
             }
         }
         .foregroundStyle(.white)
         .contentShape(.rect)
-        .onHover { inside in withAnimation(.smooth(duration: 0.2)) { hovering = inside } }
-        .onTapGesture(count: 2) { app.expandPlayer() }
+        .animation(.smooth(duration: 0.25), value: showsControls)
+        .onContinuousHover { phase in
+            switch phase {
+            case .active: bumpControls()
+            case .ended:
+                hideTask?.cancel()
+                hovering = false
+            }
+        }
+        .onDisappear { hideTask?.cancel() }
         .focusable()
         .focusEffectDisabled()
         .focused($focused)
@@ -176,6 +255,46 @@ struct MiniPlayerView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Minirreproductor")
+    }
+
+    /// Muestra los controles y programa que se oculten si el puntero se queda quieto (en pausa no se ocultan).
+    private func bumpControls() {
+        hideTask?.cancel()
+        if !hovering { hovering = true }
+        if idle { idle = false }
+        let timeout = settings.controlsTimeout
+        hideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(timeout))
+            guard !Task.isCancelled else { return }
+            idle = true
+        }
+    }
+
+    private var controls: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 8) {
+                Text(player.title)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .lineLimit(2)
+                    .shadow(color: .black.opacity(0.5), radius: 2)
+                Spacer(minLength: 6)
+                MiniButton(symbol: "arrow.up.left.and.arrow.down.right", label: "Volver a la ventana (Retorno)") { app.expandPlayer() }
+                MiniButton(symbol: "xmark", label: "Cerrar (Esc)") { app.closePlayer() }
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: 6) {
+                MiniButton(symbol: "gobackward.10", label: "Atrás 10 s") { player.seek(by: -10) }
+                MiniButton(symbol: player.isPlaying ? "pause.fill" : "play.fill", label: player.isPlaying ? "Pausar" : "Reproducir",
+                           size: 40) { player.togglePause() }
+                MiniButton(symbol: "goforward.10", label: "Adelante 10 s") { player.seek(by: 10) }
+                if player.nextItem != nil {
+                    MiniButton(symbol: "forward.end.fill", label: "Siguiente") { player.playNext() }
+                }
+            }
+            Spacer(minLength: 0)
+            MiniProgress(player: player)
+        }
+        .padding(10)
     }
 }
 

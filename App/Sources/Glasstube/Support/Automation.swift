@@ -32,7 +32,9 @@ import YTKit
 /// - `GTPanel`: abre el panel lateral del reproductor en esa pestaña (description, chapters, comments, chat, suggestions);
 ///   `GTPanelFocus N` pone el foco del teclado en su fila N. `GTSinPersonas`: quien comenta sale como `@personaN`.
 /// - `GTQueue`: `id,id,…` en la cola. `GTMini N`: pasa al minirreproductor a los N s de cargar (`GTMiniWindowFile`:
-///   escribe ahí su número de ventana).
+///   escribe ahí su número de ventana). `GTMiniDrag dx;dy`: luego lo arrastra desde el centro dx, dy puntos (y hacia
+///   arriba) con eventos de ratón en la cola, como el ratón de verdad, y anota dónde quedó. Un valor que empieza con
+///   «-» se toma como otra opción: los negativos van con un espacio delante (`-GTMiniDrag " -1000;350"`).
 /// - `GTSinLlavero`: no lee el Llavero (sin sesión; evita el aviso de permiso tras recompilar). `GTLlaveroLento N`:
 ///   igual, pero la lectura tarda N s (como el aviso del Llavero sin responder).
 /// - `GTVerbose`: registro de red de YTKit en stderr.
@@ -369,6 +371,10 @@ final class Automation {
                 NSLog("Glasstube automation: presentación \(String(describing: model?.playerPresentation)), motor \(String(describing: player.engine.map { type(of: $0) }))")
                 try? await Task.sleep(for: .seconds(3))
                 NSLog("Glasstube automation: 3 s después: presentación \(String(describing: model?.playerPresentation)), PiP del sistema \(model?.miniPlayer.isPictureInPictureActive == true ? "activo" : "no"), mini \(model?.miniPlayer.isVisible == true ? "visible" : "no")")
+                if let raw = defaults.string(forKey: "GTMiniDrag") {
+                    let xy = raw.split(separator: ";").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+                    if xy.count == 2 { await dragMiniPlayer(by: CGVector(dx: xy[0], dy: xy[1])) }
+                }
                 if defaults.object(forKey: "GTMiniExpand") != nil {
                     // `GTMiniExpand N`: vuelve a la ventana N s después.
                     try? await Task.sleep(for: .seconds(defaults.double(forKey: "GTMiniExpand")))
@@ -381,6 +387,29 @@ final class Automation {
 
     private var keysScheduled = false
     private var miniScheduled = false
+
+    /// Arrastra el minirreproductor con `leftMouseDown`, `leftMouseDragged` y `leftMouseUp` en la cola de eventos.
+    private func dragMiniPlayer(by delta: CGVector) async {
+        guard let number = model?.miniPlayer.windowNumber, let window = NSApp.window(withWindowNumber: number) else { return }
+        NSLog("Glasstube automation: minirreproductor antes en %@", NSStringFromRect(window.frame))
+        let start = NSPoint(x: window.frame.midX, y: window.frame.midY)
+        let steps = 12
+        for step in 0...(steps + 1) {
+            let type: NSEvent.EventType = step == 0 ? .leftMouseDown : (step > steps ? .leftMouseUp : .leftMouseDragged)
+            let progress = CGFloat(min(step, steps)) / CGFloat(steps)
+            let screen = NSPoint(x: start.x + delta.dx * progress, y: start.y + delta.dy * progress)
+            // En coordenadas de la ventana donde está ahora (se mueve con el arrastre).
+            let location = NSPoint(x: screen.x - window.frame.minX, y: screen.y - window.frame.minY)
+            guard let event = NSEvent.mouseEvent(with: type, location: location, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                                 windowNumber: number, context: nil, eventNumber: 0, clickCount: 1,
+                                                 pressure: type == .leftMouseUp ? 0 : 1) else { continue }
+            NSApp.postEvent(event, atStart: false)
+            try? await Task.sleep(for: .milliseconds(40))
+        }
+        try? await Task.sleep(for: .seconds(1))
+        NSLog("Glasstube automation: minirreproductor después en %@, pantalla útil %@", NSStringFromRect(window.frame),
+              NSStringFromRect(window.screen?.visibleFrame ?? .zero))
+    }
 
     private func scheduleKeys() {
         guard !keysScheduled else { return }
