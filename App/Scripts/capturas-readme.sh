@@ -1,11 +1,11 @@
 #!/bin/bash
-# Rehace las capturas de la portada (../docs/capturas/) y el GIF (../docs/glasstube.gif) con build/Glasstube.app
+# Rehace las capturas de la portada (../docs/capturas/) con build/Glasstube.app
 # (Scripts/package-app.sh antes). Solo contenido Creative Commons de la Blender Foundation (Big Buck Bunny, CC BY 3.0),
 # sin sesión ni Llavero (-GTSinLlavero), sin fotos de quien comenta (-GTSinPersonas) y con el código de vinculación de
-# prueba. Necesita el permiso de Grabación de pantalla para la terminal; el GIF, ffmpeg (FFMPEG=/ruta/ffmpeg).
+# prueba. Necesita el permiso de Grabación de pantalla para la terminal.
 #
-#   Scripts/capturas-readme.sh            # capturas y GIF
-#   Scripts/capturas-readme.sh reproductor  # solo las que contienen "reproductor" (sin GIF)
+#   Scripts/capturas-readme.sh            # todas
+#   Scripts/capturas-readme.sh reproductor  # solo las que contienen "reproductor"
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -48,21 +48,4 @@ ACTIVAR=1 shot vincular-telefono 10 -appearance light -GTRemotoEnMemoria YES -re
 shot ajustes-sponsorblock 7 -appearance light -GTOpenSettings YES -settingsTab sponsorblock
 pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true
 
-# GIF: las cuatro pantallas con un fundido de medio segundo, a 880 px y 10 cuadros por segundo (unos 3 MB).
-[[ -z "$FILTER" ]] || exit 0
-FFMPEG="${FFMPEG:-ffmpeg}"
-command -v "$FFMPEG" >/dev/null || { echo "Sin ffmpeg: no se rehízo docs/glasstube.gif" >&2; exit 0; }
-HOLD=2.6 FADE=0.5
-inputs=(); filters=""; i=0
-for name in busqueda reproductor comentarios vincular-telefono; do
-    inputs+=(-loop 1 -t "$HOLD" -i "$OUT/$name.png")
-    filters+="[$i:v]scale=880:-2:flags=lanczos,fps=10,format=rgb24,setsar=1[s$i];"
-    i=$((i + 1))
-done
-filters+="[s0][s1]xfade=transition=fade:duration=$FADE:offset=$(echo "$HOLD - $FADE" | bc)[x1];"
-filters+="[x1][s2]xfade=transition=fade:duration=$FADE:offset=$(echo "2 * ($HOLD - $FADE)" | bc)[x2];"
-filters+="[x2][s3]xfade=transition=fade:duration=$FADE:offset=$(echo "3 * ($HOLD - $FADE)" | bc),split[a][b];"
-filters+="[a]palettegen=max_colors=160:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
-"$FFMPEG" -v error -y "${inputs[@]}" -filter_complex "$filters" -loop 0 "$DOCS/glasstube.gif"
-echo "docs/glasstube.gif ($(du -h "$DOCS/glasstube.gif" | cut -f1))"
 echo "Revisa las capturas antes de publicarlas: las miniaturas de terceros pueden traer logos o caras."

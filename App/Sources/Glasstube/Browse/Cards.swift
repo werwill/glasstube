@@ -76,7 +76,7 @@ struct VideoCard: View {
         }
         .contentShape(.rect)
         .onHover { inside in
-            withAnimation(.smooth(duration: 0.2)) { hovering = inside }
+            withAnimation(.smooth(duration: 0.2)) { hovering = inside && !Automation.shared.ignoresPointer }
         }
         .task(id: lifted) {
             if lifted && settings.hoverPreviews {
@@ -320,7 +320,7 @@ struct ShortCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Reproducir Short: \(item.title)")
-        .onHover { inside in withAnimation(.smooth(duration: 0.2)) { hovering = inside } }
+        .onHover { inside in withAnimation(.smooth(duration: 0.2)) { hovering = inside && !Automation.shared.ignoresPointer } }
         .contextMenu { ItemMenu(item: item) }
     }
 }

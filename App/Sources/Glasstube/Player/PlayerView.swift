@@ -23,6 +23,16 @@ struct PlayerView: View {
     /// Ancho que ocupa el panel lateral abierto (con sus márgenes): el video queda a su izquierda.
     private var reserved: CGFloat { player.panelTab != nil ? SidePanel.width + 24 + 12 : 0 }
 
+    /// Lo que ocupa a lo ancho "Saltar" (o "A continuación") en la esquina de abajo.
+    @ViewState private var cornerSpan: ClosedRange<CGFloat> = 0...0
+
+    /// La burbuja del storyboard queda debajo de "Saltar": entonces sube por encima de ella.
+    private var clearsBubble: Bool {
+        guard player.controlsVisible, player.scrubTime != nil else { return false }
+        let half = StoryboardBubble.width / 2 + 12
+        return (player.scrubX - half...player.scrubX + half).overlaps(cornerSpan)
+    }
+
     var body: some View {
         ZStack {
             Color.black
@@ -161,21 +171,29 @@ struct PlayerView: View {
             Spacer(minLength: 0)
             HStack {
                 Spacer()
-                if let upNext = player.upNext {
-                    UpNextCard(upNext: upNext)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 24))
-                        .glassEffectID("upnext", in: glass)
-                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                } else if let segment = player.activeSegment {
-                    SkipSegmentButton(segment: segment, remaining: segment.end - player.position)
-                        .glassEffectID("skip", in: glass)
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                Group {
+                    if let upNext = player.upNext {
+                        UpNextCard(upNext: upNext)
+                            .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                            .glassEffectID("upnext", in: glass)
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    } else if let segment = player.activeSegment {
+                        SkipSegmentButton(segment: segment, remaining: segment.end - player.position)
+                            .glassEffectID("skip", in: glass)
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
                 }
+                .onGeometryChange(for: ClosedRange<CGFloat>.self) { proxy in
+                    let frame = proxy.frame(in: .named(PlayerSpace.name))
+                    return frame.minX...frame.maxX
+                } action: { cornerSpan = $0 }
             }
-            // Con un menú abierto (sale sobre su botón, a la derecha), "Saltar" se hace a un lado como en la maqueta; con la
-            // burbuja del storyboard a la vista, sube por encima de ella.
+            // Con un menú abierto (sale sobre su botón, a la derecha), "Saltar" se hace a un lado como en la maqueta; solo
+            // sube por encima de la burbuja del storyboard cuando la burbuja le queda debajo (si no, se quedaba flotando
+            // solo, muy arriba).
             .padding(.trailing, player.popover == nil ? 32 : 446)
-            .padding(.bottom, (player.controlsVisible ? 16 : 14) + (player.controlsVisible && player.scrubTime != nil ? StoryboardBubble.height + 8 : 0))
+            .padding(.bottom, (player.controlsVisible ? 16 : 14) + (clearsBubble ? StoryboardBubble.height + 8 : 0))
+            .animation(.smooth(duration: 0.25), value: clearsBubble)
 
             if player.controlsVisible {
                 PlayerControlsCapsule()

@@ -59,6 +59,8 @@ import YTKit
 ///   trae al frente varias veces en los primeros 9 s, para `screencapture -R`), `GTFiltro "tipo=video,fecha=semana,duracion=3-20,prioridad=popularidad,cc"` (filtros de `GTSearch`; el menú de
 ///   filtros se abre con un clic real, `-GTClicks "9:1340;84"` en una ventana de 1440 pt), `GTRegistroGrupos` (registro
 ///   de los feeds RSS).
+/// - `GTSinPuntero`: las tarjetas no se elevan ni muestran la vista previa por el puntero real (grabaciones y capturas;
+///   la de `GTHoverIndex` sí).
 /// - `GTKeys`: `segundos:tecla,…` (space, left, right, up, down, return, tab, escape, `cmd+,` o un carácter, p. ej. `j`, `>`):
 ///   eventos de teclado reales por `NSApp.sendEvent`, contados desde que se carga el video (o el arranque).
 final class Automation {
@@ -113,6 +115,9 @@ final class Automation {
     var onlyVideos: Set<String>? {
         defaults.string(forKey: "GTSoloVideos").map { Set($0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }) }
     }
+    /// Grabaciones: las tarjetas no reaccionan al puntero real (`GTSinPuntero`), que estaría donde lo dejó la persona; la
+    /// vista previa sale solo en la de `GTHoverIndex`.
+    var ignoresPointer: Bool { defaults.bool(forKey: "GTSinPuntero") }
     /// Fase 5a: registro de los feeds RSS de grupos y suscripciones de esta Mac.
     var logsGroups: Bool { defaults.bool(forKey: "GTRegistroGrupos") || defaults.bool(forKey: "GTVerbose") }
 

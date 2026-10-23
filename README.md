@@ -13,7 +13,7 @@
 
 <p align="center"><sub>macOS 26 o posterior · Apple Silicon · vista previa · <a href="#descargar">cómo abrirla la primera vez</a></sub></p>
 
-<p align="center"><img src="docs/glasstube.gif" alt="Glasstube: búsqueda, reproductor, comentarios y vinculación con el teléfono" width="880"></p>
+<p align="center"><img src="docs/glasstube.webp" alt="Glasstube en movimiento: la búsqueda con su vista previa, los controles de vidrio del reproductor, el menú de calidad, los comentarios y el minirreproductor" width="880"></p>
 
 > [!IMPORTANT]
 > Glasstube es un proyecto independiente. **No está afiliado a YouTube ni a Google, ni lo respaldan.** Tampoco es un
@@ -207,8 +207,8 @@ swift run ytkit search "big buck bunny"
 swift run ytkit next aqz-KE-bpKQ
 ```
 
-**Capturas:** `App/Scripts/capturas-readme.sh` rehace las de esta página y el GIF (necesita ffmpeg), y
-`App/Scripts/capturas.sh` rehace las de desarrollo. Las dos piden el permiso de Grabación de pantalla.
+**Capturas:** `App/Scripts/capturas-readme.sh` rehace las de esta página y `App/Scripts/capturas.sh`, las de
+desarrollo. Las dos piden el permiso de Grabación de pantalla.
 
 Las notas técnicas de cada paquete están en [YTKit/NOTAS.md](YTKit/NOTAS.md), [PlaybackKit/NOTAS.md](PlaybackKit/NOTAS.md)
 y [App/NOTAS.md](App/NOTAS.md).
@@ -248,11 +248,6 @@ La primera vez macOS pregunta si `codesign` puede usar la clave, y al abrir la a
 - **«Falta …/Libmpv.framework».** Corre `PlaybackKit/Scripts/fetch-libmpv.sh` y después `link-libmpv.sh`.
 - **«SHA-256 de … no coincide».** La descarga llegó incompleta o el archivo cambió en GitHub. El script borra ese zip;
   vuelve a correrlo. Si sigue fallando, abre un issue y no cambies la suma a mano.
-- **ffprobe o ffmpeg dicen «Bad CPU type in executable».** Algunos paquetes, como `ffprobe-static` de npm, traen un
-  binario para Intel (x86_64) aunque la carpeta diga arm64, y sin Rosetta no corre. Glasstube no los usa para compilar
-  ni para reproducir; solo `capturas-readme.sh` usa ffmpeg para el GIF. Compruébalo con `file "$(which ffprobe)"` e
-  instala uno para arm64 (por ejemplo, con Homebrew) o Rosetta (`softwareupdate --install-rosetta`). A los scripts que
-  lo usan se les puede pasar la ruta: `FFMPEG=/ruta/a/ffmpeg App/Scripts/capturas-readme.sh`.
 
 ### Al reproducir
 
@@ -315,8 +310,8 @@ Se agradecen issues y pull requests. Antes de mandar uno:
 - Corre `swift build` y `swift test` en los paquetes que tocaste.
 - **No subas datos personales.** Las fixtures con cuenta se graban con `ytkit record-account`, que las anonimiza, y
   `FixturePrivacyTests` revisa que no quede ningún token, correo ni id de cuenta. Nunca subas las respuestas crudas.
-- **Las capturas solo con contenido Creative Commons** (`App/Scripts/capturas-readme.sh` usa Big Buck Bunny), sin
-  sesión ni caras de creadores.
+- **Las capturas solo con contenido Creative Commons** (`App/Scripts/capturas-readme.sh` y la animación de la
+  portada usan Big Buck Bunny), sin sesión ni caras de creadores.
 - No subas binarios: libmpv lo regeneran `fetch-libmpv.sh` y `link-libmpv.sh`.
 - Los comentarios y las notas del código van en español, como el resto del proyecto.
 

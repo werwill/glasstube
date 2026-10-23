@@ -21,7 +21,7 @@ CON_SESION=1 Scripts/capturas.sh sesion   # y las de la cuenta (con sesión inic
 Scripts/capturas.sh panel          # las de la fase 3: panel, a-continuacion, dearrow, minirreproductor
 Scripts/capturas.sh vincular       # las de la fase 4: la hoja «Vincular un teléfono» y Ajustes > Control remoto
 Scripts/capturas.sh grupo          # las de la fase 5a que dicen «grupo» (también: filtros, suscripciones-esta-mac, ajustes-bloqueos)
-Scripts/capturas-readme.sh         # las de la portada (../docs/capturas/) y el GIF, solo con Big Buck Bunny
+Scripts/capturas-readme.sh         # las de la portada (../docs/capturas/), solo con Big Buck Bunny
 swift test                         # 44 pruebas: cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones, minirreproductor, grupos, bloqueos y filtros (fase 5a)
 Scripts/release.sh 0.5.0           # versión para GitHub Releases: ../dist/Glasstube-0.5.0.dmg, su SHA-256 y las notas (no sube nada)
 open "glasstube://watch?v=aqz-KE-bpKQ&t=60"   # abre la app (o la que está abierta) en ese video
@@ -575,6 +575,26 @@ Antes de subir el repositorio y la versión (18-oct-2026):
   (`strip -S`, que conserva los símbolos y las 54 `mpv_*` exportadas) antes de firmar, y `release.sh` se detiene si
   la app montada contiene `$HOME/` (`LC_ALL=C grep -rlaF`: sin `-a`, `grep -r` se salta los binarios). Las rutas
   `/Users/runner/…` que quedan en Libmpv son de las máquinas de compilación de MPVKit en GitHub.
+
+### La animación de la portada (23-oct-2026)
+
+`docs/glasstube.webp` (15 s en bucle, 1320 px, 20 fps, unos 7,6 MB) reemplaza al GIF de cuatro capturas fijas. Son
+grabaciones reales de la ventana (ScreenCaptureKit, una sola ventana a 2880 x 1800 y 60 fps) montadas con HyperFrames
+en un proyecto aparte que no está en el repositorio (las grabaciones pesan cientos de MB) y que también arma un video
+cuadrado con fondo transparente para redes; el WebP sale de los PNG con alfa con ffmpeg (`libwebp_anim`). Mismo
+criterio que las capturas: Big Buck Bunny (CC BY) con el filtro Creative Commons en la búsqueda, `@personaN`, sin
+sesión ni Llavero (`-GTSinLlavero`, `-GTSinPersonas`, `-remoteEnabled NO`).
+
+- **`-GTSinPuntero`**: las tarjetas no reaccionan al puntero real, que al grabar elevaba la tarjeta que quedara debajo;
+  la de `-GTHoverIndex` sí se eleva.
+- Mientras se graba una ventana sola, macOS pone el indicador morado de grabación en lugar de los botones de la
+  ventana: el montaje los tapa con un recorte de una captura fija de la misma ventana.
+- **«Saltar patrocinio» ya no sube si no hace falta**: antes subía por encima de la burbuja del storyboard siempre que
+  la burbuja estaba a la vista, aunque estuviera lejos, y quedaba flotando solo, muy arriba (se notó en la grabación).
+  Ahora `PlayerView` mide lo que ocupa a lo ancho la esquina de abajo («Saltar» o «A continuación») y solo sube cuando
+  la burbuja le queda debajo, con una animación corta.
+- Grabar con la ventana activa (`-GTWindowFrameFile`, que la trae al frente): en una ventana inactiva macOS le quita el
+  tinte al vidrio y «Saltar patrocinio» sale gris en lugar de verde.
 
 ### Qué falta
 

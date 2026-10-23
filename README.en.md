@@ -13,7 +13,7 @@
 
 <p align="center"><sub>macOS 26 or later · Apple Silicon · preview · <a href="#download">how to open it the first time</a></sub></p>
 
-<p align="center"><img src="docs/glasstube.gif" alt="Glasstube: search, player, comments and phone pairing" width="880"></p>
+<p align="center"><img src="docs/glasstube.webp" alt="Glasstube in motion: search with its hover preview, the player's glass controls, the quality menu, comments and the mini player" width="880"></p>
 
 > [!IMPORTANT]
 > Glasstube is an independent project. **It is not affiliated with, endorsed by or sponsored by YouTube or Google.**
@@ -210,8 +210,8 @@ swift run ytkit search "big buck bunny"
 swift run ytkit next aqz-KE-bpKQ
 ```
 
-**Screenshots:** `App/Scripts/capturas-readme.sh` rebuilds the ones on this page and the GIF (it needs ffmpeg), and
-`App/Scripts/capturas.sh` rebuilds the development ones. Both need the Screen Recording permission.
+**Screenshots:** `App/Scripts/capturas-readme.sh` rebuilds the ones on this page and `App/Scripts/capturas.sh`
+the development ones. Both need the Screen Recording permission.
 
 Each package has technical notes, in Spanish: [YTKit/NOTAS.md](YTKit/NOTAS.md),
 [PlaybackKit/NOTAS.md](PlaybackKit/NOTAS.md) and [App/NOTAS.md](App/NOTAS.md).
@@ -253,11 +253,6 @@ Keychain. Choose **Always Allow** both times and it won't ask again. To check th
   `link-libmpv.sh`.
 - **"SHA-256 de … no coincide" (checksum mismatch).** The download was incomplete or the file changed on GitHub. The
   script deletes that zip, so run it again. If it keeps failing, open an issue rather than editing the checksum.
-- **ffprobe or ffmpeg says "Bad CPU type in executable".** Some packages, such as `ffprobe-static` on npm, ship an
-  Intel (x86_64) binary even when the folder says arm64, and it won't run without Rosetta. Glasstube doesn't use them
-  to build or to play video; only `capturas-readme.sh` uses ffmpeg for the GIF. Check with `file "$(which ffprobe)"`
-  and install an arm64 build (with Homebrew, for example) or Rosetta (`softwareupdate --install-rosetta`). Scripts that
-  use it accept a path: `FFMPEG=/path/to/ffmpeg App/Scripts/capturas-readme.sh`.
 
 ### Playing video
 
@@ -321,8 +316,8 @@ Issues and pull requests are welcome. Before sending one:
 - **Don't commit personal data.** Fixtures that need an account are recorded with `ytkit record-account`, which
   anonymises them, and `FixturePrivacyTests` checks that no token, email or account ID is left. Never commit the raw
   responses.
-- **Screenshots use Creative Commons content only** (`App/Scripts/capturas-readme.sh` uses Big Buck Bunny), with no
-  signed-in session and no creators' faces.
+- **Screenshots use Creative Commons content only** (`App/Scripts/capturas-readme.sh` and the animation at the
+  top use Big Buck Bunny), with no signed-in session and no creators' faces.
 - Don't commit binaries: `fetch-libmpv.sh` and `link-libmpv.sh` regenerate libmpv.
 - Code comments and notes are in Spanish, like the rest of the project.
 
