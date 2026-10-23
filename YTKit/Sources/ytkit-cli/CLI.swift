@@ -36,7 +36,7 @@ struct CLI {
     func run() async -> Int32 {
         var options = Options(arguments)
         guard let command = options.positional.first else {
-            print(Self.usage + Self.accountUsage)
+            print(Self.usage + Self.accountUsage + Self.discoverUsage)
             return 1
         }
         options.positional.removeFirst()
@@ -57,6 +57,9 @@ struct CLI {
             case "topic": try await topic(service, options, printer)
             case "search": try await search(service, options, printer)
             case "suggest": try await suggest(service, options)
+            case "rss": try await rss(service, options, printer)
+            case "shorts": try await shorts(service, options, printer)
+            case "importar": try importGroups(options)
             case "channel": try await channel(service, options, printer)
             case "playlist": try await playlist(service, options, printer)
             case "next": try await next(service, options, printer)
@@ -90,7 +93,7 @@ struct CLI {
                 try AccountRecorder.sanitizeDirectory(crudas, into: URL(fileURLWithPath: options.positional.dropFirst().first ?? "Tests/YTKitTests/Fixtures"))
             case _ where Self.accountCommands.contains(command): try await runAccount(command, service, options, printer)
             default:
-                print(Self.usage + Self.accountUsage)
+                print(Self.usage + Self.accountUsage + Self.discoverUsage)
                 return 1
             }
             return 0
@@ -128,7 +131,9 @@ struct CLI {
         let query = options.positional.joined(separator: " ")
         guard !query.isEmpty else { throw CLIError("falta la consulta") }
         let surface = try surface(options, service.preferences.search)
-        let page = try await service.search(query, surface: surface)
+        let filter = try options.value("--filtro").map(Self.searchFilter)
+        if let filter { print("filtro: \(filter.params ?? "(ninguno)")") }
+        let page = try await service.search(query, params: filter?.params, surface: surface)
         printer.page(page)
         try await paginate(service, page: page, pages: options.int("--pages") ?? 1, printer: printer)
     }
@@ -382,7 +387,7 @@ struct Options {
     var positional: [String] = []
     private var flags: [String: String] = [:]
     private static let valued: Set<String> = ["--surface", "--rows", "--items", "--pages", "--tab", "--hl", "--gl",
-                                              "--query", "--video", "--start", "--crudo", "--sort", "--replies", "--seconds", "--live", "--veces", "--simular-bot", "--nombre"]
+                                              "--query", "--video", "--start", "--crudo", "--sort", "--replies", "--seconds", "--live", "--veces", "--simular-bot", "--nombre", "--filtro"]
 
     init(_ arguments: [String]) {
         var iterator = arguments.makeIterator()

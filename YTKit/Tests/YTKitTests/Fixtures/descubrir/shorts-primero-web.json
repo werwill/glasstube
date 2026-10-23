@@ -1,0 +1,127 @@
+{
+ "responseContext": {},
+ "engagementPanels": [
+  {
+   "engagementPanelSectionListRenderer": {
+    "panelIdentifier": "shorts-comments-panel"
+   }
+  },
+  {
+   "engagementPanelSectionListRenderer": {
+    "content": {
+     "structuredDescriptionContentRenderer": {
+      "items": [
+       {
+        "videoDescriptionHeaderRenderer": {
+         "title": {
+          "runs": [
+           {
+            "text": "Short de prueba uno"
+           },
+           {
+            "text": " #prueba",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "FEhashtag",
+              "params": "x"
+             }
+            }
+           }
+          ]
+         },
+         "channel": {
+          "simpleText": "Canal de prueba"
+         },
+         "views": {
+          "simpleText": "1,188,833 vistas"
+         },
+         "publishDate": {
+          "simpleText": "22 oct 2026"
+         },
+         "channelNavigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "UCcanaldeprueba000000001",
+           "canonicalBaseUrl": "/@canaldeprueba"
+          }
+         },
+         "channelThumbnail": {
+          "thumbnails": [
+           {
+            "url": "https://yt3.ggpht.com/prueba=s88-c-k-c0x00ffffff-no-rj"
+           }
+          ]
+         },
+         "factoid": [
+          {
+           "factoidRenderer": {
+            "value": {
+             "simpleText": "39 k"
+            },
+            "label": {
+             "simpleText": "Me gusta"
+            },
+            "accessibilityText": "39 mil “Me gusta”",
+            "backgroundColorStyle": "BACKGROUND_COLOR_STYLE_COLOR_SAMPLED",
+            "lightThemeColorPalette": {
+             "baseBackground": 4293984245,
+             "raisedBackground": 4293984245,
+             "additiveBackground": 558221684,
+             "textPrimary": 4278859289,
+             "textSecondary": 4282019404,
+             "invertedBackground": 4279730748,
+             "overlayBackground": 3423221273
+            },
+            "darkThemeColorPalette": {
+             "baseBackground": 4278328331,
+             "raisedBackground": 4278859289,
+             "additiveBackground": 725993844,
+             "textPrimary": 4292934377,
+             "textSecondary": 4289519037,
+             "invertedBackground": 4286374817,
+             "overlayBackground": 3423221273
+            },
+            "enableColorSampledText": true
+           }
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ ],
+ "overlay": {
+  "reelPlayerOverlayRenderer": {
+   "reelPlayerHeaderSupportedRenderers": {
+    "reelPlayerHeaderRenderer": {
+     "timestampText": {
+      "simpleText": "hace 17 horas"
+     },
+     "channelNavigationEndpoint": {
+      "browseEndpoint": {
+       "browseId": "UCcanaldeprueba000000001"
+      }
+     }
+    }
+   }
+  }
+ },
+ "replacementEndpoint": {
+  "reelWatchEndpoint": {
+   "videoId": "shortprueba1",
+   "thumbnail": {
+    "thumbnails": [
+     {
+      "url": "https://i.ytimg.com/vi/shortprueba1/frame0.jpg",
+      "width": 1080,
+      "height": 1920
+     }
+    ],
+    "isOriginalAspectRatio": true
+   }
+  }
+ },
+ "sequenceContinuation": "secuenciaDePrueba1"
+}

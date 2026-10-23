@@ -40,6 +40,8 @@ public final class YouTubeService: ContentService, MediaItemService, @unchecked 
     /// Sesiones y cuentas (nil = sin cuentas).
     public let session: AccountManager?
     let watchTime = WatchTimeTracker()
+    /// Feeds RSS de canal con caché (suscripciones locales y grupos de canales).
+    public let rss = RSSFeedService()
 
     public init(catalog: ClientCatalog? = nil, locale: CatalogLocale = .current, preferences: SurfacePreferences = .recommended,
                 poTokenSource: PoTokenSource? = nil, session: AccountManager? = nil) throws {
@@ -255,6 +257,7 @@ public final class YouTubeService: ContentService, MediaItemService, @unchecked 
 
     public func continueGroup(_ group: MediaGroup) async throws -> MediaGroup {
         guard let continuation = group.continuation else { throw YTKitError.notAvailable("la fila no tiene continuación") }
+        if continuation.api == .reel { return try await continueShorts(group, token: continuation.token) }
         let data = try await api.post(continuation.api, surface: continuation.surface, ["continuation": continuation.token])
         let kind = group.kind
         let result = try await InnertubeDecoding.run {
@@ -280,6 +283,13 @@ public final class YouTubeService: ContentService, MediaItemService, @unchecked 
     }
 
     public func continuePage(_ continuation: Continuation) async throws -> BrowsePage {
+        if continuation.api == .reel {
+            let more = try await shortsSequence(continuation.token)
+            let group = MediaGroup(kind: .shorts, title: "Shorts", items: more.items,
+                                   continuation: more.next.map { Continuation(token: $0, api: .reel, surface: .web) },
+                                   renderer: "reelWatchSequence")
+            return BrowsePage(title: "Shorts", groups: [group], surface: .web)
+        }
         let data = try await api.post(continuation.api, surface: continuation.surface, ["continuation": continuation.token])
         let kind: MediaGroup.Kind = continuation.api == .search ? .search : (continuation.api == .next ? .suggestions : .unknown)
         return try await Self.parsePage(data, surface: continuation.surface, api: continuation.api, kind: kind)

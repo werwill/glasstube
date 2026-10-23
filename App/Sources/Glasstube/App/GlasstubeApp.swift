@@ -22,6 +22,7 @@ struct GlasstubeApp: App {
                 .environment(model)
                 .environment(model.settings)
                 .environment(model.library)
+                .environment(model.groups)
                 .environment(model.accounts)
                 .environment(model.remote)
                 .frame(minWidth: 900, minHeight: 600)
@@ -34,6 +35,7 @@ struct GlasstubeApp: App {
                 .environment(model)
                 .environment(model.settings)
                 .environment(model.library)
+                .environment(model.groups)
                 .environment(model.accounts)
                 .environment(model.remote)
         }

@@ -130,8 +130,12 @@ Rather do it yourself? Everything is in [Building by hand](#building-by-hand).
 
 ## What you get
 
-- **Browsing:** Home, Subscriptions, History, Playlists and Explore (Music, Gaming, News, Live). Search with
-  suggestions, channels with their tabs, and a preview when you hover over a thumbnail.
+- **Browsing:** Home, Subscriptions, History, Playlists, Shorts and Explore (Music, Gaming, News, Live). Search with
+  suggestions and filters (priority, upload date, type, duration, Creative Commons…), channels with their tabs, and a
+  preview when you hover over a thumbnail.
+- **Organising:** channel groups in the sidebar, each with a feed of what's new from its channels (over RSS, with or
+  without an account). Import them from PocketTube, GrayJay and NewPipe. Without an account you subscribe on the Mac
+  and Subscriptions gathers those videos. Blocked channels disappear from every feed and from search.
 - **Player:** up to 2160p60 with VP9, AV1 (hardware-decoded from the M3 on) and H.264. Quality, speed, subtitles and
   audio track. Chapters and storyboard thumbnails on the scrubber. It resumes where you left off.
 - **Side panel:** description, chapters, comments with replies, live chat and suggestions. There is also a floating
@@ -146,8 +150,8 @@ Rather do it yourself? Everything is in [Building by hand](#building-by-hand).
   Spotlight, a Dock menu, Now Playing and media keys. YouTube-style shortcuts (K, J/L, F, C, M, 0–9) and light or dark
   appearance.
 
-**Not there yet:** channel groups, a Shorts feed, search filters, settings backup and a TV mode. Widgets, Shortcuts
-and a share extension need Xcode and are out of scope for now.
+**Not there yet:** settings backup, automatic updates and a TV mode (coming in phase 5b). Widgets, Shortcuts and a
+share extension need Xcode and are out of scope for now.
 
 ---
 

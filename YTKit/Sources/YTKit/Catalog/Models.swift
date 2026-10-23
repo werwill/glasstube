@@ -54,6 +54,10 @@ public struct MediaItem: Codable, Sendable, Hashable, Identifiable {
     public var isUpcoming = false
     public var isShort = false
     public var upcomingStart: Date?
+    /// Fecha de publicación exacta, cuando la fuente la da (feeds RSS); las de Innertube solo traen `publishedText`.
+    public var publishedAt: Date?
+    /// Vistas como número, cuando la fuente lo da (feeds RSS).
+    public var viewCount: Int?
     public var percentWatched: Int?
     public var startTimeSeconds: Int?
     public var playlistIndex: Int?
@@ -110,7 +114,8 @@ public struct MenuPanel: Codable, Sendable, Hashable {
 /// Token de paginación con lo necesario para pedir la página siguiente: el endpoint y la interfaz que lo emitieron
 /// (un token de TV solo vale con el cliente de TV).
 public struct Continuation: Codable, Sendable, Hashable {
-    public enum API: String, Codable, Sendable { case browse, search, next }
+    /// `reel` es la secuencia de Shorts (`reel/reel_watch_sequence` con `sequenceParams`, ver `Shorts.swift`).
+    public enum API: String, Codable, Sendable { case browse, search, next, reel }
 
     public var token: String
     public var api: API
@@ -132,7 +137,7 @@ public struct BrowseTarget: Codable, Sendable, Hashable {
 /// Una fila o cuadrícula (`MediaGroup` de SmartTube).
 public struct MediaGroup: Codable, Sendable, Hashable, Identifiable {
     public enum Kind: String, Codable, Sendable {
-        case home, trending, topic, search, channel, suggestions, subscriptions, history, library, unknown
+        case home, trending, topic, search, channel, suggestions, subscriptions, history, library, shorts, unknown
     }
 
     public var kind: Kind

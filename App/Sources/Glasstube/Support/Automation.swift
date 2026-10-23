@@ -48,6 +48,15 @@ import YTKit
 ///   `GTDockMenu título` (escribe el menú del Dock y elige esa opción).
 /// - `GTActualizacionesURL url`: el aviso de versiones nuevas consulta esa dirección (también `file:///…/latest.json`, una
 ///   respuesta simulada de `releases/latest`) en lugar de la API de GitHub, sin el límite de una vez al día.
+/// - Fase 5a: `GTGruposEnMemoria` (grupos y suscripciones de esta Mac solo en memoria: no lee ni escribe groups.json),
+///   `GTBibliotecaEnMemoria` (lo mismo con library.json: sin historial y sin guardar bloqueos), `GTGrupos
+///   "Nombre=UC…,UC…;Otro=UC…"` (crea esos grupos), `GTSuscripcionesLocales "UC…,UC…"`, `GTBloquear "UC…=Nombre;…"`,
+///   `GTImportar ruta` (importa ese archivo de PocketTube, GrayJay o NewPipe), `GTGrupo nombre|índice` (abre ese grupo),
+///   `GTEditarGrupo nombre` (abre su hoja «Canales del grupo»), `GTNuevoGrupo` (el aviso para nombrar uno),
+///   `GTSoloVideos id,id,…` (capturas: los feeds RSS muestran solo esos videos; con `GTWindowFrameFile` la ventana se
+///   trae al frente varias veces en los primeros 9 s, para `screencapture -R`), `GTFiltro "tipo=video,fecha=semana,duracion=3-20,prioridad=popularidad,cc"` (filtros de `GTSearch`; el menú de
+///   filtros se abre con un clic real, `-GTClicks "9:1340;84"` en una ventana de 1440 pt), `GTRegistroGrupos` (registro
+///   de los feeds RSS).
 /// - `GTKeys`: `segundos:tecla,…` (space, left, right, up, down, return, tab, escape, `cmd+,` o un carácter, p. ej. `j`, `>`):
 ///   eventos de teclado reales por `NSApp.sendEvent`, contados desde que se carga el video (o el arranque).
 final class Automation {
@@ -95,6 +104,15 @@ final class Automation {
     var forcedHoverId: String?
     private weak var window: NSWindow?
     var scrubTime: Double? { defaults.object(forKey: "GTScrub") != nil ? defaults.double(forKey: "GTScrub") : nil }
+    /// Fase 5a: filtros de la búsqueda de `GTSearch` (`GTFiltro`).
+    var searchFilter: SearchFilter? { defaults.string(forKey: "GTFiltro").flatMap(Self.searchFilter) }
+    /// Fase 5a, capturas: los feeds de grupos y suscripciones muestran solo estos videos (`GTSoloVideos id,id,…`), para
+    /// elegir contenido Creative Commons sin caras de los feeds reales.
+    var onlyVideos: Set<String>? {
+        defaults.string(forKey: "GTSoloVideos").map { Set($0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }) }
+    }
+    /// Fase 5a: registro de los feeds RSS de grupos y suscripciones de esta Mac.
+    var logsGroups: Bool { defaults.bool(forKey: "GTRegistroGrupos") || defaults.bool(forKey: "GTVerbose") }
 
     func attach(to model: AppModel) {
         self.model = model
@@ -171,6 +189,7 @@ final class Automation {
             }
             if defaults.string(forKey: "GTPlay") == nil { scheduleKeys() }
             phase4(model)
+            phase5a(model)
             if defaults.bool(forKey: "GTOpenSettings") {
                 Task {
                     try? await Task.sleep(for: .seconds(2))
@@ -512,4 +531,98 @@ final class Automation {
 extension Double {
     /// nil si es 0 (opciones `-GT…` ausentes).
     var nonZero: Double? { self == 0 ? nil : self }
+}
+
+// MARK: - Fase 5a: grupos, suscripciones de esta Mac, bloqueos y filtros
+
+extension Automation {
+    /// `tipo=video,fecha=semana,duracion=3-20,prioridad=popularidad,cc,4k,hd,hdr,vivo,subtitulos` (como `ytkit search --filtro`).
+    static func searchFilter(_ text: String) -> SearchFilter {
+        var filter = SearchFilter()
+        for part in text.lowercased().split(separator: ",") {
+            let pair = part.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            switch (pair.first ?? "", pair.count > 1 ? pair[1] : "") {
+            case ("tipo", "video"): filter.type = .video
+            case ("tipo", "shorts"): filter.type = .shorts
+            case ("tipo", "canal"): filter.type = .channel
+            case ("tipo", "playlist"): filter.type = .playlist
+            case ("tipo", "pelicula"): filter.type = .movie
+            case ("fecha", "hoy"): filter.uploadDate = .today
+            case ("fecha", "semana"): filter.uploadDate = .week
+            case ("fecha", "mes"): filter.uploadDate = .month
+            case ("fecha", "año"), ("fecha", "ano"): filter.uploadDate = .year
+            case ("duracion", "<3"), ("duracion", "corta"): filter.duration = .underThree
+            case ("duracion", "3-20"), ("duracion", "media"): filter.duration = .threeToTwenty
+            case ("duracion", ">20"), ("duracion", "larga"): filter.duration = .overTwenty
+            case ("prioridad", "popularidad"): filter.priority = .popularity
+            case ("cc", _): filter.features.insert(.creativeCommons)
+            case ("4k", _): filter.features.insert(.uhd)
+            case ("hd", _): filter.features.insert(.hd)
+            case ("hdr", _): filter.features.insert(.hdr)
+            case ("vivo", _): filter.features.insert(.live)
+            case ("subtitulos", _): filter.features.insert(.subtitles)
+            default: NSLog("Glasstube automation: filtro desconocido «\(part)»")
+            }
+        }
+        return filter
+    }
+
+    fileprivate func phase5a(_ model: AppModel) {
+        let defaults = UserDefaults.standard
+        if defaults.string(forKey: "GTWindowFrameFile") != nil {
+            // Capturas por región (`screencapture -R`, con menús abiertos): la ventana tiene que estar al frente.
+            Task {
+                for delay in [1.0, 2.5, 2.5, 2.5] {
+                    try? await Task.sleep(for: .seconds(delay))
+                    self.forceActivate()
+                }
+            }
+        }
+        if let spec = defaults.string(forKey: "GTGrupos") {
+            for part in spec.split(separator: ";") {
+                let pair = part.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                guard pair.count == 2, !model.groups.groups.contains(where: { $0.title == pair[0] }) else { continue }
+                let channels = pair[1].split(separator: ",").map { GroupChannel(id: $0.trimmingCharacters(in: .whitespaces)) }
+                model.groups.create(title: pair[0], channels: channels.filter { ChannelGroupImport.isChannelId($0.id) })
+            }
+            NSLog("Glasstube grupos: \(model.groups.groups.map { "\($0.title) (\($0.channels.count))" }.joined(separator: ", "))")
+        }
+        if let spec = defaults.string(forKey: "GTSuscripcionesLocales") {
+            // `subscribe` pone cada canal primero: se recorren al revés para que queden en el orden dado.
+            for id in spec.split(separator: ",").reversed().map({ $0.trimmingCharacters(in: .whitespaces) }) where ChannelGroupImport.isChannelId(id) {
+                model.groups.subscribe(GroupChannel(id: id))
+            }
+        }
+        if let spec = defaults.string(forKey: "GTBloquear") {
+            for part in spec.split(separator: ";") {
+                let pair = part.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                if let id = pair.first { model.library.block(channelId: id, name: pair.count > 1 ? pair[1] : id) }
+            }
+        }
+        if let path = defaults.string(forKey: "GTImportar") {
+            NSLog("Glasstube grupos: importar \(URL(fileURLWithPath: path).lastPathComponent) → \(model.importGroups(from: URL(fileURLWithPath: path)))")
+        }
+        if let name = defaults.string(forKey: "GTGrupo") {
+            let byIndex = Int(name).flatMap { model.groups.groups.indices.contains($0) ? model.groups.groups[$0] : nil }
+            if let group = model.groups.groups.first(where: { $0.title == name }) ?? byIndex {
+                model.navigator.go(.channelGroup(group.id))
+            }
+        }
+        if let name = defaults.string(forKey: "GTEditarGrupo"), let group = model.groups.groups.first(where: { $0.title == name }) {
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                model.groupEditor = GroupEditorRequest(id: group.id)
+                try? await Task.sleep(for: .seconds(1))
+                self.forceActivate()
+            }
+        }
+        if defaults.bool(forKey: "GTNuevoGrupo") {
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                model.groupPrompt = .create(nil)
+                try? await Task.sleep(for: .seconds(1))
+                self.forceActivate()
+            }
+        }
+    }
 }

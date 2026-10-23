@@ -149,15 +149,16 @@ final class PlayerModel {
     var chapters: [Chapter] { metadata?.chapters ?? [] }
     var hasPrevious: Bool { !previousItems.isEmpty }
     var queue: PlayQueue { app.queue }
-    /// El siguiente de la reproducción automática según YouTube (o el primer sugerido).
+    /// El siguiente de la reproducción automática según YouTube (o el primer sugerido). Nunca uno de un canal bloqueado.
     var nextSuggestion: MediaItem? {
-        metadata?.nextVideo ?? suggestedVideos.first
+        metadata?.nextVideo.flatMap { app.library.isBlocked($0) ? nil : $0 } ?? suggestedVideos.first
     }
     /// Lo que pone «Siguiente»: la cola y, si está vacía, el sugerido.
     var nextItem: MediaItem? { queue.next ?? nextSuggestion }
-    /// Los sugeridos reproducibles (sin Shorts ni el video actual).
+    /// Los sugeridos reproducibles (sin Shorts, el video actual, lo oculto ni lo de canales bloqueados).
     var suggestedVideos: [MediaItem] {
-        (metadata?.suggestions ?? []).flatMap(\.items).filter { $0.isPlayable && !$0.isShort && $0.videoId != item.videoId }.uniqued()
+        app.library.visible((metadata?.suggestions ?? []).flatMap(\.items)
+            .filter { $0.isPlayable && !$0.isShort && $0.videoId != item.videoId }).uniqued()
     }
 
     /// Una calidad por resolución y cuadros por segundo, con el códec preferido (la fuente da cada una en VP9, AVC y

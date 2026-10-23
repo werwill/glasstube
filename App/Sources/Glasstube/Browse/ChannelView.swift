@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import YTKit
 
@@ -10,6 +11,7 @@ struct ChannelView: View {
     @Environment(AppModel.self) private var model
     @Environment(LocalLibrary.self) private var library
     @Environment(AccountModel.self) private var accounts
+    @Environment(ChannelGroupStore.self) private var groups
     @ViewState private var page: ChannelPage?
     /// Con cuenta: suscripción al canal (nil mientras no se sabe).
     @ViewState private var subscribed: Bool?
@@ -46,7 +48,7 @@ struct ChannelView: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.width - GridMetrics.pagePadding * 2 } action: { width = $0 }
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
-        .modifier(GridKeyboardNavigation(sections: groups.map { ($0.items, columns(for: $0.items)) }, grid: grid, isFocused: $gridFocused) { model.open($0) })
+        .modifier(GridKeyboardNavigation(sections: rows.map { ($0.items, columns(for: $0.items)) }, grid: grid, isFocused: $gridFocused) { model.open($0) })
         .task(id: TaskKey(tab: tab, reload: model.reloadToken)) { await load() }
     }
 
@@ -96,28 +98,110 @@ struct ChannelView: View {
                     }
                 }
                 Spacer()
-                if accounts.isSignedIn {
-                    Group {
-                        if subscribed == true {
-                            Button("Suscrito", systemImage: "checkmark") { toggleSubscription() }
-                                .buttonStyle(.glass)
-                        } else {
-                            Button("Suscribirse") { toggleSubscription() }
-                                .buttonStyle(.glassProminent)
-                        }
+                // Controles de la cabecera en un solo contenedor de vidrio: grupos, suscribirse y más. El menú de grupos va
+                // primero para que, al abrirse hacia la derecha, quepa en la ventana.
+                GlassEffectContainer(spacing: 8) {
+                    HStack(spacing: 8) {
+                        groupMenu
+                        subscribeButton
+                        moreMenu
                     }
                     .controlSize(.large)
-                    .disabled(subscribed == nil)
-                    .help(subscribed == true ? "Cancelar la suscripción" : "Suscribirse con tu cuenta")
-                    .task(id: TaskKey(tab: .home, reload: model.reloadToken)) { await loadSubscription() }
-                } else {
-                    Button("Suscribirse") { accounts.beginSignIn() }
-                        .buttonStyle(.glassProminent)
-                        .controlSize(.large)
-                        .help("Inicia sesión para suscribirte")
                 }
+                .fixedSize()
+            }
+            if isBlocked {
+                Label("Bloqueaste este canal: sus videos no aparecen en Glasstube.", systemImage: "nosign")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
         }
+    }
+
+    /// El canal de la página para grupos, suscripciones de esta Mac y bloqueos.
+    private var channel: GroupChannel {
+        GroupChannel(id: page?.channelId ?? channelId, title: page?.title ?? fallbackTitle,
+                     avatarURL: page?.avatar.best(forWidth: 88)?.url)
+    }
+
+    private var isBlocked: Bool { library.isBlocked(channelId: page?.channelId ?? channelId) }
+
+    /// Con cuenta, la suscripción de YouTube; sin cuenta, la de esta Mac (sus videos llegan por RSS a Suscripciones).
+    @ViewBuilder
+    private var subscribeButton: some View {
+        if accounts.isSignedIn {
+            Group {
+                if subscribed == true {
+                    Button("Suscrito", systemImage: "checkmark") { toggleSubscription() }
+                        .buttonStyle(.glass)
+                } else {
+                    Button("Suscribirse") { toggleSubscription() }
+                        .buttonStyle(.glassProminent)
+                }
+            }
+            .disabled(subscribed == nil)
+            .help(subscribed == true ? "Cancelar la suscripción" : "Suscribirse con tu cuenta")
+            .task(id: TaskKey(tab: .home, reload: model.reloadToken)) { await loadSubscription() }
+        } else if groups.isSubscribed(channel.id) {
+            Button("Suscrito en esta Mac", systemImage: "checkmark") { model.toggleLocalSubscription(channel) }
+                .buttonStyle(.glass)
+                .disabled(!ChannelGroupImport.isChannelId(channel.id))
+                .help("Dejar de seguirlo en esta Mac")
+        } else {
+            Button("Suscribirse") { model.toggleLocalSubscription(channel) }
+                .buttonStyle(.glassProminent)
+                .disabled(!ChannelGroupImport.isChannelId(channel.id))
+                .help("Sin cuenta: se guarda en esta Mac y sus videos nuevos llegan a Suscripciones por RSS")
+        }
+    }
+
+    private var groupMenu: some View {
+        Menu {
+            GroupMembershipItems(channel: channel)
+        } label: {
+            // Solo texto: el botón de menú de macOS pega el ícono al título.
+            Text(groups.groups(containing: channel.id).isEmpty ? "Agregar a un grupo" : "En \(groupCountText)")
+        }
+        .menuStyle(.button)
+        .buttonStyle(.glass)
+        .menuIndicator(.hidden)
+        .disabled(!ChannelGroupImport.isChannelId(channel.id))
+        .help("Agregar el canal a uno de tus grupos")
+    }
+
+    private var groupCountText: String {
+        let count = groups.groups(containing: channel.id).count
+        return count == 1 ? (groups.groups(containing: channel.id).first?.title ?? "1 grupo") : "\(count) grupos"
+    }
+
+    private var moreMenu: some View {
+        Menu {
+            if isBlocked {
+                Button("Desbloquear canal", systemImage: "checkmark.circle") { model.unblockChannel(id: channel.id) }
+            } else {
+                Button("Bloquear canal", systemImage: "nosign") { model.blockChannel(id: channel.id, name: channel.displayName) }
+            }
+            if let url = URL(string: "https://www.youtube.com/channel/\(channel.id)") {
+                Divider()
+                ShareLink(item: url, subject: Text(channel.displayName)) {
+                    Label("Compartir…", systemImage: "square.and.arrow.up")
+                }
+                Button("Copiar enlace", systemImage: "link") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 28, height: 28)
+                .accessibilityLabel("Más opciones del canal")
+        }
+        .menuStyle(.button)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .menuIndicator(.hidden)
+        .help("Bloquear, compartir o copiar el enlace del canal")
     }
 
     private func loadSubscription() async {
@@ -150,15 +234,25 @@ struct ChannelView: View {
 
     @ViewBuilder
     private var content: some View {
-        if page != nil {
-            if groups.isEmpty {
+        if page != nil, isBlocked {
+            ContentUnavailableView {
+                Label("Canal bloqueado", systemImage: "nosign")
+            } description: {
+                Text("Sus videos no aparecen en ningún feed, en la búsqueda ni en los sugeridos.")
+            } actions: {
+                Button("Desbloquear") { model.unblockChannel(id: channel.id) }
+                    .buttonStyle(.glass)
+            }
+            .frame(maxWidth: .infinity, minHeight: 260)
+        } else if page != nil {
+            if rows.isEmpty {
                 ContentUnavailableView("Esta pestaña está vacía", systemImage: "rectangle.on.rectangle.slash")
                     .frame(minHeight: 240)
             }
-            ForEach(groups.indices, id: \.self) { index in
-                CardSection(title: groups[index].title, items: groups[index].items, section: index, grid: grid,
+            ForEach(rows.indices, id: \.self) { index in
+                CardSection(title: rows[index].title, items: rows[index].items, section: index, grid: grid,
                             shortsAsGrid: tab == .shorts)
-                if index == groups.count - 1, groups[index].continuation != nil || page?.content.continuation != nil {
+                if index == rows.count - 1, rows[index].continuation != nil || page?.content.continuation != nil {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -172,8 +266,9 @@ struct ChannelView: View {
         }
     }
 
-    private var groups: [MediaGroup] {
-        guard let page else { return [] }
+    /// Las filas de la pestaña sin lo oculto (un canal bloqueado muestra el aviso en su lugar).
+    private var rows: [MediaGroup] {
+        guard let page, !isBlocked else { return [] }
         return page.content.groups.compactMap { group in
             var group = group
             group.items = library.visible(group.items)
@@ -195,6 +290,8 @@ struct ChannelView: View {
                 // Spotlight: el canal abierto (fase 4).
                 model.spotlight.index(channel: loaded.channelId, name: name, avatar: loaded.avatar,
                                       detail: loaded.subscriberCountText ?? loaded.handle)
+                // Nombre y foto para los grupos y suscripciones de esta Mac en que esté (los importados solo traen el id).
+                groups.update(channel: GroupChannel(id: loaded.channelId, title: name, avatarURL: loaded.avatar.best(forWidth: 88)?.url))
             }
             if let selected = loaded.selectedTab, selected != tab, tab == .home { tab = selected }
             if !model.searchFieldFocused {
@@ -361,22 +458,17 @@ struct LocalPlaylistsView: View {
     }
 }
 
-/// Suscripciones: los videos nuevos de los canales a los que está suscrita la cuenta.
+/// Suscripciones: con cuenta, los videos nuevos de los canales a los que está suscrita (YouTube) o los de esta Mac; sin
+/// cuenta, los de esta Mac por RSS (fase 5a, como las suscripciones sin cuenta de SmartTube).
 struct SubscriptionsView: View {
     @Environment(AccountModel.self) private var accounts
+    @AppStorage("subscriptionsScope") private var scope = LibraryScope.youtube
 
     var body: some View {
-        if accounts.isSignedIn {
-            BrowseView(source: .subscriptions)
+        if accounts.isSignedIn && scope == .youtube {
+            BrowseView(source: .subscriptions, accessory: AnyView(LibraryScopePicker(scope: $scope)))
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    PageHeader(title: "Suscripciones")
-                    SignInNotice(what: "Las suscripciones", symbol: "play.rectangle.on.rectangle")
-                }
-                .padding(.horizontal, GridMetrics.pagePadding)
-                .padding(.top, 8)
-            }
+            ChannelFeedView(source: .subscriptions, accessory: accounts.isSignedIn ? AnyView(LibraryScopePicker(scope: $scope)) : nil)
         }
     }
 }

@@ -82,6 +82,7 @@ struct MainWindow: View {
         .sheet(isPresented: signInPresented) { SignInSheet() }
         .sheet(isPresented: pairingPresented) { PairingSheet() }
         .sheet(item: $model.playlistPicker) { PlaylistPickerSheet(item: $0) }
+        .modifier(GroupDialogs(model: model))
         .overlay(alignment: .bottom) {
             // Aviso breve de una acción de cuenta: una cápsula de vidrio sobre el contenido (capa de controles).
             if let banner = model.banner ?? model.accounts.notice ?? (model.accounts.waitingForKeychain ? Self.keychainHint : nil) {
@@ -135,7 +136,8 @@ struct MainWindow: View {
     private var title: String {
         switch model.navigator.current {
         case .section(let item): item.title
-        case .search(let query): query
+        case .search(let query, _): query
+        case .channelGroup(let id): model.groups.group(id)?.title ?? "Grupo"
         case .channel(_, let title): title ?? "Canal"
         case .playlist(_, let title): title ?? "Playlist"
         case .group(let group): group.title ?? "Fila"
@@ -186,6 +188,7 @@ struct MainWindow: View {
 /// Elige la vista de la columna de contenido según el destino.
 struct DetailRouter: View {
     let destination: Destination
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         switch destination {
@@ -203,8 +206,12 @@ struct DetailRouter: View {
             if let topic = item.topic {
                 BrowseView(source: .topic(topic, title: item.title))
             }
-        case .search(let query):
-            BrowseView(source: .search(query))
+        case .search(let query, let filter):
+            BrowseView(source: .search(query, filter), accessory: AnyView(SearchFilterMenu(filter: filter) { newFilter in
+                model.navigator.replace(.search(query, newFilter))
+            }))
+        case .channelGroup(let id):
+            ChannelFeedView(source: .group(id))
         case .channel(let id, let title):
             ChannelView(channelId: id, fallbackTitle: title)
         case .playlist(let id, let title):

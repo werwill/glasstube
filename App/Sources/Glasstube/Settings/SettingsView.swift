@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Ajustes: escena `Settings` con `TabView` y `Form` agrupado, con las pestañas de los presenters de SmartTube. En
 /// esta fase funcionan Interfaz, Reproductor, Subtítulos y SponsorBlock; el resto explica cuándo llega.
@@ -14,11 +15,12 @@ struct SettingsView: View {
             Tab("Subtítulos", systemImage: "captions.bubble", value: "subtitles") { SubtitleSettings() }
             Tab("SponsorBlock", systemImage: "forward.frame", value: "sponsorblock") { SponsorBlockSettings() }
             Tab("DeArrow", systemImage: "textformat.abc", value: "dearrow") { DeArrowSettings() }
+            Tab("Bloqueos", systemImage: "nosign", value: "blocked") { BlockedSettings() }
             Tab("Cuentas", systemImage: "person.crop.circle", value: "accounts") { AccountSettings() }
             Tab("Control remoto", systemImage: "iphone.radiowaves.left.and.right", value: "remote") { RemoteSettings() }
             Tab("Respaldo", systemImage: "externaldrive", value: "backup") { BackupSettings() }
         }
-        .frame(width: 780, height: 520)
+        .frame(width: 860, height: 520)
     }
 }
 
@@ -42,21 +44,6 @@ struct GeneralSettings: View {
             } footer: {
                 Text("Busca con ⌘ espacio un video que viste o un canal y ábrelo directo en Glasstube. En el índice de esta Mac solo va lo público de YouTube: título, canal, duración y miniatura.")
             }
-            Section("Contenido oculto") {
-                LabeledContent("Videos marcados como «No me interesa»", value: "\(library.hiddenVideos.count)")
-                Button("Mostrar de nuevo los videos ocultos") { library.unhideAll() }
-                    .disabled(library.hiddenVideos.isEmpty)
-            }
-            Section("Canales bloqueados") {
-                if library.blockedChannels.isEmpty {
-                    Text("Ninguno. Usa «Bloquear canal» en el menú de un video.").foregroundStyle(.secondary)
-                }
-                ForEach(library.blockedChannels) { channel in
-                    LabeledContent(channel.name) {
-                        Button("Desbloquear") { library.unblock(channel) }
-                    }
-                }
-            }
             Section("Acerca de") {
                 LabeledContent("Glasstube", value: Self.version)
                 Text("Reimplementación para macOS de SmartTube (MIT). Reproduce con mpv y FFmpeg bajo LGPL (enlazados de forma dinámica en Libmpv.framework); los textos de licencia van en Contents/Resources/Licenses.")
@@ -72,6 +59,39 @@ struct GeneralSettings: View {
         let info = Bundle.main.infoDictionary
         guard let short = info?["CFBundleShortVersionString"] as? String else { return "desarrollo" }
         return (info?["CFBundleVersion"] as? String).map { "\(short) (\($0))" } ?? short
+    }
+}
+
+/// Canales bloqueados y videos ocultos (fase 5a: los bloqueos se aplican en todos los feeds y en la búsqueda).
+struct BlockedSettings: View {
+    @Environment(LocalLibrary.self) private var library
+
+    var body: some View {
+        Form {
+            Section {
+                if library.blockedChannels.isEmpty {
+                    Text("Ninguno.").foregroundStyle(.secondary)
+                }
+                ForEach(library.blockedChannels) { channel in
+                    LabeledContent {
+                        Button("Desbloquear") { library.unblock(channel) }
+                    } label: {
+                        Text(channel.name)
+                        Text(channel.id).font(.caption).foregroundStyle(.tertiary)
+                    }
+                }
+            } header: {
+                Text(library.blockedChannels.isEmpty ? "Canales bloqueados" : "Canales bloqueados (\(library.blockedChannels.count))")
+            } footer: {
+                Text("Usa «Bloquear canal» en el menú «…» de un video o en la página del canal. Sus videos dejan de aparecer en Inicio, Explorar, Suscripciones, los grupos, Shorts, la búsqueda, los sugeridos y la reproducción automática.")
+            }
+            Section("Contenido oculto") {
+                LabeledContent("Videos marcados como «No me interesa»", value: "\(library.hiddenVideos.count)")
+                Button("Mostrar de nuevo los videos ocultos") { library.unhideAll() }
+                    .disabled(library.hiddenVideos.isEmpty)
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 
@@ -288,21 +308,42 @@ struct SponsorBlockSettings: View {
 }
 
 struct BackupSettings: View {
+    @Environment(AppModel.self) private var model
     @Environment(LocalLibrary.self) private var library
+    @Environment(ChannelGroupStore.self) private var groups
+    @ViewState private var importing = false
+    @ViewState private var lastImport: String?
 
     var body: some View {
         Form {
             Section("Datos de esta Mac") {
                 LabeledContent("Historial", value: "\(library.history.count) videos")
                 LabeledContent("Ver más tarde", value: "\(library.watchLater.count) videos")
-                LabeledContent("Archivo", value: "~/Library/Application Support/Glasstube/library.json")
+                LabeledContent("Grupos de canales", value: "\(groups.groups.count)")
+                LabeledContent("Suscripciones de esta Mac", value: "\(groups.subscriptions.count) canales")
+                LabeledContent("Archivos", value: "~/Library/Application Support/Glasstube/library.json y groups.json")
             }
             Section {
-                Text("Exportar e importar un respaldo compatible con SmartTube, PocketTube, NewPipe y Grayjay llega en la fase 5.")
+                LabeledContent {
+                    Button("Importar…") { importing = true }
+                } label: {
+                    Text("Importar grupos de canales")
+                    Text(lastImport ?? "Un archivo de PocketTube (.json), de GrayJay (subscription_groups) o de NewPipe (suscripciones .json)")
+                }
+            } header: {
+                Text("Importar")
+            } footer: {
+                Text("Los mismos formatos que acepta SmartTube. De PocketTube y GrayJay llegan grupos (uno con el mismo nombre recibe los canales que le falten); de NewPipe, las suscripciones, que pasan a Suscripciones de esta Mac.")
+            }
+            Section {
+                Text("Exportar e importar un respaldo completo de Glasstube (y el de SmartTube) llega en la fase 5b.")
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
+            if case .success(let url) = result { lastImport = model.importGroups(from: url) }
+        }
     }
 }
 

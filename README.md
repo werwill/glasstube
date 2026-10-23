@@ -127,8 +127,12 @@ Para compilarla tú necesitas una Mac con Apple Silicon, macOS 26 o posterior, l
 
 ## Qué incluye
 
-- **Navegación:** Inicio, Suscripciones, Historial, Playlists y Explorar (Música, Gaming, Noticias, En vivo). Búsqueda
-  con sugerencias, canales con sus pestañas y vista previa al pasar el puntero sobre una miniatura.
+- **Navegación:** Inicio, Suscripciones, Historial, Playlists, Shorts y Explorar (Música, Gaming, Noticias, En vivo).
+  Búsqueda con sugerencias y filtros (prioridad, fecha, tipo, duración, Creative Commons…), canales con sus pestañas y
+  vista previa al pasar el puntero sobre una miniatura.
+- **Organizar:** grupos de canales en la barra lateral, cada uno con el feed de lo nuevo de sus canales (por RSS, con o
+  sin cuenta). Se importan de PocketTube, GrayJay y NewPipe. Sin cuenta, te suscribes en la Mac y Suscripciones junta
+  sus videos. Los canales bloqueados desaparecen de todos los feeds y de la búsqueda.
 - **Reproductor:** hasta 2160p60, con VP9, AV1 (por hardware desde el M3) y H.264. Calidad, velocidad, subtítulos y
   pista de audio. Capítulos y la miniatura del storyboard en la barra. Retoma donde lo dejaste.
 - **Panel lateral:** descripción, capítulos, comentarios con respuestas, chat de los directos y sugeridos. También hay
@@ -143,8 +147,8 @@ Para compilarla tú necesitas una Mac con Apple Silicon, macOS 26 o posterior, l
   Servicios, Spotlight, menú del Dock, «Ahora suena» y teclas multimedia. Atajos como los de YouTube (K, J/L, F, C, M,
   0–9) y apariencia clara u oscura.
 
-**Todavía no hay:** grupos de canales, feed de Shorts, filtros de búsqueda, respaldo de ajustes ni modo TV. Los widgets,
-Atajos y la extensión de compartir necesitan Xcode y por ahora quedan fuera.
+**Todavía no hay:** respaldo de ajustes, actualización automática ni modo TV (llegan en la fase 5b). Los widgets, Atajos
+y la extensión de compartir necesitan Xcode y por ahora quedan fuera.
 
 ---
 

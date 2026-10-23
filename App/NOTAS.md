@@ -1,4 +1,4 @@
-# Glasstube.app — notas (fase 1, interfaz; fase 2, cuentas; 15-oct-2026; fase 3, comunidad y reproductor; 16-oct-2026; fase 4, sistema y control remoto; distribución; 18-oct-2026)
+# Glasstube.app — notas (fase 1, interfaz; fase 2, cuentas; 15-oct-2026; fase 3, comunidad y reproductor; 16-oct-2026; fase 4, sistema y control remoto; distribución; 18-oct-2026; fase 5a, organizar y descubrir; 23-oct-2026)
 
 App nativa de macOS que reimplementa SmartTube con el lenguaje Liquid Glass, sobre YTKit (catálogo, streams y cuentas)
 y PlaybackKit (libmpv LGPL propia, SABR). Hecha según `smarttube-re/BRIEF-app-swiftui.md`. Mac de prueba: M1 Pro,
@@ -9,6 +9,8 @@ el panel lateral del reproductor, el minirreproductor, la cola con reproducción
 YouTube del teléfono, `glasstube://`, pegar y arrastrar enlaces, el menú Servicios, Spotlight y el menú del Dock (ver
 [Fase 4](#fase-4-control-remoto-enlaces-y-sistema)). Para descargar desde GitHub Releases: el aviso de versiones nuevas,
 `Scripts/release.sh` (DMG, suma, notas y notarización opcional) y los entitlements (ver [Distribución](#distribución)).
+La fase 5a agrega grupos de canales, suscripciones de esta Mac por RSS, bloqueos en todos los feeds, el feed de Shorts y
+los filtros de búsqueda (ver [Fase 5a](#fase-5a-organizar-y-descubrir)).
 
 ```bash
 Scripts/package-app.sh             # swift build -c release + build/Glasstube.app firmado con «Glasstube Desarrollo» (o ad hoc)
@@ -18,8 +20,9 @@ Scripts/capturas.sh                # rehace capturas/ (necesita permiso de Graba
 CON_SESION=1 Scripts/capturas.sh sesion   # y las de la cuenta (con sesión iniciada en la app)
 Scripts/capturas.sh panel          # las de la fase 3: panel, a-continuacion, dearrow, minirreproductor
 Scripts/capturas.sh vincular       # las de la fase 4: la hoja «Vincular un teléfono» y Ajustes > Control remoto
+Scripts/capturas.sh grupo          # las de la fase 5a que dicen «grupo» (también: filtros, suscripciones-esta-mac, ajustes-bloqueos)
 Scripts/capturas-readme.sh         # las de la portada (../docs/capturas/) y el GIF, solo con Big Buck Bunny
-swift test                         # 29 pruebas: cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones
+swift test                         # 44 pruebas: cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones, minirreproductor, grupos, bloqueos y filtros (fase 5a)
 Scripts/release.sh 0.5.0           # versión para GitHub Releases: ../dist/Glasstube-0.5.0.dmg, su SHA-256 y las notas (no sube nada)
 open "glasstube://watch?v=aqz-KE-bpKQ&t=60"   # abre la app (o la que está abierta) en ese video
 ```
@@ -587,6 +590,152 @@ Antes de subir el repositorio y la versión (18-oct-2026):
 - **«Ahora no» vuelve a avisar en la siguiente consulta** (al día siguiente como pronto); no hay «saltar esta versión».
 - **Las notas de cada versión** traen un comentario para escribir qué cambió: el script no lo inventa.
 
+## Fase 5a: organizar y descubrir
+
+Grupos de canales, suscripciones sin cuenta, bloqueos, el feed de Shorts y los filtros de búsqueda (23-oct-2026). La
+parte de red está en YTKit (`Sources/YTKit/Discover/`, ver «Organizar y descubrir (fase 5a)» en YTKit/NOTAS.md). La 5b
+(respaldo, Sparkle, accesibilidad y modo TV) va después.
+
+### Estado frente a "Terminado"
+
+| Criterio | Estado |
+|---|---|
+| `swift build` | Pasa en los tres paquetes. La app no tiene avisos nuevos (los que salen son los de OpenGL de PlaybackKit). |
+| Todas las pruebas pasan | YTKit 106 en 22 suites (16 nuevas en `DiscoverTests`), PlaybackKit 6 en 2, la app 44 en 10 (11 nuevas en `Phase5aTests`; incluye las 4 de `MiniPlayerTests`, que estaban sin commit). |
+| Capturas nuevas con `Scripts/capturas.sh` | Diez, en `capturas/` (tabla abajo). Contenido Creative Commons sin caras: videos del canal oficial de Blender (licencia CC comprobada en `next`) y Big Buck Bunny; nada de la cuenta ni del historial (grupos e historial en memoria). |
+| `Scripts/package-app.sh` | Release de 51 MB, versión 0.4.0 (no se cambió), firmado con «Glasstube Desarrollo», `codesign --verify` válido. |
+| Informe de lo no verificado | «Qué falta (fase 5a)», abajo. |
+
+### Qué hay
+
+1. **Grupos de canales** (`App/ChannelGroups.swift`, como `ChannelGroupServiceImpl` de SmartTube):
+   - **Barra lateral, «Mis grupos»**: un renglón con carpeta por grupo (como la maqueta), «+» para «Nuevo grupo…» o
+     «Importar…», y sin grupos, esos dos renglones. Se ordenan arrastrando (`onMove`) o con «Subir»/«Bajar»; el menú de
+     cada grupo también tiene «Canales del grupo…», «Renombrar…» y «Borrar grupo…» (con confirmación; solo borra el
+     grupo). Nombres sin repetir («Música 2»).
+   - **Feed del grupo** (`Browse/ChannelFeedView.swift`): lo nuevo de sus canales por RSS, del más nuevo al más viejo,
+     en cuadrícula, y los Shorts aparte en su fila. Arriba, los canales en cápsulas (foto o inicial; clic abre el canal,
+     menú para quitarlo) y, en vidrio, «Canales…» y «…» (renombrar, ordenar, borrar). Abajo dice qué canales no
+     respondieron. ⌘R vuelve a pedir los feeds sin caché.
+   - **Agregar canales**: «Agregar a un grupo» en el menú de las tarjetas (cada grupo con su marca, y «Nuevo grupo con
+     este canal…») y en la cabecera del canal («Agregar a un grupo» o «En <grupo>»/«En N grupos»); en la hoja «Canales
+     del grupo», por @handle, enlace o id.
+   - **Importar** (Ajustes › Respaldo o el «+» de la barra lateral): PocketTube,
+     GrayJay y NewPipe, los mismos formatos que SmartTube. Un grupo con el mismo nombre recibe los canales que le falten
+     en lugar de duplicarse; NewPipe va a las suscripciones de esta Mac, como en SmartTube. El aviso dice qué entró y
+     cuántas entradas no eran canales de YouTube.
+   - **Nombres y fotos**: lo importado solo trae ids. Los nombres se completan con el feed RSS; las fotos, al abrir el
+     canal, al agregarlo desde una tarjeta y, en el feed, de hasta 8 canales por visita (de su página). Todo queda
+     guardado.
+2. **Suscripciones de esta Mac, sin cuenta**: «Suscribirse» en la cabecera del canal (sin sesión ya no pide iniciar
+   sesión) y «Suscribirse en esta Mac» en el menú de las tarjetas. Suscripciones muestra su feed RSS (como
+   `BrowseService2Wrapper` de SmartTube cuando no hay cuenta). Con sesión, Suscripciones sigue siendo la de YouTube y
+   tiene el selector **YouTube | Esta Mac** (como Historial y Playlists). Los grupos funcionan igual con o sin cuenta.
+   La barra lateral ya no pone candado en Suscripciones.
+3. **Bloqueos**: «Bloquear canal» en el menú de las tarjetas y en el «…» de la cabecera del canal. Sus videos, Shorts,
+   listas y su tarjeta de canal desaparecen de Inicio (también de «Seguir viendo»), Explorar, Suscripciones, grupos,
+   Shorts, búsqueda, sugeridos del reproductor y la reproducción automática. Su página dice «Canal bloqueado» con
+   «Desbloquear». La lista para desbloquear está en una pestaña nueva, **Ajustes › Bloqueos** (antes al fondo de
+   General), con «Contenido oculto».
+4. **Feed de Shorts**: la sección Shorts es el feed de YouTube (`reel_watch_sequence` por WEB, como SmartTube), con más
+   al llegar al final. Se abren en el reproductor normal (el video vertical con franjas; sin visor especial).
+5. **Filtros de búsqueda** (`Browse/SearchFilterMenu.swift`): junto al título de los resultados, un menú de vidrio con
+   los grupos del diálogo de YouTube: Prioridad (Relevancia, Popularidad), Fecha de carga (Hoy, Esta semana, Este mes,
+   Este año), Tipo (Videos, Shorts, Canales, Playlists, Películas), Duración (menos de 3, de 3 a 20, más de 20 minutos) y
+   Características (En vivo, 4K, HD, Subtítulos, Creative Commons, HDR). El botón dice lo que está puesto («Videos ·
+   3–20 min · Creative Commons») y al lado aparece × para quitarlos. Con tipo Shorts, los resultados van en
+   cuadrícula; sin resultados, el aviso ofrece «Quitar los filtros».
+
+### Decisiones
+
+- **El feed de un grupo es RSS siempre**, con cuenta o sin ella, como SmartTube (`getRssFeed`). No necesita sesión ni
+  Innertube, y la caché de YTKit (15 min en memoria y disco) hace que volver a un grupo sea instantáneo. Lo que no da el
+  RSS: duración, directos y estrenos (ver «Qué falta»).
+- **`groups.json` aparte de `library.json`**, con el mismo esquema (JSON en Application Support escrito 400 ms después
+  del último cambio). Así el respaldo de la 5b puede exportar los grupos solos, como SmartTube.
+- **El filtro es parte del destino** (`Destination.search(texto, filtro)`): cambiarlo reemplaza la página sin dejar otra
+  entrada en «Atrás» (`Navigator.replace`), y volver a una búsqueda anterior la trae con sus filtros.
+- **Solo los filtros que hoy ofrece YouTube.** El orden por fecha de subida y «Última hora» ya no existen (YouTube ignora
+  `CAI=`); «Orden» es la «Prioridad» del diálogo actual. Detalle en YTKit/NOTAS.md.
+- **Bloqueo por id del canal y, si la tarjeta no lo trae** (la búsqueda de TV), por el nombre.
+- **Botones de la cabecera del canal**: «Agregar a un grupo» va antes de «Suscribirse» para que su menú, que se abre
+  hacia la derecha, quepa en la ventana; el título del menú va sin ícono porque el botón de menú de macOS lo pega al
+  texto.
+- **Vidrio**: los controles nuevos (filtros, «Canales…», «…», botones de la cabecera) son `.glass`/`.glassProminent`
+  dentro de un `GlassEffectContainer`; las cápsulas de canales y las tarjetas son contenido (sin vidrio). Sin `Material`
+  ni `blur` propios.
+
+### Verificación (cómo)
+
+Con `build/Glasstube.app` (debug para iterar, release al final), `-GTSinLlavero -GTGruposEnMemoria
+-GTBibliotecaEnMemoria -remoteEnabled NO` (sin tocar los grupos, el historial ni el teléfono vinculado del dueño) y las
+opciones nuevas de `Support/Automation.swift` (`-GTGrupos`, `-GTGrupo`, `-GTSuscripcionesLocales`, `-GTImportar`,
+`-GTBloquear`, `-GTFiltro`, `-GTEditarGrupo`, `-GTNuevoGrupo`, `-GTSoloVideos`, `-GTRegistroGrupos`):
+
+- **Grupo**: «Blender» + «Blender Studio» → «feed de 2 canales → 30 videos (13 Shorts) en 0,08 s; de caché 1». Con un
+  tercer id que no existe: «sin respuesta 1», el aviso al pie y «fotos completadas 2 de 3» (las fotos se piden solas).
+- **Importar**: `pockettube.json` de las pruebas → «PocketTube: 3 grupos nuevos, 5 canales, 1 entrada omitida», los tres
+  en la barra lateral en el orden del archivo y el primero abierto; `newpipe_subscriptions.json` → «NewPipe: 2
+  suscripciones nuevas en esta Mac, 1 entrada omitida», Suscripciones abierta con su feed. Con `ytkit importar`, también
+  los archivos de prueba del propio SmartTube.
+- **Suscripciones sin cuenta**: la página de Blender Studio muestra «Suscrito en esta Mac» y «En Animación abierta»;
+  Suscripciones, las cápsulas y el feed.
+- **Bloqueos**: con Blender bloqueado, `ytkit search blender` da 2 resultados del canal oficial y la app no muestra
+  ninguno (el canal «BLENDER» que sí sale es otro); su página dice «Canal bloqueado».
+- **Shorts**: 14 en la primera página (3,6 s) y 15 más al bajar; Retorno en la sección abre el primero en el reproductor
+  («SABR …: video 780 vp9 608x1080@30»); `-GTPlay` con un Short de Spring (Blender Studio) también. Un clic en un Short
+  de una búsqueda filtrada por Shorts lo abre.
+- **Filtros**: «big buck bunny blender» con Videos + 3–20 min + Creative Commons → solo videos de esa duración; el menú
+  abierto con un clic real; «blender open movie» con Shorts + Creative Commons → «Sin resultados con estos filtros».
+- **Menús**: el de grupos de la cabecera del canal, abierto con un clic real, muestra los tres grupos con su marca y
+  «Nuevo grupo con este canal…».
+
+### Capturas nuevas
+
+`Scripts/capturas.sh` (bloque «Fase 5a»). Los feeds son los RSS reales; `-GTSoloVideos` deja a la vista solo cuatro
+videos del canal oficial de Blender con licencia Creative Commons y sin caras (dos portadas de BCON26 y los Shorts
+«Default Cube» y «Blender on Android»), elegidos el 23-oct-2026 entre los 15 últimos de cada canal: los demás eran
+charlas con personas, y los de Blender Studio no son CC. Si dejan de salir en el RSS, el script dice cómo elegir otros.
+
+| Captura | Qué muestra |
+|---|---|
+| `grupo-claro.png`, `grupo-oscuro.png` | El grupo «Blender»: la barra lateral con tres grupos, la cápsula del canal con su foto, «Canales…» y «…», videos y la fila de Shorts |
+| `grupo-canales-claro.png` | La hoja «Canales del grupo»: nombre, canales y «Agregar un canal» |
+| `grupo-nuevo-oscuro.png` | El aviso «Nuevo grupo de canales» con su campo |
+| `canal-grupos-oscuro.png` | La página del canal oficial de Blender con el menú «En 3 grupos» abierto (los videos son reels de Blender, CC) |
+| `suscripciones-esta-mac-oscuro.png` | Suscripciones sin cuenta: dos canales seguidos en esta Mac y su feed |
+| `filtros-busqueda-claro.png` | Búsqueda de Big Buck Bunny con Videos · 3–20 min · Creative Commons y el menú de filtros abierto |
+| `filtros-sin-resultados-oscuro.png` | Shorts + Creative Commons sin resultados, con «Quitar los filtros» |
+| `ajustes-bloqueos-claro.png` | Ajustes › Bloqueos con dos canales de prueba (ids inventados) |
+| `ajustes-respaldo-claro.png` | Ajustes › Respaldo tras importar el PocketTube de las pruebas: grupos y el botón «Importar…» |
+
+Las dos con un menú abierto se capturan con `screencapture -R` (el rectángulo de la ventana): el script solo captura si
+Glasstube está al frente (`lsappinfo front`), porque si no saldría lo que haya en pantalla (pasó una vez al probar: se
+borró). Con `-GTWindowFrameFile`, la app se trae al frente varias veces en los primeros segundos.
+
+**Sin captura del feed de Shorts**: son recomendaciones de YouTube al azar, casi todas con caras y sin licencia CC (se
+revisó, no se guardó).
+
+### Qué falta (fase 5a)
+
+- **Sin probar a mano** (la automatización no llega): un clic en una tarjeta de la **sección Shorts** solo le da el foco
+  a la cuadrícula (el mismo clic sintético en un Short de una búsqueda sí lo abre, y Retorno en la sección también; con
+  el ratón de verdad no se probó); escribir en la hoja «Canales del grupo» (las teclas automáticas van a la ventana
+  principal, no a la hoja: la resolución de @handle se probó con `ytkit channel @BlenderStudio`); marcar o desmarcar un
+  grupo y «Bloquear canal» desde los menús (los menús abiertos no reciben clics sintéticos; el almacén y el bloqueo
+  tienen pruebas); reordenar arrastrando en la barra lateral; el selector de archivos de «Importar…» (se probó la misma
+  importación con `-GTImportar`).
+- **Con cuenta, sin verificar**: el selector YouTube | Esta Mac de Suscripciones y los grupos con sesión iniciada (la
+  sesión de prueba no se usó: solo la secundaria y solo si la inicia el dueño). El feed de los grupos no usa la cuenta.
+- **RSS**: sin duración, directos ni estrenos en las tarjetas (SmartTube los completa pidiendo la pestaña de cada canal,
+  una petición más por canal); solo los 15 últimos videos de cada canal; tope de 200 canales por feed.
+- **Shorts**: siempre anónimos (SmartTube, con cuenta, pone antes los de las suscripciones); unos 2,5 MB por página de
+  diez (un `reel_item_watch` por Short, como SmartTube).
+- **Bloqueo por nombre** cuando la tarjeta no trae el id del canal: un canal homónimo también se oculta.
+- **Exportar** grupos y suscripciones (y el respaldo de SmartTube) llega con el respaldo de la 5b.
+- **El botón «…»** de la cabecera del canal y del grupo sale como un círculo más chico que los botones con texto: el
+  botón de menú de macOS no toma el alto de su etiqueta.
+
 ## Paso 0: un solo YTKit
 
 - La copia de `Spike/` era idéntica a YTKit salvo el `public` y el reloj (`SabrPlaybackClock` → `PlaybackClock`), así que
@@ -614,18 +763,19 @@ Antes de subir el repositorio y la versión (18-oct-2026):
 | `App/PlayQueue.swift`, `Services/Community.swift` | Cola de reproducción y DeArrow en la app (fase 3) |
 | `Services/*` | Imágenes con caché, storyboard y subtítulos (VISIONOS), SponsorBlock |
 | `Settings/SettingsView.swift` | `TabView` + `Form` `.grouped` |
-| `Support/Automation.swift` | Opciones `-GT…` para pruebas y capturas (teclas y clics reales dentro de la app; fase 2: `-GTSignIn`, `-GTPlaylistPicker`, `-GTAnonimo`; fase 4: `-GTRemoto`, `-GTRemotoEnMemoria`, `-GTPairing`, `-GTCodigoDePrueba`, `-GTEnlaces`, `-GTPegar`, `-GTSoltar`, `-GTSpotlight`, `-GTSpotlightQuery`, `-GTSpotlightOpen`, `-GTDockMenu`) |
+| `Support/Automation.swift` | Opciones `-GT…` para pruebas y capturas (teclas y clics reales dentro de la app; fase 2: `-GTSignIn`, `-GTPlaylistPicker`, `-GTAnonimo`; fase 4: `-GTRemoto`, `-GTRemotoEnMemoria`, `-GTPairing`, `-GTCodigoDePrueba`, `-GTEnlaces`, `-GTPegar`, `-GTSoltar`, `-GTSpotlight`, `-GTSpotlightQuery`, `-GTSpotlightOpen`, `-GTDockMenu`; fase 5a: `-GTGruposEnMemoria`, `-GTBibliotecaEnMemoria`, `-GTGrupos`, `-GTGrupo`, `-GTSuscripcionesLocales`, `-GTImportar`, `-GTBloquear`, `-GTFiltro`, `-GTEditarGrupo`, `-GTNuevoGrupo`, `-GTSoloVideos`, `-GTRegistroGrupos`) |
 | `Tests/GlasstubeTests` | Pruebas de la lógica de cuentas de la app (fase 2) y de cola, DeArrow, comentarios y chat con servicios falsos (fase 3) |
 | `App/RemoteControl.swift`, `Remote/RemoteViews.swift` | Control remoto desde el teléfono sobre `LoungeScreen`: comandos, reportes, hoja «Vincular un teléfono» con QR y Ajustes > Control remoto (fase 4) |
 | `App/SystemIntegration.swift` | Delegado de la app: `glasstube://`, Spotlight, menú del Dock, Servicios y ⌘V; abrir enlaces, soltar (fase 4) |
 | `Services/Spotlight.swift`, `Support/KeyInjector.swift` | Índice de Core Spotlight; teclas reales dentro de la app (automatización y cruceta del teléfono) (fase 4) |
 | `Scripts/package-app.sh`, `Scripts/capturas.sh`, `Licenses/` | Empaquetado (Info.plist con `glasstube://` y `NSServices` desde la fase 4), capturas y avisos de licencias |
 | `Services/UpdateChecker.swift`, `Scripts/release.sh`, `Glasstube.entitlements`, `Packaging/dmg-fondo.svg` | Aviso de versiones nuevas; versión para GitHub Releases (DMG, suma, notas, notarización opcional); entitlements (`allow-jit`); fondo del DMG (distribución) |
+| `App/ChannelGroups.swift`, `Browse/ChannelFeedView.swift`, `Browse/SearchFilterMenu.swift` | Grupos de canales y suscripciones de esta Mac (groups.json); feed RSS de un grupo o de las suscripciones, hoja «Canales del grupo», avisos de nombre y borrado; menú de filtros de búsqueda (fase 5a) |
 
 ## Alcance (puntos 1–7)
 
-1. **Ventana:** `NavigationSplitView` con la barra lateral del sistema (Inicio, Suscripciones (🔒 sin sesión), Historial, Playlists,
-   Shorts; Explorar: Música, Gaming, Noticias, En vivo; Mis grupos como marcador; Ajustes al pie, que abre la escena
+1. **Ventana:** `NavigationSplitView` con la barra lateral del sistema (Inicio, Suscripciones, Historial, Playlists,
+   Shorts; Explorar: Música, Gaming, Noticias, En vivo; Mis grupos con los grupos de canales desde la fase 5a; Ajustes al pie, que abre la escena
    `Settings`). Toolbar: atrás/adelante (`ToolbarItemGroup(.navigation)`), búsqueda centrada (`.searchable(placement:
    .toolbarPrincipal)` + `.searchSuggestions` de YTKit con 180 ms de pausa), recargar y cuenta separados por
    `ToolbarSpacer(.fixed)`.
@@ -650,8 +800,8 @@ Antes de subir el repositorio y la versión (18-oct-2026):
 7. **Ajustes:** escena `Settings` con `TabView` (General, Interfaz, Reproductor, Subtítulos, SponsorBlock, DeArrow,
    Cuentas, Control remoto, Respaldo) y `Form(.grouped)`. Funcionan Control remoto (desde la fase 4), DeArrow (desde la fase 3), Cuentas (desde la fase 2), Interfaz (apariencia, vista previa, Shorts en
    Inicio, tiempo de los controles), Reproductor (calidad máxima, códec, búfer, seguir donde lo dejé, siguiente al
-   terminar), Subtítulos (activar al empezar, idioma), SponsorBlock (activar, saltar solo) y General (ocultos y
-   bloqueados). Las demás explican en qué fase llegan.
+   terminar), Subtítulos (activar al empezar, idioma), SponsorBlock (activar, saltar solo) y General; ocultos y
+   bloqueados están en su propia pestaña, Bloqueos, desde la fase 5a. Las demás explican en qué fase llegan.
 
 ### Reproductor
 
@@ -700,8 +850,9 @@ menú abierto, y los mismos controles y orden.
    Se usa la del sistema, como pide el brief; el banner se ve a través de ella como tinte del vidrio.
 2. **Contenido.** Sin cuenta, YouTube no recomienda nada: «Para ti» sale de Explorar (aviso al pie) y la insignia dice
    «Destacado en Explorar» en lugar de «Nuevo de tus suscripciones». Las miniaturas son reales (y a veces estridentes).
-3. **Mis grupos** es un renglón «Grupos de canales — Llegan en la fase 5» en vez de grupos de ejemplo; **Cuenta** es un
-   símbolo en lugar del avatar «T»; **Suscripciones** lleva un candado y explica que requiere cuenta.
+3. **Mis grupos** era un renglón «Grupos de canales — Llegan en la fase 5» (desde la fase 5a son los grupos de verdad,
+   con la carpeta de la maqueta); **Cuenta** es un símbolo en lugar del avatar «T»; **Suscripciones** llevaba un candado
+   hasta la fase 5a (ahora sin cuenta muestra las suscripciones de esta Mac).
 4. **⌘K** no se dibuja dentro del campo (el campo del sistema no lo admite); está en el menú Edición.
 5. **Botones del sistema.** «Reproducir» es `.glassProminent` (acento, más bajo que el de la maqueta) y «Ver más tarde»
    `.glass`; la insignia del banner es una cápsula oscura, no vidrio (es información, no un control).
@@ -737,8 +888,8 @@ menú abierto, y los mismos controles y orden.
   Vive en la app (`Services/PlayerExtras.swift`) usando la API pública de YTKit; es candidato a pasar a YTKit.
 - **Calidades con el nombre de YouTube:** altura equivalente en 16:9 (un 3840×1920 es «2160p», no «1920p»), una por
   resolución con el códec preferido.
-- **Shorts** sin cuenta: YTKit aún no tiene el feed (`reel_watch_sequence`); la sección muestra los Shorts de una
-  búsqueda y lo dice.
+- **Shorts:** hasta la fase 5a la sección mostraba los Shorts de una búsqueda; desde entonces es el feed de
+  `reel_watch_sequence` (ver [Fase 5a](#fase-5a-organizar-y-descubrir)).
 - **Firma ad hoc sin hardened runtime:** con hardened runtime y sin Team ID, la validación de bibliotecas impediría cargar
   un `Libmpv.framework` reconstruido por el usuario (lo que pide la LGPL). Identificador `mx.glasstube.Glasstube`
   (el framework ya usaba `mx.glasstube.libmpv`). Desde la distribución, hardened runtime solo con Developer ID (ver
@@ -784,8 +935,8 @@ menú abierto, y los mismos controles y orden.
   es la versión simplificada para 16 y 32 px. `Scripts/make-icon.sh` genera `Icon/AppIcon.icns` (qlmanage + sips +
   iconutil) y `package-app.sh` lo copia y lo declara en `CFBundleIconFile`. Falta el ícono "vivo" (vidrio del
   sistema, modos teñido y transparente): se arma en Icon Composer con `Icon/capas/` y necesita Xcode (`actool`).
-- **Pendientes del producto:** grupos de canales, feed de Shorts, filtros de búsqueda, respaldo y modo «TV»
-  (comentarios, chat, panel lateral, minirreproductor, DeArrow y la cola llegaron en la fase 3; el control remoto en la
-  fase 4).
+- **Pendientes del producto:** respaldo, Sparkle, accesibilidad y modo «TV» (fase 5b). Comentarios, chat, panel
+  lateral, minirreproductor, DeArrow y la cola llegaron en la fase 3; el control remoto en la fase 4; grupos de canales,
+  suscripciones sin cuenta, bloqueos, feed de Shorts y filtros de búsqueda en la 5a.
 - **Atajos:** Tab desde la búsqueda no llega al contenido (ver Decisiones); ⌘K, ⌘[, ⌘] y ⌘R sin probar.
 - **Solo arm64** (como PlaybackKit) y probado en una sola Mac y región (MX, `es-419`).

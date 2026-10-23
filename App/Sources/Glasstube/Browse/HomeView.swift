@@ -114,7 +114,7 @@ struct HomeView: View {
 
     private var sections: [Section] {
         var result: [Section] = []
-        let continuing = library.continueWatching.prefix(GridMetrics.columns(for: width)).map(\.item)
+        let continuing = library.visible(library.continueWatching.map(\.item)).prefix(GridMetrics.columns(for: width))
         if !continuing.isEmpty {
             result.append(Section(title: "Seguir viendo", items: Array(continuing), isContinue: true,
                                   seeAll: { model.navigator.go(.section(.history)) }))

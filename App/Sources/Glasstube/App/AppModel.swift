@@ -56,11 +56,14 @@ enum SidebarItem: String, Hashable, CaseIterable, Identifiable {
 /// Lo que muestra la columna de contenido.
 enum Destination: Hashable {
     case section(SidebarItem)
-    case search(String)
+    /// Resultados de una búsqueda con sus filtros (fase 5a).
+    case search(String, SearchFilter = .none)
     case channel(id: String, title: String?)
     case playlist(id: String, title: String?)
     /// "Ver todo" de una fila: la fila con su continuación.
     case group(MediaGroup)
+    /// Feed de un grupo de canales (`ChannelGroup.id`).
+    case channelGroup(String)
 
     var sidebarItem: SidebarItem? {
         if case .section(let item) = self { return item }
@@ -82,6 +85,12 @@ final class Navigator {
         guard destination != current else { return }
         backStack.append(current)
         forwardStack.removeAll()
+        current = destination
+    }
+
+    /// Cambia el destino sin dejar el anterior en «Atrás» (otros filtros de la misma búsqueda).
+    func replace(_ destination: Destination) {
+        guard destination != current else { return }
         current = destination
     }
 
@@ -123,7 +132,9 @@ final class AppModel {
     let extras: PlayerExtrasService
     let sponsorBlock = SponsorBlockClient()
     let settings = AppSettings()
-    let library = LocalLibrary()
+    let library = LocalLibrary(persistent: !UserDefaults.standard.bool(forKey: "GTBibliotecaEnMemoria"))
+    /// Grupos de canales y suscripciones de esta Mac (fase 5a). `-GTGruposEnMemoria`: sin leer ni escribir el archivo.
+    let groups = ChannelGroupStore(fileURL: UserDefaults.standard.bool(forKey: "GTGruposEnMemoria") ? nil : ChannelGroupStore.defaultURL)
     let navigator = Navigator()
     let queue = PlayQueue()
     let deArrow: DeArrowStore
@@ -144,6 +155,14 @@ final class AppModel {
     @ObservationIgnored let miniPlayer = MiniPlayerController()
     /// Video para la hoja "Guardar en una playlist" (con cuenta).
     var playlistPicker: MediaItem?
+    /// Pedir el nombre de un grupo nuevo o renombrar uno (fase 5a).
+    var groupPrompt: GroupPrompt?
+    /// Grupo abierto en la hoja «Canales del grupo».
+    var groupEditor: GroupEditorRequest?
+    /// Grupo a punto de borrarse (confirmación).
+    var groupToDelete: ChannelGroup?
+    /// Muestra el selector de archivos para importar grupos.
+    var importingGroups = false
     /// Aviso breve de una acción de cuenta ("Se agregó a Ver más tarde").
     private(set) var banner: String?
     @ObservationIgnored private var bannerTask: Task<Void, Never>?
@@ -268,7 +287,7 @@ final class AppModel {
             return
         }
         searchText = text
-        navigator.go(.search(text))
+        navigator.go(.search(text, Automation.shared.searchFilter ?? .none))
     }
 
     func open(_ item: MediaItem, context: PlayContext? = nil) {
@@ -373,5 +392,101 @@ final class AppModel {
         case .playlist, .mix:
             item.playlistId.flatMap { URL(string: "https://www.youtube.com/playlist?list=\($0)") }
         }
+    }
+}
+
+// MARK: - Grupos, suscripciones locales y bloqueos (fase 5a)
+
+/// Qué nombre se está pidiendo en el aviso con campo de texto.
+enum GroupPrompt: Identifiable, Equatable {
+    /// Grupo nuevo, opcionalmente ya con un canal (desde el menú de una tarjeta o la página del canal).
+    case create(GroupChannel?)
+    case rename(ChannelGroup)
+
+    var id: String {
+        switch self {
+        case .create(let channel): "nuevo:\(channel?.id ?? "")"
+        case .rename(let group): "renombrar:\(group.id)"
+        }
+    }
+}
+
+struct GroupEditorRequest: Identifiable, Equatable {
+    var id: String
+}
+
+extension AppModel {
+    /// Bloquea un canal: sus videos desaparecen de todos los feeds, la búsqueda y los sugeridos.
+    func blockChannel(id: String, name: String) {
+        library.block(channelId: id, name: name)
+        show(banner: "Bloqueaste «\(name)». Para verlo de nuevo: Ajustes › Bloqueos.", seconds: 4)
+    }
+
+    func unblockChannel(id: String) {
+        guard let channel = library.blockedChannels.first(where: { $0.id == id }) else { return }
+        library.unblock(channel)
+        show(banner: "«\(channel.name)» ya no está bloqueado")
+    }
+
+    /// Agrega o quita el canal del grupo (los «✓» del menú «Agregar a un grupo»).
+    func toggle(_ channel: GroupChannel, inGroup groupId: String) {
+        guard let group = groups.group(groupId) else { return }
+        if group.contains(channel.id) {
+            groups.remove(channelId: channel.id, from: groupId)
+            show(banner: "Se quitó «\(channel.displayName)» de «\(group.title)»")
+        } else {
+            groups.add(channel, to: groupId)
+            show(banner: "Se agregó «\(channel.displayName)» a «\(group.title)»")
+        }
+    }
+
+    /// Crea un grupo (con el canal, si lo hay) y lo abre.
+    func createGroup(named title: String, with channel: GroupChannel?) {
+        let group = groups.create(title: title, channels: channel.map { [$0] } ?? [])
+        if let channel {
+            show(banner: "Se creó «\(group.title)» con «\(channel.displayName)»")
+        } else {
+            if player != nil, playerPresentation == .full { enterMiniPlayer() }
+            navigator.go(.channelGroup(group.id))
+        }
+    }
+
+    func deleteGroup(_ group: ChannelGroup) {
+        if navigator.current == .channelGroup(group.id) { navigator.go(.section(.home)) }
+        groups.delete(group.id)
+        show(banner: "Se borró el grupo «\(group.title)»")
+    }
+
+    /// Suscripción de esta Mac (sin cuenta): sus videos llegan por RSS a Suscripciones.
+    func toggleLocalSubscription(_ channel: GroupChannel) {
+        if groups.isSubscribed(channel.id) {
+            groups.unsubscribe(channel.id)
+            show(banner: "Ya no sigues «\(channel.displayName)» en esta Mac")
+        } else {
+            groups.subscribe(channel)
+            show(banner: "Te suscribiste a «\(channel.displayName)» en esta Mac")
+        }
+    }
+
+    /// Importa un archivo de PocketTube, GrayJay o NewPipe. Devuelve el aviso que se mostró.
+    @discardableResult
+    func importGroups(from url: URL) -> String {
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        let message: String
+        if let data = try? Data(contentsOf: url), let result = ChannelGroupImport.parse(data) {
+            let summary = groups.importGroups(result)
+            message = summary.message
+            if result.isSubscriptions {
+                navigator.go(.section(.subscriptions))
+            } else if let first = summary.created.first ?? summary.updated.first,
+                      let group = groups.groups.first(where: { $0.title == first }) {
+                navigator.go(.channelGroup(group.id))
+            }
+        } else {
+            message = "«\(url.lastPathComponent)» no es un archivo de PocketTube, GrayJay ni NewPipe"
+        }
+        show(banner: message, seconds: 5)
+        return message
     }
 }

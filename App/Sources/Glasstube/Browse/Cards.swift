@@ -204,6 +204,7 @@ struct ItemMenu: View {
     @Environment(AccountModel.self) private var accounts
     @Environment(\.playlistContext) private var playlistContext
     @Environment(\.feedbackLabel) private var feedbackLabel
+    @Environment(ChannelGroupStore.self) private var groups
 
     var body: some View {
         if item.isPlayable {
@@ -252,8 +253,20 @@ struct ItemMenu: View {
             Button("Abrir canal", systemImage: "person.crop.square") {
                 model.navigator.go(.channel(id: channelId, title: item.author ?? (item.kind == .channel ? item.title : nil)))
             }
+            if let channel = GroupChannel(item: item) {
+                // Fase 5a: grupos de canales y, sin cuenta, suscripciones de esta Mac.
+                Menu("Agregar a un grupo", systemImage: "folder.badge.plus") {
+                    GroupMembershipItems(channel: channel)
+                }
+                if !accounts.isSignedIn {
+                    Button(groups.isSubscribed(channel.id) ? "Dejar de seguir en esta Mac" : "Suscribirse en esta Mac",
+                           systemImage: groups.isSubscribed(channel.id) ? "minus.circle" : "plus.circle") {
+                        model.toggleLocalSubscription(channel)
+                    }
+                }
+            }
             Button("Bloquear canal", systemImage: "nosign") {
-                library.block(channelId: channelId, name: item.author ?? item.title)
+                model.blockChannel(id: channelId, name: item.kind == .channel ? item.title : (item.author ?? item.title))
             }
         }
         if let url = AppModel.webURL(for: item) {
@@ -279,7 +292,8 @@ struct ShortCard: View {
     var body: some View {
         Button { model.open(item) } label: {
             ZStack(alignment: .bottomLeading) {
-                RemoteImage(urls: MediaItemImages.card(item, width: 400))
+                // 600: la miniatura de 640 de un Short (4:3, con franjas) se recorta al centro y no queda borrosa.
+                RemoteImage(urls: MediaItemImages.card(item, width: 600))
                 LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .center, endPoint: .bottom)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.deArrow.title(for: item))
@@ -389,5 +403,22 @@ final class StoryboardPreview {
             frameTime = nil
             fraction = nil
         }
+    }
+}
+
+/// Los grupos con una marca en los que ya tiene el canal (elegir uno lo agrega o lo quita) y «Nuevo grupo…» (fase 5a).
+/// Va dentro de un `Menu`: el de las tarjetas y el de la cabecera del canal.
+struct GroupMembershipItems: View {
+    let channel: GroupChannel
+    @Environment(AppModel.self) private var model
+    @Environment(ChannelGroupStore.self) private var groups
+
+    var body: some View {
+        ForEach(groups.groups) { group in
+            Toggle(group.title, isOn: Binding(get: { group.contains(channel.id) },
+                                              set: { _ in model.toggle(channel, inGroup: group.id) }))
+        }
+        if !groups.groups.isEmpty { Divider() }
+        Button("Nuevo grupo con este canal…", systemImage: "folder.badge.plus") { model.groupPrompt = .create(channel) }
     }
 }

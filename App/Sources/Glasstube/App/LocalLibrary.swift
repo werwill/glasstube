@@ -38,6 +38,8 @@ final class LocalLibrary {
     private(set) var hiddenVideos: Set<String> = []
     private(set) var blockedChannels: [BlockedChannel] = []
     private var saveTask: Task<Void, Never>?
+    /// Sin archivo: pruebas y capturas (`-GTBibliotecaEnMemoria`), que no tocan el historial de esta Mac.
+    @ObservationIgnored private let persistent: Bool
 
     static let historyLimit = 500
 
@@ -46,8 +48,9 @@ final class LocalLibrary {
         return base.appendingPathComponent("Glasstube", isDirectory: true).appendingPathComponent("library.json")
     }()
 
-    init() {
-        if let data = try? Data(contentsOf: Self.fileURL), let store = try? JSONDecoder().decode(Store.self, from: data) {
+    init(persistent: Bool = true) {
+        self.persistent = persistent
+        if persistent, let data = try? Data(contentsOf: Self.fileURL), let store = try? JSONDecoder().decode(Store.self, from: data) {
             history = store.history
             watchLater = store.watchLater
             hiddenVideos = Set(store.hiddenVideos)
@@ -128,16 +131,27 @@ final class LocalLibrary {
         scheduleSave()
     }
 
-    /// Quita lo oculto y lo de canales bloqueados (como los filtros de contenido de SmartTube).
+    func isBlocked(channelId: String) -> Bool { blockedChannels.contains { $0.id == channelId } }
+
+    /// Video, Short, canal o lista de un canal bloqueado. Sin id de canal (la búsqueda de TV no lo da), por el nombre.
+    func isBlocked(_ item: MediaItem) -> Bool {
+        guard !blockedChannels.isEmpty else { return false }
+        if let channelId = item.channelId { return isBlocked(channelId: channelId) }
+        let name = item.kind == .channel ? item.title : item.author
+        return name.map { name in blockedChannels.contains { $0.name == name } } ?? false
+    }
+
+    /// Quita lo oculto y lo de canales bloqueados (como los filtros de contenido de SmartTube): en todos los feeds, la
+    /// búsqueda, los sugeridos y la reproducción automática.
     func visible(_ items: [MediaItem]) -> [MediaItem] {
         guard !hiddenVideos.isEmpty || !blockedChannels.isEmpty else { return items }
-        let blocked = Set(blockedChannels.map(\.id))
-        return items.filter { !hiddenVideos.contains($0.id) && !($0.channelId.map(blocked.contains) ?? false) }
+        return items.filter { !hiddenVideos.contains($0.id) && !isBlocked($0) }
     }
 
     // MARK: - Disco
 
     private func scheduleSave() {
+        guard persistent else { return }
         saveTask?.cancel()
         let store = Store(history: history, watchLater: watchLater, hiddenVideos: Array(hiddenVideos), blockedChannels: blockedChannels)
         saveTask = Task.detached(priority: .utility) {

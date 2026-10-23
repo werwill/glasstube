@@ -4,11 +4,12 @@ import YTKit
 /// Qué página de YTKit se muestra.
 enum BrowseSource: Hashable {
     case topic(Topic, title: String)
-    case search(String)
+    /// Resultados con sus filtros (fase 5a).
+    case search(String, SearchFilter)
     case playlist(String, title: String?)
     /// "Ver todo" de una fila: la fila y su continuación.
     case group(MediaGroup)
-    /// Shorts sin cuenta: YTKit aún no tiene el feed (`reel_watch_sequence`); se muestran los Shorts de una búsqueda.
+    /// Feed de Shorts de YouTube (`reel_watch_sequence` por WEB, como SmartTube; fase 5a).
     case shorts
     /// Con cuenta: Suscripciones (FEsubscriptions), Historial (FEhistory) y Playlists (FEplaylist_aggregation).
     case subscriptions, history, library
@@ -16,7 +17,7 @@ enum BrowseSource: Hashable {
     var title: String {
         switch self {
         case .topic(_, let title): title
-        case .search(let query): "Resultados para «\(query)»"
+        case .search(let query, _): "Resultados para «\(query)»"
         case .playlist(_, let title): title ?? "Playlist"
         case .group(let group): group.title ?? "Más videos"
         case .shorts: "Shorts"
@@ -72,7 +73,7 @@ struct BrowseView: View {
 
     private var subtitle: String? {
         switch source {
-        case .shorts: "Sin cuenta todavía no hay feed de Shorts: estos salen de una búsqueda."
+        case .shorts: "Los que recomienda YouTube (sin usar tu cuenta). Se abren en el reproductor de siempre."
         case .topic: page?.isFallback == true ? "Contenido sustituto de YouTube" : nil
         case .subscriptions, .history, .library: model.accounts.selected.map { "De tu cuenta de YouTube · \($0.displayName)" }
         default: nil
@@ -82,7 +83,17 @@ struct BrowseView: View {
     @ViewBuilder
     private var content: some View {
         if page != nil {
-            if groups.isEmpty {
+            if groups.isEmpty, case .search(let query, let filter) = source, !filter.isEmpty {
+                ContentUnavailableView {
+                    Label("Sin resultados con estos filtros", systemImage: "line.3.horizontal.decrease")
+                } description: {
+                    Text("YouTube no encontró nada para «\(query)» con estos filtros.")
+                } actions: {
+                    Button("Quitar los filtros") { model.navigator.replace(.search(query, .none)) }
+                        .buttonStyle(.glass)
+                }
+                .frame(minHeight: 300)
+            } else if groups.isEmpty {
                 ContentUnavailableView("Nada que mostrar", systemImage: "rectangle.on.rectangle.slash",
                                        description: Text(page?.notice ?? "YouTube no devolvió videos para esta página."))
                     .frame(minHeight: 300)
@@ -91,7 +102,7 @@ struct BrowseView: View {
                 let group = groups[index]
                 CardSection(title: groups.count > 1 || group.title != page?.title ? group.title : nil,
                             items: group.items, section: index, grid: grid, progress: accountProgress,
-                            shortsAsGrid: source == .shorts)
+                            shortsAsGrid: source.showsShortsAsGrid)
                     .environment(\.playlistContext, playlistContext)
                     .environment(\.playContext, playContext)
                     .environment(\.feedbackLabel, feedbackLabel)
@@ -121,7 +132,7 @@ struct BrowseView: View {
 
     private func columns(for items: [MediaItem]) -> Int {
         guard items.allSatisfy(\.isShort) else { return GridMetrics.columns(for: width) }
-        return source == .shorts ? GridMetrics.columns(for: width, minimum: GridMetrics.shortWidth) : items.count
+        return source.showsShortsAsGrid ? GridMetrics.columns(for: width, minimum: GridMetrics.shortWidth) : items.count
     }
 
     /// La última fila con continuación, o la página.
@@ -137,8 +148,8 @@ struct BrowseView: View {
             switch source {
             case .topic(let topic, _):
                 loaded = try await model.service.topic(topic)
-            case .search(let query):
-                loaded = try await model.service.search(query)
+            case .search(let query, let filter):
+                loaded = try await model.service.search(query, filter: filter)
             case .playlist(let id, _):
                 loaded = try await model.service.playlist(id)
             case .group(let group):
@@ -150,12 +161,7 @@ struct BrowseView: View {
             case .library:
                 loaded = try await model.service.playlists()
             case .shorts:
-                var result = try await model.service.search("#shorts")
-                // Los Shorts de la búsqueda llegan en sus estantes: se juntan en una cuadrícula.
-                let shorts = result.groups.flatMap(\.items).filter(\.isShort)
-                result.groups = [MediaGroup(kind: .search, title: nil, items: shorts, renderer: "shorts")]
-                result.continuation = nil
-                loaded = result
+                loaded = try await model.service.shorts()
             }
             withAnimation(.smooth) { page = loaded }
             // Capturas: la tarjeta N de la primera fila con la vista previa activa (`GTHoverIndex`).
@@ -207,6 +213,15 @@ extension BrowseSource {
     var isSearch: Bool {
         if case .search = self { return true }
         return false
+    }
+
+    /// Los Shorts van en cuadrícula (y no en una fila) en el feed de Shorts y en una búsqueda filtrada por Shorts.
+    var showsShortsAsGrid: Bool {
+        switch self {
+        case .shorts: true
+        case .search(_, let filter): filter.type == .shorts
+        default: false
+        }
     }
 }
 

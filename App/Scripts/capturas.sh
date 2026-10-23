@@ -92,4 +92,48 @@ F4=(-GTRemotoEnMemoria YES -remoteEnabled YES -remoteName "Glasstube en la Mac")
 ACTIVAR=1 shot vincular-telefono-claro 10 -appearance light "${F4[@]}" -GTCodigoDePrueba YES -GTPairing 4 -GTSearch "big buck bunny blender"
 ACTIVAR=1 shot vincular-telefono-oscuro 10 -appearance dark "${F4[@]}" -GTCodigoDePrueba YES -GTPairing 4 -GTSearch "big buck bunny blender"
 ACTIVAR=1 shot ajustes-control-remoto-claro 9 -appearance light "${F4[@]}" -GTOpenSettings YES -settingsTab remote
+# Fase 5a: grupos de canales, suscripciones de esta Mac, filtros de búsqueda y bloqueos. Grupos, suscripciones e
+# historial solo en memoria (no tocan groups.json ni library.json); sin control remoto. Los feeds RSS son reales, pero
+# -GTSoloVideos deja a la vista solo videos del canal oficial de Blender con licencia Creative Commons (CC BY, «permite
+# reutilización» en `next`) y sin caras de personas, revisados el 23-oct-2026. El RSS solo trae los 15 últimos de cada
+# canal: si estos ya no salen, elige otros (`ytkit rss UCSMOQeBJ2RAnuFungnQOxLg`) y revisa sus miniaturas.
+BLENDER=UCSMOQeBJ2RAnuFungnQOxLg
+STUDIO=UCz75RVbH8q2jdBJ4SnwuZZQ
+CC_BLENDER="dVrELpmfcEQ,k6l1CK0O_r4,YsKxkP_kGbE,EycY6jDFK74"
+F5=(-GTGruposEnMemoria YES -GTBibliotecaEnMemoria YES -remoteEnabled NO -GTSoloVideos "$CC_BLENDER"
+    -GTGrupos "Blender=$BLENDER;Software libre=$BLENDER;Animación 3D=$BLENDER")
+ACTIVAR=1 shot grupo-claro 13 -appearance light "${F5[@]}" -GTGrupo Blender
+ACTIVAR=1 shot grupo-oscuro 13 -appearance dark "${F5[@]}" -GTGrupo Blender
+ACTIVAR=1 shot grupo-canales-claro 12 -appearance light "${F5[@]}" -GTGrupo Blender -GTEditarGrupo Blender
+ACTIVAR=1 shot grupo-nuevo-oscuro 11 -appearance dark "${F5[@]}" -GTGrupo Blender -GTNuevoGrupo YES
+ACTIVAR=1 shot suscripciones-esta-mac-oscuro 13 -appearance dark "${F5[@]}" -GTSuscripcionesLocales "$BLENDER,$STUDIO" -GTSection subscriptions
+# Con un menú abierto: `screencapture -R` con el marco de la ventana (con -l el menú no sale). El menú se abre con un
+# clic real (en 1440×900: el botón de filtros a la derecha del título; «En 3 grupos» en la cabecera del canal).
+shot_rect() {
+    local name="$1" wait="$2"; shift 2
+    [[ -z "$FILTER" || "$name" == *"$FILTER"* ]] || return 0
+    pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true
+    sleep 1
+    rm -f "$TMP/wid" "$TMP/frame"
+    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowFrameFile "$TMP/frame" -GTWindowSize 1440x900 -GTSinLlavero YES "$@" > "$TMP/$name.log" 2>&1 &
+    sleep "$wait"
+    # -R captura lo que haya en pantalla en ese rectángulo: solo si Glasstube quedó al frente (la app se trae sola con
+    # -GTWindowFrameFile, pero si se usa otra app mientras tanto, saldría esa).
+    if ! lsappinfo info -only bundleid "$(lsappinfo front)" | grep -q 'mx.glasstube.Glasstube'; then
+        echo "capturas/$name.png: Glasstube no quedó al frente; no se captura (repítela sin usar otra app)" >&2
+        return 0
+    fi
+    screencapture -x -R"$(cat "$TMP/frame")" "$OUT/$name.png"
+    echo "capturas/$name.png"
+}
+shot_rect filtros-busqueda-claro 13 -appearance light -remoteEnabled NO -GTBibliotecaEnMemoria YES -GTSearch "big buck bunny blender" \
+    -GTFiltro "tipo=video,duracion=3-20,cc" -GTClicks "9:1340;84"
+shot_rect canal-grupos-oscuro 14 -appearance dark "${F5[@]}" -GTChannel $BLENDER -GTClicks "10:1222;312"
+shot filtros-sin-resultados-oscuro 12 -appearance dark -remoteEnabled NO -GTBibliotecaEnMemoria YES -GTSearch "blender open movie" \
+    -GTFiltro "tipo=shorts,cc"
+# Ajustes: la pestaña Bloqueos (canales de prueba, ids inventados) y Respaldo tras importar el PocketTube de las pruebas.
+ACTIVAR=1 shot ajustes-bloqueos-claro 8 -appearance light "${F5[@]}" -GTOpenSettings YES -settingsTab blocked \
+    -GTBloquear "UCcanaldeprueba000000001=Canal de prueba 1;UCcanaldeprueba000000002=Canal de prueba 2"
+ACTIVAR=1 shot ajustes-respaldo-claro 8 -appearance light -GTGruposEnMemoria YES -GTBibliotecaEnMemoria YES -remoteEnabled NO \
+    -GTImportar "$APP_DIR/../YTKit/Tests/YTKitTests/Fixtures/descubrir/pockettube.json" -GTOpenSettings YES -settingsTab backup
 pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true

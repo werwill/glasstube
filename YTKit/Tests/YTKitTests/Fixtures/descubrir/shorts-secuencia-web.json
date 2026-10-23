@@ -1,0 +1,54 @@
+{
+ "responseContext": {},
+ "entries": [
+  {
+   "command": {
+    "reelWatchEndpoint": {
+     "videoId": "shortprueba2",
+     "params": "CA8aEwj4te382dCXAxUfma4FHb88BTsqALoBGFVD",
+     "thumbnail": {
+      "thumbnails": [
+       {
+        "url": "https://i.ytimg.com/vi/shortprueba2/frame0.jpg",
+        "width": 1080,
+        "height": 1920
+       }
+      ]
+     },
+     "overlay": {
+      "reelPlayerOverlayRenderer": {
+       "style": "REEL_PLAYER_OVERLAY_STYLE_SHORTS"
+      }
+     }
+    }
+   }
+  },
+  {
+   "command": {
+    "reelWatchEndpoint": {
+     "videoId": "shortprueba3",
+     "params": "CA8aEwj4te382dCXAxUfma4FHb88BTsqALoBGFVD",
+     "thumbnail": {
+      "thumbnails": [
+       {
+        "url": "https://i.ytimg.com/vi/shortprueba3/frame0.jpg",
+        "width": 1080,
+        "height": 1920
+       }
+      ]
+     },
+     "overlay": {
+      "reelPlayerOverlayRenderer": {
+       "style": "REEL_PLAYER_OVERLAY_STYLE_SHORTS"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "continuationEndpoint": {
+  "continuationCommand": {
+   "token": "secuenciaDePrueba2"
+  }
+ }
+}

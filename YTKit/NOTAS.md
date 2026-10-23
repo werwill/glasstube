@@ -1,4 +1,4 @@
-# YTKit: notas de las fases 1 (red y catálogo), 2 (cuentas), 3 (comunidad) y 4 (control remoto y enlaces)
+# YTKit: notas de las fases 1 (red y catálogo), 2 (cuentas), 3 (comunidad), 4 (control remoto y enlaces) y 5a (organizar y descubrir)
 
 Fecha: 15-oct-2026 (fase 3: 16-oct-2026). Mac M1 Pro, macOS 27.0.1, Swift 6.4 con Command Line Tools (sin Xcode). Red doméstica en México,
 `hl=es-419`, `gl=MX`. La fase 1 se probó sin sesión; la fase 2 con una cuenta de prueba del dueño del proyecto (una
@@ -385,6 +385,84 @@ esquema propio `glasstube://` (`watch?v=…&t=…&list=…`, `video/ID`, `channe
 - `ytkit lounge [--seconds N] [--nombre X] [--mostrar] [--sin-codigo] [--guardar]`: una pantalla sin la app (escribe
   los comandos y responde `getNowPlaying`); `ytkit link <texto>`: cómo se interpreta un enlace.
 
+## Organizar y descubrir (fase 5a)
+
+Carpeta `Sources/YTKit/Discover/`. Verificado contra YouTube el 23-oct-2026, sin sesión, desde México (`es-419`).
+
+### Feeds RSS (`RSSFeed.swift`)
+
+- `RSSFeedParser.parse(_:channelId:)` lee `https://www.youtube.com/feeds/videos.xml?channel_id=UC…` con `XMLParser`,
+  como `YouTubeRssParser` de SmartTube: id, canal, título, autor, fecha exacta (`MediaItem.publishedAt`, nuevo), vistas
+  (`viewCount`, nuevo), miniatura (`hqdefault` 480×360) y el principio de la descripción. **Los Shorts se reconocen por
+  su enlace** (`<link rel="alternate" href="…/shorts/ID">`): SmartTube los quita pidiendo además la pestaña del canal;
+  aquí no hace falta otra petición. El `<yt:channelId>` del feed llega sin el prefijo `UC` (el de cada entrada sí lo
+  trae); el id del canal sale del enlace `/channel/UC…` del feed o del que se pidió.
+- `RSSFeedService` (actor; `YouTubeService.rss` y `rssFeed(channelIds:refresh:)`): hasta 8 canales a la vez (ventana
+  deslizante), caché en memoria y en disco (`~/Library/Caches/Glasstube/rss/<id>`) de 15 min, y si YouTube no responde,
+  la copia que haya aunque sea vieja. Un reintento ante 5xx (los feeds dan 500 a ratos); 404 = canal sin videos o id
+  malo. Dos páginas que piden el mismo canal comparten la petición. Junta todo sin repetidos y ordena por fecha;
+  `publishedText` («hace 4 horas») y `viewCountText` («2.3 K vistas», «1.2 M de vistas», como las tarjetas de YouTube) se
+  escriben al pedir, en el idioma del catálogo, así que la caché no deja textos viejos. Tope de 200 canales (SmartTube:
+  100, porque en las cajas de TV «sin límite tarda muchísimo»); `Result.skipped` dice cuántos quedaron fuera.
+- Medido: Blender + otro canal en 0,56 s en frío; de la caché en disco, 0,28 s (`ytkit rss`).
+- El RSS **no trae duración** ni marca directos o estrenos: las tarjetas salen sin el distintivo de duración.
+
+### Shorts (`Shorts.swift`)
+
+`shorts()`, por WEB y anónimo, como `BrowseService2.getShortsWeb`: `reel/reel_item_watch` con
+`inputType: REEL_WATCH_INPUT_TYPE_SEEDLESS` y `params: "CA8%3D"` (el primero y `sequenceContinuation`), después
+`reel/reel_watch_sequence` con `sequenceParams` (diez entradas con id, `params` y `frame0.jpg`, y la continuación en
+`continuationEndpoint.continuationCommand.token`). Las entradas no traen título ni canal (solo la primera trae un
+`playerResponse` precargado), así que, igual que SmartTube, se pide `reel_item_watch` de cada una con su `params` y se lee
+`engagementPanels[].structuredDescriptionContentRenderer.items[].videoDescriptionHeaderRenderer` (título, canal con su
+UC…, vistas, fecha) y la fecha relativa del reproductor de Shorts. Unos 240 KB por Short; de 5 en 5. Primera página: 14
+Shorts en 3,6 s. La paginación va por `continueGroup` con `Continuation.API.reel` (nuevo) y `MediaGroup.Kind.shorts`.
+La miniatura de la tarjeta es `sddefault.jpg` (la portada que eligió el canal, 4:3 con franjas, que la tarjeta vertical
+recorta al centro); `frame0.jpg` es el primer cuadro y a veces sale negro.
+
+### Filtros de búsqueda (`SearchFilter.swift`)
+
+`SearchFilter` arma el `params` de `/search` (el `sp=` de las URL): `{1: prioridad, 2: {1: fecha, 2: tipo, 3: duración,
+N: característica = 1}}` en base64, y lo lee de vuelta (`init?(params:)`, también con `%3D`). Los valores son los del
+diálogo «Filtros de búsqueda» que manda la propia respuesta WEB en `header.searchHeaderRenderer.searchFilterButton`
+(23-oct-2026), y no los de las listas viejas que circulan:
+
+- **Tipo:** videos 1, **Shorts 9** (nuevo), canales 2, playlists 3, películas 4.
+- **Duración:** **menos de 3 minutos 4** y **de 3 a 20 minutos 5** (nuevos; antes «menos de 4» era 1), más de 20 es 2.
+- **Fecha de carga:** hoy 2, esta semana 3, este mes 4, este año 5. **«Última hora» ya no está.**
+- **Prioridad** (antes «Ordenar por»): relevancia 0 y popularidad 3 (`CAM=`). **El orden por fecha de subida ya no
+  existe:** con `CAI=` YouTube devuelve lo mismo que sin filtro (comprobado con «blender»).
+- **Características:** en vivo 8, 4K 14, HD 4, subtítulos 5, Creative Commons 6, HDR 25 (y 360°, VR180, 3D, ubicación y
+  compras, que la app no ofrece).
+- Se combinan: «esta semana + videos + de 3 a 20 minutos» = `EgYIAxABGAU=` (verificado: solo videos de la semana y de
+  esa duración). Con tipo Shorts, los resultados llegan en `gridShelfViewModel`; con Shorts + Creative Commons YouTube
+  responde con un `backgroundPromoRenderer` «No se encontraron resultados».
+
+### Importar grupos (`ChannelGroupImport.swift`)
+
+Los tres formatos de SmartTube (`ChannelGroupServiceImpl` prueba PocketTube, GrayJay y NewPipe en ese orden):
+
+- **PocketTube:** objeto JSON; `ysc_collection` nombra los grupos y cada uno es una clave de la raíz con sus ids. Como
+  `JSONSerialization` pierde el orden de las claves, los grupos van en el orden en que aparecen en el archivo.
+- **GrayJay:** lista de grupos, cada uno una **cadena** con su JSON (SmartTube la «arregla» quitando comillas; aquí se
+  decodifica cada cadena) o un objeto. De `urls` solo cuentan los canales `youtube.com/channel/UC…`; Rumble, LBRY y los
+  `@handle` (sin red no hay id) se cuentan en `skipped`.
+- **NewPipe:** `subscriptions` con `service_id` 0 (YouTube). Son suscripciones, no un grupo (`isSubscriptions`), como
+  en SmartTube.
+- Probado también con los archivos de prueba del propio SmartTube (`youtubeapi/src/test/resources/channelgroups`):
+  PocketTube 3 grupos y 12 canales; GrayJay 6 grupos, 99 canales y 4 entradas que no son de YouTube.
+
+### Pruebas y CLI
+
+- `DiscoverTests.swift` (16): RSS (lectura, Shorts por enlace, id del canal, lo que no es un feed, mezcla de 12
+  canales en paralelo con caché y `refresh`, copia vieja ante fallos con su reintento, textos de vistas), filtros (los
+  19 `params` del diálogo de YouTube, combinaciones verificadas, ida y vuelta), Shorts (secuencia con detalles; el que
+  no tiene detalles no sale) e importar (los tres formatos, objetos de GrayJay, archivos que no son de ninguno, URL de
+  canal). Fixtures en `Fixtures/descubrir/`: un feed de Blender recortado, Shorts recortados y **neutralizados**
+  (títulos, canales e ids de prueba) y archivos de importación propios con canales de Blender e ids de prueba.
+- CLI: `ytkit rss <UC…>… [--refrescar]`, `ytkit shorts [--pages N]`, `ytkit search … --filtro
+  tipo=video,fecha=semana,duracion=3-20,prioridad=popularidad,cc` y `ytkit importar <archivo>`.
+
 ## Cómo se parsean los renderers
 
 - **Campos tolerantes.** Todos los campos de los modelos (`Renderers.swift`, `WatchNext.swift`, `Channel.swift`) van
@@ -562,10 +640,13 @@ Con cuenta (la sesión es la misma de Glasstube.app, en el Llavero; nombres y co
   (`createCommentParams`, sin botón en la app), la forma WEB de los comentarios (`commentViewModel`), el chat de la
   repetición de un directo (`get_live_chat_replay`) y las imágenes de los emojis propios de un canal (se muestran como
   `:atajo:`).
-- **Shorts como feed** (`reel_watch_sequence`), Kids, pestañas de canal sin contenido navegable (Publicaciones,
-  Tienda), búsqueda dentro de un canal y el video destacado del Inicio del canal.
-- **Filtros de búsqueda:** solo se acepta el `params` crudo; falta construir el protobuf `sp` (fecha, duración, tipo,
-  orden).
+- **Shorts con cuenta:** el feed va siempre por WEB anónimo (SmartTube, con cuenta, pide antes los Shorts de las
+  suscripciones por TV). Kids, pestañas de canal sin contenido navegable (Publicaciones, Tienda), búsqueda dentro de un
+  canal y el video destacado del Inicio del canal.
+- **RSS sin duración ni directos:** completarlos como SmartTube costaría pedir la pestaña de cada canal (una petición
+  más por canal).
+- **Filtros:** el orden por fecha de subida y «Última hora» ya no los ofrece YouTube; si vuelven a cambiar el diálogo,
+  los números están en `SearchFilter` y en `SearchFilterTests`.
 - **Textos sin interpretar:** visitas, fechas y suscriptores quedan como los da YouTube ("1.1 M de vistas",
   "hace 2 semanas"). Pasarlos a números y fechas dependería del idioma.
 - **Solo se probó en una región** (MX, `es-419`). Con `hl=es`, YouTube responde en español de España ("vídeos");

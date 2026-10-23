@@ -1,0 +1,111 @@
+{
+ "responseContext": {},
+ "engagementPanels": [
+  {
+   "engagementPanelSectionListRenderer": {
+    "panelIdentifier": "shorts-comments-panel"
+   }
+  },
+  {
+   "engagementPanelSectionListRenderer": {
+    "content": {
+     "structuredDescriptionContentRenderer": {
+      "items": [
+       {
+        "videoDescriptionHeaderRenderer": {
+         "title": {
+          "runs": [
+           {
+            "text": "Short de prueba dos"
+           },
+           {
+            "text": " #prueba",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "FEhashtag",
+              "params": "x"
+             }
+            }
+           }
+          ]
+         },
+         "channel": {
+          "simpleText": "Otro canal"
+         },
+         "views": {
+          "simpleText": "2,796,020 vistas"
+         },
+         "publishDate": {
+          "simpleText": "11 oct 2026"
+         },
+         "channelNavigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "UCcanaldeprueba000000002",
+           "canonicalBaseUrl": "/@canaldeprueba"
+          }
+         },
+         "channelThumbnail": {
+          "thumbnails": [
+           {
+            "url": "https://yt3.ggpht.com/prueba=s88-c-k-c0x00ffffff-no-rj"
+           }
+          ]
+         },
+         "factoid": [
+          {
+           "factoidRenderer": {
+            "value": {
+             "simpleText": "70 k"
+            },
+            "label": {
+             "simpleText": "Me gusta"
+            },
+            "accessibilityText": "70 mil “Me gusta”",
+            "backgroundColorStyle": "BACKGROUND_COLOR_STYLE_COLOR_SAMPLED",
+            "lightThemeColorPalette": {
+             "baseBackground": 4294965744,
+             "raisedBackground": 4294965744,
+             "additiveBackground": 566859077,
+             "textPrimary": 4281738506,
+             "textSecondary": 4285422138,
+             "invertedBackground": 4287586841,
+             "overlayBackground": 3426100490
+            },
+            "darkThemeColorPalette": {
+             "baseBackground": 4280029698,
+             "raisedBackground": 4281738506,
+             "additiveBackground": 734631237,
+             "textPrimary": 4294635744,
+             "textSecondary": 4292725420,
+             "invertedBackground": 4293115004,
+             "overlayBackground": 3426100490
+            },
+            "enableColorSampledText": true
+           }
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ ],
+ "overlay": {
+  "reelPlayerOverlayRenderer": {
+   "reelPlayerHeaderSupportedRenderers": {
+    "reelPlayerHeaderRenderer": {
+     "timestampText": {
+      "simpleText": "hace 12 días"
+     },
+     "channelNavigationEndpoint": {
+      "browseEndpoint": {
+       "browseId": "UCcanaldeprueba000000002"
+      }
+     }
+    }
+   }
+  }
+ }
+}

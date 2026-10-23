@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCSMOQeBJ2RAnuFungnQOxLg"/>
+ <id>yt:channel:SMOQeBJ2RAnuFungnQOxLg</id>
+ <yt:channelId>SMOQeBJ2RAnuFungnQOxLg</yt:channelId>
+ <title>Blender</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg"/>
+ <author>
+  <name>Blender</name>
+  <uri>https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg</uri>
+ </author>
+ <published>2008-05-29T10:18:59+00:00</published>
+ <entry>
+  <id>yt:video:YsKxkP_kGbE</id>
+  <yt:videoId>YsKxkP_kGbE</yt:videoId>
+  <yt:channelId>UCSMOQeBJ2RAnuFungnQOxLg</yt:channelId>
+  <title>Default Cube: the Interview</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/YsKxkP_kGbE"/>
+  <author>
+   <name>Blender</name>
+   <uri>https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg</uri>
+  </author>
+  <published>2026-10-23T13:30:07+00:00</published>
+  <updated>2026-10-23T13:30:15+00:00</updated>
+  <media:group>
+   <media:title>Default Cube: the Interview</media:title>
+   <media:content url="https://www.youtube.com/v/YsKxkP_kGbE?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/YsKxkP_kGbE/hqdefault.jpg" width="480" height="360"/>
+   <media:description>The default cube wants to remind you that the Blender Survey ends on October 31st. Participate today: your answers will </media:description>
+   <media:community>
+    <media:starRating count="202" average="5.00" min="1" max="5"/>
+    <media:statistics views="2326"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:dVrELpmfcEQ</id>
+  <yt:videoId>dVrELpmfcEQ</yt:videoId>
+  <yt:channelId>UCSMOQeBJ2RAnuFungnQOxLg</yt:channelId>
+  <title>Blender Education Community Meeting — BCON26</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=dVrELpmfcEQ"/>
+  <author>
+   <name>Blender</name>
+   <uri>https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg</uri>
+  </author>
+  <published>2026-10-23T09:37:25+00:00</published>
+  <updated>2026-10-23T10:26:58+00:00</updated>
+  <media:group>
+   <media:title>Blender Education Community Meeting — BCON26</media:title>
+   <media:content url="https://www.youtube.com/v/dVrELpmfcEQ?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/dVrELpmfcEQ/hqdefault.jpg" width="480" height="360"/>
+   <media:description>The recording of the Blender Education SIG Community Meeting, a gathering for pre-university, university and professiona</media:description>
+   <media:community>
+    <media:starRating count="62" average="5.00" min="1" max="5"/>
+    <media:statistics views="4280"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:EycY6jDFK74</id>
+  <yt:videoId>EycY6jDFK74</yt:videoId>
+  <yt:channelId>UCSMOQeBJ2RAnuFungnQOxLg</yt:channelId>
+  <title>Blender on Android - #BCON26 Demo</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/EycY6jDFK74"/>
+  <author>
+   <name>Blender</name>
+   <uri>https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg</uri>
+  </author>
+  <published>2026-10-21T12:14:18+00:00</published>
+  <updated>2026-10-21T12:19:53+00:00</updated>
+  <media:group>
+   <media:title>Blender on Android - #BCON26 Demo</media:title>
+   <media:content url="https://www.youtube.com/v/EycY6jDFK74?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/EycY6jDFK74/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Jonas Holzman showcases the progress of the Blender on Android project. Use the link in the comments to download the dem</media:description>
+   <media:community>
+    <media:starRating count="543" average="5.00" min="1" max="5"/>
+    <media:statistics views="8671"/>
+   </media:community>
+  </media:group>
+ </entry>
+</feed>
