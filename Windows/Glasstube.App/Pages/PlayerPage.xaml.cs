@@ -53,15 +53,24 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         ChannelText.Text = channelName = video.Channel ?? "";
         Volume.Value = lastVolume;
         SpeedText.Text = speed.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + "×";
+        PanelTitle.Text = video.Title;
+        SetPanelOpen(panelOpen);
 
         hideTimer = DispatcherQueue.CreateTimer();
         hideTimer.Interval = TimeSpan.FromSeconds(3);
         hideTimer.IsRepeating = false;
         hideTimer.Tick += (_, _) =>
         {
-            if (!state.Paused.AsBool() && player != null && !dragging && !overCapsule && openMenus == 0) SetControlsVisible(false);
+            if (!state.Paused.AsBool() && player != null && !dragging && !overCapsule && !overPanel && openMenus == 0
+                && UpNextCard.Visibility == Visibility.Collapsed) SetControlsVisible(false);
         };
-        if (App.Window is { } window) window.MiniChanged += OnMiniChanged;
+        if (App.Window is { } window)
+        {
+            window.MiniChanged += OnMiniChanged;
+            // Llegando desde otro reproductor (sugerido, reproducción automática) se sigue en pantalla completa o en mini.
+            FullScreenIcon.Glyph = window.IsFullScreen ? "\uE73F" : "\uE740";
+            if (window.IsMini) OnMiniChanged(window, true);
+        }
 
         GlasstubeFFI.Log("app", $"abrir {video.Id} «{video.Title}»");
         try
@@ -69,6 +78,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             await App.Ready;
             _ = LoadExtras(video.Id);
             _ = LoadCaptions(video.Id);
+            _ = LoadWatchNext(video.Id);
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
             var saved = GlasstubeFFI.SavedPositionOf(video.Id);
             var resolved = await GlasstubeFFI.ResolveStream(video.Id, Settings.Quality, null).WaitAsync(ResolveTimeout);
@@ -112,6 +122,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         closed = true;
         poll?.Stop();
         hideTimer?.Stop();
+        upNextTimer?.Stop();
         osdTimer?.Stop();
         player?.Dispose();
         player = null;
@@ -119,8 +130,11 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         if (App.Window is { } window)
         {
             window.MiniChanged -= OnMiniChanged;
-            window.SetMini(false);
-            window.SetFullScreen(false);
+            if (!handingOff)
+            {
+                window.SetMini(false);
+                window.SetFullScreen(false);
+            }
         }
     }
 
@@ -141,6 +155,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         player.SetProperty("sub-font-size", "40"); // el 55 de mpv tapa media imagen con subtítulos largos
         UpdateStreamMenus();
         UpdateSubtitleMargin();
+        UpdateVideoMargin();
         var url = resolved.Hls ?? resolved.Video?.Url;
         if (url == null)
         {
@@ -195,6 +210,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             return;
         }
         ApplyCaptions();
+        CheckEnded();
         var waiting = !state.HasVideo.AsBool() || state.Buffering.AsBool() || reloading;
         Spinner.Visibility = waiting && !state.Paused.AsBool() ? Visibility.Visible : Visibility.Collapsed;
 
@@ -261,7 +277,11 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         player?.Resize(width, height, scale);
     }
 
-    void OnPanelSizeChanged(object sender, SizeChangedEventArgs e) => Resize();
+    void OnPanelSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        Resize();
+        UpdateVideoMargin();
+    }
     void OnPanelScaleChanged(SwapChainPanel sender, object args) => Resize();
 
     // MARK: Mostrar y ocultar controles
@@ -307,6 +327,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     {
         Controls.Visibility = mini ? Visibility.Collapsed : Visibility.Visible;
         MiniControls.Visibility = mini ? Visibility.Visible : Visibility.Collapsed;
+        SetPanelOpen(panelOpen); // el panel no cabe en el mini reproductor; vuelve al salir
         SetControlsVisible(!mini);
         if (!mini) ShowControls();
     }

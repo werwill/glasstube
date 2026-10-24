@@ -42,11 +42,13 @@ public sealed partial class PlayerPage
             if (TitleText.Text == videoId && !string.IsNullOrEmpty(details.Title)) TitleText.Text = details.Title;
             if (channelName.Length == 0 && !string.IsNullOrEmpty(details.Author)) ChannelText.Text = channelName = details.Author;
             chapterIndex = -2; // que se vuelva a escribir la línea del canal
+            FillDescription(details);
             GlasstubeFFI.Log("app", $"{videoId}: {chapters.Count} capítulos, {segments.Count} segmentos de SponsorBlock");
             BuildTrack();
         }
         catch (Exception error)
         {
+            PanelDescription.Text = "No se pudo cargar la descripción.";
             GlasstubeFFI.Log("app", $"{videoId}: sin capítulos ni SponsorBlock: {error.Message}");
         }
     }
@@ -167,7 +169,8 @@ public sealed partial class PlayerPage
     /// <summary>La píldora va justo encima de la cápsula, que cambia de alto con el ancho de la ventana.</summary>
     void OnCapsuleSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        SkipButton.Margin = new Thickness(0, 0, 24 + 8, Capsule.Margin.Bottom + e.NewSize.Height + 12);
+        SkipButton.Margin = new Thickness(0, 0, Capsule.Margin.Right + 8, Capsule.Margin.Bottom + e.NewSize.Height + 12);
+        UpNextCard.Margin = new Thickness(0, 0, Capsule.Margin.Right, Capsule.Margin.Bottom + e.NewSize.Height + 12);
         UpdateSubtitleMargin();
     }
 }

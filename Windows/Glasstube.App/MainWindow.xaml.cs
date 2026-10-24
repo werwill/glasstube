@@ -224,6 +224,19 @@ public sealed partial class MainWindow : Window
     public void Play(Models.VideoCard video) =>
         ContentFrame.Navigate(typeof(PlayerPage), video, new DrillInNavigationTransitionInfo());
 
+    /// <summary>
+    /// Abre otro video desde el reproductor (sugeridos, reproducción automática). Con <paramref name="replacePlayer"/>,
+    /// el reproductor anterior sale del historial: atrás vuelve a donde se abrió el primero.
+    /// </summary>
+    public void Play(Models.VideoCard video, bool replacePlayer)
+    {
+        var fromPlayer = ContentFrame.Content is PlayerPage;
+        ContentFrame.Navigate(typeof(PlayerPage), video, new SuppressNavigationTransitionInfo());
+        if (replacePlayer && fromPlayer && ContentFrame.BackStack.Count > 0)
+            ContentFrame.BackStack.RemoveAt(ContentFrame.BackStack.Count - 1);
+        BackButton.IsEnabled = ContentFrame.CanGoBack;
+    }
+
     void OnNavigated(object sender, NavigationEventArgs e)
     {
         BackButton.IsEnabled = ContentFrame.CanGoBack;

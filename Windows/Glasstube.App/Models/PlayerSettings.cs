@@ -5,7 +5,7 @@ namespace Glasstube.Models;
 
 /// <summary>
 /// Ajustes locales del reproductor en %LOCALAPPDATA%\Glasstube\reproductor.json: la última calidad elegida, los
-/// subtítulos. Se guardan al cambiar.
+/// subtítulos y la reproducción automática. Se guardan al cambiar.
 /// </summary>
 public sealed class PlayerSettings
 {
@@ -15,6 +15,8 @@ public sealed class PlayerSettings
     public string? CaptionLanguage { get; set; }
     /// <summary>Si los subtítulos estaban activados al salir del último video.</summary>
     public bool CaptionsOn { get; set; }
+    /// <summary>Reproducir el siguiente sugerido al terminar (con cuenta atrás).</summary>
+    public bool Autoplay { get; set; } = true;
 
     static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Glasstube", "reproductor.json");
