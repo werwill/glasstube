@@ -2,16 +2,18 @@
 
 <h1 align="center">Glasstube</h1>
 
-<p align="center"><b>Un cliente nativo de YouTube para Mac, en Liquid Glass.</b></p>
+<p align="center"><b>Un cliente nativo de YouTube para Mac, en Liquid Glass. Y ahora también para Windows.</b></p>
 
 <p align="center"><b>Español</b> · <a href="README.en.md">English</a></p>
 
 <p align="center">
   <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/badge/Descargar_para_macOS-0F8A86?style=for-the-badge" alt="Descargar para macOS"></a>
+  <a href="https://github.com/werwill/glasstube/releases/tag/windows-v0.1.0"><img src="https://img.shields.io/badge/Descargar_para_Windows-0F8A86?style=for-the-badge" alt="Descargar para Windows"></a>
   <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/github/v/release/werwill/glasstube?style=for-the-badge&label=versi%C3%B3n&color=073F4A" alt="Última versión"></a>
 </p>
 
-<p align="center"><sub>macOS 26 o posterior · Apple Silicon · vista previa · <a href="#descargar">cómo abrirla la primera vez</a></sub></p>
+<p align="center"><sub>macOS 26 o posterior · Apple Silicon · vista previa · <a href="#descargar">cómo abrirla la primera vez</a><br>
+Windows 10 (1809) u 11 · x64 · primera vista previa · <a href="#windows">instalarla</a></sub></p>
 
 <p align="center"><img src="docs/glasstube.webp" alt="Glasstube en movimiento: la búsqueda con su vista previa, los controles de vidrio del reproductor, el menú de calidad, los comentarios y el minirreproductor" width="880"></p>
 
@@ -23,6 +25,9 @@
 Glasstube porta a macOS **SmartTube**, el cliente libre de YouTube para Android TV (licencia MIT), como una app nativa
 en Swift y SwiftUI con el diseño Liquid Glass de macOS 26. No tiene anuncios ni rastreo, y reproduce con libmpv sobre
 Metal. Se compila con SwiftPM y las Command Line Tools, **sin Xcode**.
+
+La **versión para Windows** comparte con la de Mac todo lo que habla con YouTube (YTKit) y el motor de libmpv, con una
+interfaz propia en WinUI 3 y el acabado de vidrio de Windows 11. Va un paso atrás: ver [Windows](#windows).
 
 Se hizo con [Claude Code](https://claude.com/claude-code). El prompt para que Claude Code te guíe al compilarla viene en
 el repositorio: [PROMPT.md](PROMPT.md).
@@ -68,10 +73,13 @@ El código está en tres paquetes de Swift:
 | [YTKit](YTKit/) | Habla con YouTube: catálogo, búsqueda, cuentas, streams, SABR, comentarios, chat, control remoto. Sin interfaz. Trae la herramienta de terminal `ytkit`. |
 | [PlaybackKit](PlaybackKit/) | El motor de reproducción: libmpv (dinámica y reemplazable), AVPlayer para directos y la fuente SABR. |
 | [App](App/) | La app SwiftUI: ventanas, Liquid Glass, ajustes e integración con macOS. |
+| [Windows](Windows/) | La app de Windows: interfaz WinUI 3 (C#), YTKit como DLL y libmpv. Ver [README-WINDOWS.md](Windows/README-WINDOWS.md). |
 
 ---
 
 ## Descargar
+
+### Mac
 
 Baja **`Glasstube-<versión>.dmg`** de [Releases](https://github.com/werwill/glasstube/releases/latest). Es una **vista
 previa**: funciona, pero YouTube cambia seguido su reproductor y a veces algo deja de andar hasta la siguiente versión
@@ -105,6 +113,24 @@ Es la única consulta que la app hace por su cuenta, y no lleva datos tuyos ni d
 General › Actualizaciones**, donde también está «Buscar ahora». Una copia que compilas tú consulta el mismo repositorio;
 `GITHUB_REPO= App/Scripts/package-app.sh` arma una sin aviso.
 
+### Windows
+
+Baja **`Glasstube-<versión>-Windows-x64-Setup.exe`** de su [versión en Releases](https://github.com/werwill/glasstube/releases/tag/windows-v0.1.0). Las de Windows van aparte,
+con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de la app de Mac no las toma por suyas.
+
+- **Requisitos:** Windows 10 1809 o posterior, u 11, de 64 bits (x64). Necesita Microsoft Edge WebView2, que Windows 11
+  ya trae; si falta, el instalador lo avisa.
+- **Instalar:** abre el `.exe`. Se instala para tu usuario sin pedir permisos de administrador, con acceso en el menú
+  Inicio y desinstalador en Configuración › Aplicaciones. No hace falta instalar .NET ni nada más.
+- **La primera vez:** el instalador no está firmado, así que SmartScreen dice que «Windows protegió su PC». Pulsa **Más
+  información** y luego **Ejecutar de todas formas**.
+- **Comprobar la descarga** (opcional): `Get-FileHash Glasstube-<versión>-Windows-x64-Setup.exe` en PowerShell debe dar
+  la suma SHA-256 de las notas de la versión.
+
+Ya tiene Inicio, Suscripciones y el reproductor con calidad, subtítulos, capítulos, SponsorBlock, comentarios y
+sugeridos. Todavía no hay ajustes, páginas de canal ni inicio de sesión desde la app, y no avisa de versiones nuevas. Lo
+que falta, cómo compilarla y cómo arma el instalador están en [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
+
 ---
 
 ## Inicio rápido
@@ -126,6 +152,8 @@ Para compilarla tú necesitas una Mac con Apple Silicon, macOS 26 o posterior, l
 ---
 
 ## Qué incluye
+
+Lo que sigue es la app de Mac; la de Windows tiene una parte (ver [Windows](#windows)).
 
 - **Navegación:** Inicio, Suscripciones, Historial, Playlists, Shorts y Explorar (Música, Gaming, Noticias, En vivo).
   Búsqueda con sugerencias y filtros (prioridad, fecha, tipo, duración, Creative Commons…), canales con sus pestañas y

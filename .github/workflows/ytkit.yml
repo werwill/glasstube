@@ -17,6 +17,9 @@ jobs:
       run:
         working-directory: YTKit
     steps:
+      # Package.swift le pasa a las pruebas el plugin de macros de Swift Testing de las Command Line Tools, que no carga
+      # con el compilador del Xcode del runner: se compila con las Command Line Tools, como en una Mac sin Xcode.
+      - run: sudo xcode-select -s /Library/Developer/CommandLineTools
       - uses: actions/checkout@v4
       - run: swift build
       - run: swift test
@@ -29,8 +32,10 @@ jobs:
     steps:
       - uses: compnerd/gha-setup-swift@v0.5.1
         with:
-          swift-version: swift-6.2.4-release
-          swift-build: 6.2.4-RELEASE
+          # La misma que se usa para compilar la app de Windows. El clang de 6.2 no sirve con el STL del Visual Studio
+          # nuevo del runner («expected Clang 20 or newer»).
+          swift-version: swift-6.4.1-release
+          swift-build: 6.4.1-RELEASE
       - uses: actions/checkout@v4
       - run: swift build
       - run: swift test
