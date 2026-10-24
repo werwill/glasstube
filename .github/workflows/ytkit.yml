@@ -20,6 +20,7 @@ jobs:
       # Package.swift le pasa a las pruebas el plugin de macros de Swift Testing de las Command Line Tools, que no carga
       # con el compilador del Xcode del runner: se compila con las Command Line Tools, como en una Mac sin Xcode.
       - run: sudo xcode-select -s /Library/Developer/CommandLineTools
+        working-directory: .
       - uses: actions/checkout@v4
       - run: swift build
       - run: swift test
