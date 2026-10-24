@@ -1,3 +1,4 @@
+using Glasstube.Models;
 using Glasstube.Native;
 using Glasstube.Pages;
 using Microsoft.UI;
@@ -88,6 +89,74 @@ public sealed partial class MainWindow : Window
 
         NavList.SelectedItem = HomeItem;
         _ = LoadAccount();
+        SubscriptionsStore.Shared.Changed += (_, _) => UpdateChannels();
+        _ = SubscriptionsStore.Shared.LoadAsync();
+    }
+
+    /// <summary>
+    /// Sección "Canales" del panel con los canales suscritos (y los grupos, si hay): cuántos videos sin ver tiene cada
+    /// uno en la Bandeja, o un punto si YouTube lo marca con contenido nuevo. Y el contador de Suscripciones.
+    /// </summary>
+    void UpdateChannels()
+    {
+        var store = SubscriptionsStore.Shared;
+        var unseen = store.UnseenCount();
+        SubscriptionsBadge.Value = unseen;
+        SubscriptionsBadge.Visibility = unseen > 0 && Pane.Width >= PaneOpenWidth ? Visibility.Visible : Visibility.Collapsed;
+
+        var selected = (ChannelList.SelectedItem as ListViewItem)?.Tag as string;
+        selectingFromNavigation = true;
+        ChannelList.Items.Clear();
+        foreach (var group in store.Groups)
+        {
+            var ids = group.Channels.ToHashSet();
+            ChannelList.Items.Add(ChannelItem($"group:{group.Id}", group.Title, null, "\uE8F1",
+                store.UnseenCount(v => v.ChannelId != null && ids.Contains(v.ChannelId)), false));
+        }
+        // Primero los que tienen algo sin ver.
+        foreach (var channel in store.Channels.OrderByDescending(c => store.UnseenCount(v => v.ChannelId == c.Id) > 0))
+            ChannelList.Items.Add(ChannelItem($"channel:{channel.Id}", channel.Name, channel.Avatar, null,
+                store.UnseenCount(v => v.ChannelId == channel.Id), channel.HasNew));
+        ChannelList.SelectedItem = ChannelList.Items.OfType<ListViewItem>().FirstOrDefault(i => (string)i.Tag == selected);
+        selectingFromNavigation = false;
+        ChannelsHeader.Text = store.Groups.Count > 0 ? "Grupos y canales" : "Canales";
+        ChannelsSection.Visibility = ChannelList.Items.Count > 0 && Pane.Width >= PaneOpenWidth ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    static ListViewItem ChannelItem(string tag, string name, string? avatar, string? glyph, int unseen, bool hasNew)
+    {
+        var row = new Grid { ColumnSpacing = 12 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        FrameworkElement icon = glyph != null
+            ? new FontIcon { Glyph = glyph, FontSize = 16, Width = 20 }
+            : new PersonPicture { Width = 20, Height = 20, DisplayName = name, ProfilePicture = avatar == null ? null : new BitmapImage(new Uri(avatar)) { DecodePixelWidth = 40 } };
+        row.Children.Add(icon);
+        var label = new TextBlock { Text = name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(label, 1);
+        row.Children.Add(label);
+        FrameworkElement? mark = unseen > 0
+            ? new TextBlock { Text = unseen.ToString(), FontSize = 12, VerticalAlignment = VerticalAlignment.Center,
+                              Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"] }
+            : hasNew ? new Microsoft.UI.Xaml.Shapes.Ellipse { Width = 6, Height = 6, VerticalAlignment = VerticalAlignment.Center,
+                                                              Fill = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"] }
+            : null;
+        if (mark != null)
+        {
+            Grid.SetColumn(mark, 2);
+            row.Children.Add(mark);
+        }
+        var item = new ListViewItem { Tag = tag, Content = row, Padding = new Thickness(16, 0, 12, 0), MinHeight = 36 };
+        ToolTipService.SetToolTip(item, name);
+        return item;
+    }
+
+    /// <summary>La Bandeja de Suscripciones, de todos los canales o de uno ("UC…").</summary>
+    public void ShowSubscriptions(string? channelId)
+    {
+        var section = channelId == null ? "subscriptions" : $"channel:{channelId}";
+        if (CurrentTag != section) ContentFrame.Navigate(typeof(SubscriptionsPage), section, new EntranceNavigationTransitionInfo());
     }
 
     async Task LoadAccount()
@@ -128,6 +197,8 @@ public sealed partial class MainWindow : Window
         if (tag == CurrentTag) return;
         if (tag == "home")
             ContentFrame.Navigate(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
+        else if (tag == "subscriptions" || tag.StartsWith("channel:") || tag.StartsWith("group:"))
+            ContentFrame.Navigate(typeof(SubscriptionsPage), tag, new EntranceNavigationTransitionInfo());
         else
             ContentFrame.Navigate(typeof(PlaceholderPage), tag, new EntranceNavigationTransitionInfo());
     }
@@ -136,6 +207,7 @@ public sealed partial class MainWindow : Window
     string? CurrentTag => ContentFrame.Content switch
     {
         HomePage => "home",
+        SubscriptionsPage subscriptions => subscriptions.Section,
         PlaceholderPage placeholder => placeholder.Section,
         _ => null,
     };
@@ -160,8 +232,10 @@ public sealed partial class MainWindow : Window
         chromeFaded = false;
         BackButton.Opacity = 1;
 
-        // Al volver de un reproductor, la selección del panel sigue a la página.
-        var tag = CurrentTag;
+        // Al volver de un reproductor, la selección del panel sigue a la página. Navigated llega antes de que la página
+        // (guardada en caché) lea su parámetro: la sección sale del parámetro mismo.
+        var tag = e.Content is SubscriptionsPage ? e.Parameter as string ?? "subscriptions"
+            : e.Content is PlaceholderPage ? e.Parameter as string : CurrentTag;
         selectingFromNavigation = true;
         foreach (var list in new[] { NavList, FooterList, ChannelList })
         {
@@ -336,7 +410,9 @@ public sealed partial class MainWindow : Window
             // Con solo iconos, el nombre sale en el tooltip.
             ToolTipService.SetToolTip(item, visible ? null : panel?.Children.OfType<TextBlock>().First().Text);
         }
-        ChannelsHeader.Visibility = state;
+        // Los canales y el contador solo con el panel abierto.
+        ChannelsSection.Visibility = visible && ChannelList.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        SubscriptionsBadge.Visibility = visible && SubscriptionsBadge.Value > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     double Scale => Root.XamlRoot?.RasterizationScale ?? 1;

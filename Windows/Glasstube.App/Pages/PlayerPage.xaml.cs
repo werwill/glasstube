@@ -203,7 +203,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         QualityBadge.Visibility = string.IsNullOrEmpty(label) ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    static string Time(double seconds)
+    public static string Time(double seconds)
     {
         if (double.IsNaN(seconds) || seconds < 0) seconds = 0;
         var t = TimeSpan.FromSeconds(Math.Floor(seconds));

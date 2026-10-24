@@ -22,7 +22,7 @@ public static partial class GlasstubeFFI
 
     static byte[] CardJson(VideoCard card) => Utf8(JsonSerializer.Serialize(card, Outgoing));
 
-    public static unsafe Task<SubscriptionsPage> Subscriptions() => Call<SubscriptionsPage>(context => gt_subscriptions(&OnReply, context));
+    public static unsafe Task<SubscriptionsFeed> Subscriptions() => Call<SubscriptionsFeed>(context => gt_subscriptions(&OnReply, context));
 
     public static unsafe Task<FeedPage> SubscriptionsMore() => Call<FeedPage>(context => gt_subscriptions_more(&OnReply, context));
 

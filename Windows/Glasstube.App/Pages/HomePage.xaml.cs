@@ -62,7 +62,7 @@ public sealed partial class HomePage : Page, IFullBleedPage
         Feed.ItemsMargin = new Thickness(left + 28, 4, 28, 24);
     }
 
-    async Task Load()
+    async Task Load(bool refresh = false)
     {
         loaded = true;
         LoadingPanel.Visibility = Visibility.Visible;
@@ -72,15 +72,16 @@ public sealed partial class HomePage : Page, IFullBleedPage
         try
         {
             await App.Ready;
-            var subscriptions = Try(GlasstubeFFI.Subscriptions(), "Suscripciones");
+            // Las mismas Suscripciones que el panel y la Bandeja.
+            var subscriptions = SubscriptionsStore.Shared.LoadAsync(force: refresh);
             var continueWatching = LoadContinueWatching();
             var home = await GlasstubeFFI.Home();
             Feed.ItemsSource = new FeedCollection(home.Items, home.HasMore, GlasstubeFFI.HomeMore);
             if (home.Items.Count == 0 || home.Notice != null)
                 ShowNotice(InfoBarSeverity.Informational, home.Notice ?? "YouTube no devolvió videos para el Inicio.");
 
-            var subs = await subscriptions;
-            var fresh = subs?.Items ?? [];
+            await subscriptions;
+            var fresh = SubscriptionsStore.Shared.Items.ToList();
             var live = fresh.Concat(home.Items).Where(v => v.IsLive).DistinctBy(v => v.Id).ToList();
             ShowRow(NewRow, fresh.Where(v => !v.IsLive).Take(24).ToList());
             ShowRow(LiveRow, live);
@@ -188,7 +189,7 @@ public sealed partial class HomePage : Page, IFullBleedPage
     void OnRefresh(object sender, RoutedEventArgs e)
     {
         Feed.ItemsSource = null;
-        _ = Load();
+        _ = Load(refresh: true);
     }
 
     void OnItemClick(object sender, ItemClickEventArgs e)

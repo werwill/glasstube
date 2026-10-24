@@ -77,7 +77,7 @@
                     <Rectangle Height="1" Margin="12,4" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
                     <TextBlock x:Name="ChannelsHeader" Grid.Row="1" Text="Canales" Margin="16,8,16,4"
                                Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <ListView x:Name="ChannelList" Grid.Row="2" SelectionMode="Single" />
+                    <ListView x:Name="ChannelList" Grid.Row="2" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged" />
                 </Grid>
 
                 <ListView x:Name="FooterList" Grid.Row="2" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged">

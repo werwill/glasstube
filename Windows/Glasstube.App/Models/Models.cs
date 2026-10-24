@@ -63,7 +63,7 @@ public sealed record SubscribedChannel(string Id, string Name, string? Avatar, b
 
 public sealed record ChannelGroupInfo(string Id, string Title, List<string> Channels);
 
-public sealed record SubscriptionsPage(List<VideoCard> Items, bool HasMore, List<SubscribedChannel> Channels,
+public sealed record SubscriptionsFeed(List<VideoCard> Items, bool HasMore, List<SubscribedChannel> Channels,
                                        List<ChannelGroupInfo> Groups, string? Notice, bool SignedIn);
 
 public sealed record LibraryInfo(List<VideoCard> History, List<VideoCard> ContinueWatching, List<VideoCard> WatchLater,
