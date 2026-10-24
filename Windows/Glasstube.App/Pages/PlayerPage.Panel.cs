@@ -307,10 +307,13 @@ public sealed partial class PlayerPage
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var size = isReply ? 24 : 32;
+        // --capturas: quien comenta sale como @personaN y sin foto (el canal del video sí, con su nombre).
+        var anonymous = CaptureMode.Enabled && !comment.AuthorIsChannelOwner;
+        var name = anonymous ? CaptureMode.Person(comment.Author) : comment.Author;
         grid.Children.Add(new PersonPicture
         {
-            Width = size, Height = size, DisplayName = comment.Author.TrimStart('@'), ProfilePicture = comment.AvatarImage,
-            VerticalAlignment = VerticalAlignment.Top,
+            Width = size, Height = size, DisplayName = anonymous ? "" : name.TrimStart('@'),
+            ProfilePicture = anonymous ? null : comment.AvatarImage, VerticalAlignment = VerticalAlignment.Top,
         });
 
         var body = new StackPanel { Spacing = 4 };
@@ -327,7 +330,7 @@ public sealed partial class PlayerPage
             });
         }
         var header = new TextBlock { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
-        var author = new Microsoft.UI.Xaml.Documents.Run { Text = comment.Author, FontWeight = FontWeights.SemiBold };
+        var author = new Microsoft.UI.Xaml.Documents.Run { Text = name, FontWeight = FontWeights.SemiBold };
         author.Foreground = comment.AuthorIsChannelOwner ? (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"] : Primary;
         header.Inlines.Add(author);
         if (!string.IsNullOrEmpty(comment.Published))

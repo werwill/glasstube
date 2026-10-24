@@ -54,6 +54,13 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         Volume.Value = lastVolume;
         SpeedText.Text = speed.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + "×";
         PanelTitle.Text = video.Title;
+        if (CaptureMode.Panel is { } tab)
+        {
+            panelOpen = true;
+            var item = tab switch { "comentarios" => CommentsTab, "sugeridos" => SuggestionsTab, _ => DescriptionTab };
+            // Antes de cargarse, la SelectorBar vuelve a la pestaña marcada en el XAML.
+            PanelTabs.Loaded += (_, _) => item.IsSelected = true;
+        }
         SetPanelOpen(panelOpen);
 
         hideTimer = DispatcherQueue.CreateTimer();
@@ -61,7 +68,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         hideTimer.IsRepeating = false;
         hideTimer.Tick += (_, _) =>
         {
-            if (!state.Paused.AsBool() && player != null && !dragging && !overCapsule && !overPanel && openMenus == 0
+            if (!CaptureMode.Enabled && !state.Paused.AsBool() && player != null && !dragging && !overCapsule && !overPanel && openMenus == 0
                 && UpNextCard.Visibility == Visibility.Collapsed) SetControlsVisible(false);
         };
         if (App.Window is { } window)
@@ -83,7 +90,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             var saved = GlasstubeFFI.SavedPositionOf(video.Id);
             var resolved = await GlasstubeFFI.ResolveStream(video.Id, Settings.Quality, null).WaitAsync(ResolveTimeout);
             if (closed) return;
-            Start(resolved, ResumePosition(await saved));
+            Start(resolved, CaptureMode.StartAt ?? ResumePosition(await saved));
         }
         catch (TimeoutException)
         {
@@ -109,7 +116,8 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     /// <summary>Guarda la posición en el historial local (cada 10 s, al salir y al cerrar la app). Los directos no.</summary>
     public void RecordPosition()
     {
-        if (player == null || video == null || stream?.Hls != null || !state.HasVideo.AsBool() || state.Position < 1) return;
+        if (player == null || video == null || stream?.Hls != null || !state.HasVideo.AsBool() || state.Position < 1
+            || CaptureMode.Enabled) return;
         video.Position = state.Position;
         if (state.Duration > 0) video.Progress = Math.Clamp(state.Position / state.Duration, 0, 1);
         _ = GlasstubeFFI.RecordPlayback(video, state.Position, state.Duration);
