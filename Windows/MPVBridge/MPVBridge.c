@@ -142,12 +142,11 @@ MPVB_API int32_t mpvb_load(mpvb_player *p, const char *url, const char *audio_ur
         set_list(p, "http-header-fields", lines, count);
         free(copy);
     }
-    if (audio_url && *audio_url) set_list(p, "audio-files", &audio_url, 1);
-    if (start_seconds > 0) {
-        char start[32];
-        snprintf(start, sizeof start, "%.3f", start_seconds);
-        set_option(p, "start", start);
-    }
+    // audio-files y start se quedan puestos entre archivos: se vacían si esta vez no van (cambio de calidad, HLS…).
+    set_list(p, "audio-files", &audio_url, audio_url && *audio_url ? 1 : 0);
+    char start[32] = "none";
+    if (start_seconds > 0) snprintf(start, sizeof start, "%.3f", start_seconds);
+    set_option(p, "start", start);
     p->state.error = 0;
     p->state.ended = 0;
     p->error[0] = 0;
@@ -212,6 +211,7 @@ MPVB_API void mpvb_poll(mpvb_player *p, mpvb_state *state) {
         case MPV_EVENT_PROPERTY_CHANGE: property_changed(p, e); break;
         case MPV_EVENT_VIDEO_RECONFIG: attach_swapchain(p); break;
         case MPV_EVENT_START_FILE: p->state.buffering = 1; break;
+        case MPV_EVENT_FILE_LOADED: p->state.file_loads++; break;
         case MPV_EVENT_PLAYBACK_RESTART: p->state.buffering = 0; break;
         case MPV_EVENT_LOG_MESSAGE: {
             mpv_event_log_message *msg = e->data;
@@ -272,6 +272,33 @@ MPVB_API void mpvb_set_volume(mpvb_player *p, double volume) {
     if (!p) return;
     double v = volume < 0 ? 0 : volume > 100 ? 100 : volume;
     mpv_set_property_async(p->mpv, 0, "volume", MPV_FORMAT_DOUBLE, &v);
+}
+
+MPVB_API void mpvb_set_speed(mpvb_player *p, double speed) {
+    if (!p) return;
+    double v = speed < 0.1 ? 0.1 : speed > 4 ? 4 : speed;
+    mpv_set_property_async(p->mpv, 0, "speed", MPV_FORMAT_DOUBLE, &v);
+}
+
+MPVB_API void mpvb_set_property(mpvb_player *p, const char *name, const char *value) {
+    if (!p || !name || !value) return;
+    char *v = (char *)value;
+    mpv_set_property_async(p->mpv, 0, name, MPV_FORMAT_STRING, &v);
+}
+
+MPVB_API void mpvb_set_subtitle(mpvb_player *p, const char *url, const char *title, const char *language) {
+    if (!p) return;
+    // Quita la pista externa que hubiera (sub-remove sin argumento quita la seleccionada) y añade la nueva ya
+    // seleccionada. Los comandos asíncronos de un mismo cliente se ejecutan en orden.
+    const char *remove[] = {"sub-remove", NULL};
+    mpv_command_async(p->mpv, 0, remove);
+    if (!url || !*url) {
+        mpv_set_property_string(p->mpv, "sid", "no");
+        return;
+    }
+    const char *add[] = {"sub-add", url, "select", title && *title ? title : "", language && *language ? language : "", NULL};
+    mpv_command_async(p->mpv, 0, add);
+    say("sub-add %s (%s)", language ? language : "?", title ? title : "");
 }
 
 MPVB_API void mpvb_video_format(mpvb_player *p, int32_t *height, double *fps) {

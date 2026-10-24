@@ -32,6 +32,7 @@ typedef struct mpvb_state {
     int32_t has_video; // ya hay swapchain en el panel
     int32_t ended;     // llegó al final
     int32_t error;     // el archivo falló (end-file con error)
+    int32_t file_loads; // archivos abiertos (FILE_LOADED) desde mpvb_create: cambia en cada loadfile que abre
 } mpvb_state;
 
 /// `panel` es el IInspectable* del SwapChainPanel (WinRT.MarshalInterface en C#). Tamaño en píxeles físicos y escala
@@ -47,6 +48,14 @@ MPVB_API void mpvb_resize(mpvb_player *player, int32_t width, int32_t height, fl
 MPVB_API void mpvb_set_pause(mpvb_player *player, int32_t paused);
 MPVB_API void mpvb_seek(mpvb_player *player, double seconds);
 MPVB_API void mpvb_set_volume(mpvb_player *player, double volume);
+/// Velocidad de reproducción (propiedad `speed`, 0.1–4). Se mantiene entre archivos.
+MPVB_API void mpvb_set_speed(mpvb_player *player, double speed);
+/// Cualquier propiedad de mpv como cadena ("sub-margin-y", "sub-font-size"…). Asíncrono.
+MPVB_API void mpvb_set_property(mpvb_player *player, const char *name, const char *value);
+/// Subtítulos externos: quita la pista externa seleccionada y, si hay `url` (WebVTT u otro que lea mpv), la añade
+/// seleccionada con `title` y `language`. `url` NULL o vacía = sin subtítulos. Asíncrono; las descargas usan las
+/// cabeceras y el User-Agent del video. `loadfile` los descarta: hay que volver a ponerlos tras cargar otro archivo.
+MPVB_API void mpvb_set_subtitle(mpvb_player *player, const char *url, const char *title, const char *language);
 /// Altura del video (0 si aún no se sabe) y cuadros por segundo del contenedor (0 si no se saben), para mostrar la
 /// calidad ("1080p60"). Son propiedades observadas: no bloquea esperando al núcleo de mpv.
 MPVB_API void mpvb_video_format(mpvb_player *player, int32_t *height, double *fps);

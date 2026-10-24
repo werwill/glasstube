@@ -17,6 +17,8 @@ public struct MpvState
     public int HasVideo;
     public int Ended;
     public int Error;
+    /// <summary>Archivos abiertos desde que se creó (cambia tras cada Load que abre).</summary>
+    public int FileLoads;
 }
 
 /// <summary>libmpv dentro de un SwapChainPanel (MPVBridge.dll). Todo desde el hilo de la interfaz.</summary>
@@ -33,6 +35,11 @@ public sealed unsafe class MpvPlayer : IDisposable
     [DllImport(Dll)] static extern void mpvb_set_pause(IntPtr player, int paused);
     [DllImport(Dll)] static extern void mpvb_seek(IntPtr player, double seconds);
     [DllImport(Dll)] static extern void mpvb_set_volume(IntPtr player, double volume);
+    [DllImport(Dll)] static extern void mpvb_set_speed(IntPtr player, double speed);
+    [DllImport(Dll)] static extern void mpvb_set_property(IntPtr player, [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string value);
+    [DllImport(Dll)] static extern void mpvb_set_subtitle(IntPtr player, [MarshalAs(UnmanagedType.LPUTF8Str)] string? url,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string? title, [MarshalAs(UnmanagedType.LPUTF8Str)] string? language);
     [DllImport(Dll)] static extern IntPtr mpvb_last_error(IntPtr player);
     [DllImport(Dll)] static extern void mpvb_video_format(IntPtr player, out int height, out double fps);
     [DllImport(Dll)] static extern void mpvb_destroy(IntPtr player);
@@ -81,6 +88,11 @@ public sealed unsafe class MpvPlayer : IDisposable
     public void SetPause(bool paused) => mpvb_set_pause(handle, paused ? 1 : 0);
     public void Seek(double seconds) => mpvb_seek(handle, seconds);
     public void SetVolume(double volume) => mpvb_set_volume(handle, volume);
+    public void SetSpeed(double speed) => mpvb_set_speed(handle, speed);
+    /// <summary>Una propiedad de mpv como cadena ("sub-margin-y"…).</summary>
+    public void SetProperty(string name, string value) => mpvb_set_property(handle, name, value);
+    /// <summary>Subtítulos externos (WebVTT); <paramref name="url"/> null los quita. Tras cada Load hay que volver a ponerlos.</summary>
+    public void SetSubtitle(string? url, string? title = null, string? language = null) => mpvb_set_subtitle(handle, url, title, language);
     /// <summary>Altura del video y cuadros por segundo (0 si aún no se saben).</summary>
     public (int Height, double Fps) VideoFormat()
     {
