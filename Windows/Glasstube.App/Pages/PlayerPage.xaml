@@ -33,6 +33,7 @@
         <KeyboardAccelerator Key="J" Invoked="OnSeekBack10Key" />
         <KeyboardAccelerator Key="L" Invoked="OnSeekForward10Key" />
         <KeyboardAccelerator Key="M" Invoked="OnMuteKey" />
+        <KeyboardAccelerator Key="S" Invoked="OnSkipKey" />
     </Page.KeyboardAccelerators>
 
     <!-- El video ocupa toda la ventana, también detrás de la barra de título (que aquí solo tiene atrás y los botones
@@ -71,20 +72,12 @@
                 </StackPanel>
             </Grid>
 
-            <!-- TODO(SponsorBlock): la píldora «Saltar patrocinio» va aquí, encima de la cápsula a la derecha. Necesita
-                 los segmentos de SponsorBlock por la FFI (GlasstubeCore/Services/SponsorBlock.swift). -->
-            <Button x:Name="SkipSponsorButton" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    Margin="0,0,24,120" CornerRadius="16" Padding="14,6" Background="#99000000" Foreground="White">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xE893;" FontSize="12" />
-                    <TextBlock Text="Saltar patrocinio" />
-                </StackPanel>
-            </Button>
 
             <!-- Cápsula de controles -->
             <Border x:Name="Capsule" VerticalAlignment="Bottom" Margin="24,0,24,24" Padding="12,4,12,6" CornerRadius="16"
                     BorderThickness="1" BorderBrush="#26FFFFFF" MaxWidth="1400"
-                    PointerEntered="OnCapsulePointerEntered" PointerExited="OnCapsulePointerExited">
+                    PointerEntered="OnCapsulePointerEntered" PointerExited="OnCapsulePointerExited"
+                    SizeChanged="OnCapsuleSizeChanged">
                 <Border.Background>
                     <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
                 </Border.Background>
@@ -94,12 +87,23 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- TODO(capítulos): los segmentos de capítulos van en esta fila, como cortes encima de la barra
-                         (ChapterLayer). Necesita los capítulos por la FFI (GlasstubeCore/Services/PlayerExtras.swift). -->
+                    <!-- La barra de progreso: el Slider (sin pista propia) para el clic, el arrastre y el pulgar, y debajo la
+                         pista dibujada en TrackLayer (PlayerPage.Chapters.cs): un tramo por capítulo con lo reproducido en
+                         el color de acento y los segmentos de SponsorBlock sombreados. -->
                     <Grid x:Name="ProgressRow">
+                        <Canvas x:Name="TrackLayer" IsHitTestVisible="False" Margin="4,0,4,-8" />
                         <Slider x:Name="Progress" AutomationProperties.Name="Progreso" Minimum="0" Maximum="1" StepFrequency="0.1"
-                                IsThumbToolTipEnabled="False" ValueChanged="OnProgressChanged" Margin="4,0,4,-8" />
-                        <Canvas x:Name="ChapterLayer" IsHitTestVisible="False" />
+                                IsThumbToolTipEnabled="False" ValueChanged="OnProgressChanged" Margin="4,0,4,-8"
+                                SizeChanged="OnProgressSizeChanged">
+                            <Slider.Resources>
+                                <SolidColorBrush x:Key="SliderTrackFill" Color="Transparent" />
+                                <SolidColorBrush x:Key="SliderTrackFillPointerOver" Color="Transparent" />
+                                <SolidColorBrush x:Key="SliderTrackFillPressed" Color="Transparent" />
+                                <SolidColorBrush x:Key="SliderTrackValueFill" Color="Transparent" />
+                                <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="Transparent" />
+                                <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="Transparent" />
+                            </Slider.Resources>
+                        </Slider>
                     </Grid>
 
                     <Grid Grid.Row="1" ColumnSpacing="2">
@@ -160,6 +164,20 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- SponsorBlock: «Saltar patrocinio» (o intro, créditos…) encima de la cápsula mientras se está en el tramo,
+             aunque los controles estén ocultos. Botón o tecla S; salta al final del tramo. -->
+        <Button x:Name="SkipButton" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="0,0,24,132" CornerRadius="18" Padding="16,8" Foreground="White" BorderThickness="1"
+                BorderBrush="#33FFFFFF" Click="OnSkip" ToolTipService.ToolTip="Saltar (S)">
+            <Button.Background>
+                <AcrylicBrush TintColor="#000000" TintOpacity="0.5" TintLuminosityOpacity="0.3" FallbackColor="#E6202020" />
+            </Button.Background>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <FontIcon Glyph="&#xE893;" FontSize="13" />
+                <TextBlock x:Name="SkipText" Text="Saltar patrocinio" FontWeight="SemiBold" />
+            </StackPanel>
+        </Button>
 
         <!-- Mini reproductor: solo al pasar el ratón; reproducir/pausa, tiempo y volver a la ventana. -->
         <Grid x:Name="MiniControls" Visibility="Collapsed" Opacity="0">

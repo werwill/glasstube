@@ -48,7 +48,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         video = e.Parameter as VideoCard;
         if (video == null) return;
         TitleText.Text = video.Title;
-        ChannelText.Text = video.Channel ?? "";
+        ChannelText.Text = channelName = video.Channel ?? "";
         Volume.Value = lastVolume;
 
         hideTimer = DispatcherQueue.CreateTimer();
@@ -64,6 +64,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         try
         {
             await App.Ready;
+            _ = LoadExtras(video.Id);
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
             var saved = GlasstubeFFI.SavedPositionOf(video.Id);
             var resolved = await GlasstubeFFI.ResolveStream(video.Id).WaitAsync(ResolveTimeout);
@@ -122,7 +123,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     {
         stream = resolved;
         if (!string.IsNullOrEmpty(resolved.Title)) TitleText.Text = resolved.Title;
-        if (!string.IsNullOrEmpty(resolved.Author)) ChannelText.Text = resolved.Author;
+        if (!string.IsNullOrEmpty(resolved.Author)) ChannelText.Text = channelName = resolved.Author;
         var (width, height, scale) = PanelPixels();
         player = MpvPlayer.Create(Panel, width, height, scale);
         if (player == null)
@@ -188,6 +189,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             Progress.Value = Math.Min(state.Position, state.Duration);
             updatingProgress = false;
         }
+        UpdateExtras(dragging ? Progress.Value : state.Position);
         if (ticks++ % 15 == 0) UpdateQuality();
         if (ticks % 300 == 0) RecordPosition();
     }

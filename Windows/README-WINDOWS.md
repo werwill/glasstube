@@ -61,20 +61,28 @@ y GlasstubeFFI (31 MB en release).
 - `Glasstube.exe --abrir <videoId>` abre ese video al arrancar (pruebas).
 - El reproductor da error claro si la resolución pasa de 45 s o mpv no muestra imagen en 30 s.
 
-## Qué funciona (probado el 23-oct-2026 en esta PC)
+## Qué funciona (probado el 24-oct-2026 en esta PC)
 
 - Ventana con acabado Vidrio (DesktopAcrylicBackdrop, o Mica si no hay acrílico), tema y acento de Windows. Barra de
-  título integrada de 48 px: atrás, menú, búsqueda centrada (Ctrl+K; por ahora solo una página «Buscar: …») y la cuenta.
-  Panel lateral propio y flotante (Inicio, Suscripciones, Biblioteca, Historial, Configuración): solo iconos por debajo
-  de 1000 DIP y encima del contenido por debajo de 640. El Frame ocupa toda la ventana; las páginas que implementan
-  `IFullBleedPage` van detrás del panel y de la barra (el reproductor, y la portada del Inicio más adelante).
-- Inicio real de la cuenta: cuadrícula adaptable (columnas de al menos 260 DIP), miniatura, duración, título, canal, vistas y
-  fecha; carga más al llegar al final; botón de actualizar. Las tarjetas se levantan al pasar el ratón.
+  título integrada de 48 px: atrás, menú, búsqueda centrada (Ctrl+K, con resultados) y la cuenta. Panel lateral propio y
+  flotante (Inicio, Suscripciones con el contador de no vistos, Biblioteca, Historial, los canales suscritos y
+  Configuración): solo iconos por debajo de 1000 DIP y encima del contenido por debajo de 640. El Frame ocupa toda la
+  ventana; las páginas `IFullBleedPage` (Inicio, reproductor) van detrás del panel y de la barra y usan
+  `MainWindow.ContentInset` y `SetTitleBarStyle`.
+- Inicio en estilo Cine: portada con el video más nuevo de Suscripciones (miniatura con máscara que se funde con el
+  acrílico), filas de Continuar viendo, Nuevos de tus canales y En vivo ahora, y "Para ti" (el Inicio de la cuenta) en la
+  cuadrícula con carga incremental. Tarjetas con barra de lo visto y EN VIVO.
+- Suscripciones como Bandeja: agrupadas por día, pestañas Sin ver / Más tarde / Archivados, vista previa con descripción y
+  capítulos, J/K, Intro, W, E y Mayús+U; al volver del reproductor queda visto y pasa al siguiente. Elegir un canal del
+  panel filtra la Bandeja. Visto y archivado van en `%LOCALAPPDATA%\Glasstube\inbox.json`; historial y Ver más tarde en
+  la biblioteca local de GlasstubeCore.
 - Reproductor a ventana completa con la cápsula de controles flotante: clic en una tarjeta → resuelve (~2–3 s) y reproduce
-  1080p60 VP9 con decodificación por hardware (d3d11va). Reproducir/pausa (espacio o K), −10/+10 s (botones, J/L), ←/→ ±5 s,
-  barra de progreso, volumen y silencio (M), calidad que da mpv («1080p60»), pantalla completa (F o doble clic) y mini
-  reproductor siempre encima (I o el botón; Esc o doble clic vuelve a la ventana con su tamaño y posición). Controles,
-  título, botón de atrás y cursor se ocultan a los 3 s.
+  1080p60 VP9 con decodificación por hardware (d3d11va), desde donde se quedó (guarda la posición cada 10 s, al salir y al
+  cerrar). Reproducir/pausa (espacio o K), −10/+10 s (botones, J/L), ←/→ ±5 s, volumen y silencio (M), calidad que da mpv
+  («1080p60»), pantalla completa (F o doble clic) y mini reproductor siempre encima (I; Esc o doble clic vuelve). Barra
+  partida por capítulos con el capítulo actual junto al canal, segmentos de SponsorBlock sombreados y «Saltar patrocinio»
+  (o intro, créditos…) con botón o S, sin salto automático. Controles, título, botón de atrás y cursor se ocultan a los 3 s.
+- `--probar-ffi` anota en el registro un resumen de Suscripciones, biblioteca, detalles y búsqueda.
 - `--tema claro|oscuro` fuerza el tema (capturas); sin él sigue al de Windows.
 - GlasstubeCore compila en Windows (antes solo se había probado en Linux); la FFI usa `cardSubtitle` y `durationBadge`.
 
@@ -82,11 +90,12 @@ y GlasstubeFFI (31 MB en release).
 
 - **SABR.** El reproductor usa URLs directas (cliente TV_DOWNGRADED hoy). Si YouTube deja de darlas, hay que llevar
   `SabrMediaSource` de PlaybackKit a la FFI (mpv leyendo por `stream_cb`), como en la app de Mac.
-- Calidad elegible, subtítulos, capítulos, SponsorBlock, reanudar donde se quedó y reportar el historial (`watchtime`).
+- Calidad elegible, subtítulos y reportar el historial a YouTube (`watchtime`). Algunos videos cargan muy lento (unos
+  segundos de video por cada 20 s) con las URLs de TV_DOWNGRADED; otros van bien con la misma conexión.
 - Página del video: descripción, comentarios, sugeridos y siguiente automático.
-- Suscripciones, Biblioteca, búsqueda, canales, ajustes, iniciar y cerrar sesión desde la app (hoy se usa la sesión que dejó
-  `ytkit signin`).
-- Atajos de volumen; recordar tamaño de ventana. Capítulos en la barra y «Saltar patrocinio» (sitio y TODO en PlayerPage).
+- Biblioteca e Historial como páginas, página de canal, ajustes, iniciar y cerrar sesión desde la app (hoy se usa la sesión
+  que dejó `ytkit signin`). Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
+- Atajos de volumen; recordar tamaño de ventana.
 - Errores de red con reintento en el Inicio (hoy un aviso y el botón de actualizar).
 - Empaquetado MSIX, icono, instalador y firma. El runtime de Swift se copia entero (se puede recortar).
 - `gt_pump` con temporizador: se podría despertar solo cuando la cola tiene trabajo
