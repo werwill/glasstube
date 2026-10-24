@@ -34,6 +34,9 @@
         <KeyboardAccelerator Key="L" Invoked="OnSeekForward10Key" />
         <KeyboardAccelerator Key="M" Invoked="OnMuteKey" />
         <KeyboardAccelerator Key="S" Invoked="OnSkipKey" />
+        <KeyboardAccelerator Key="C" Invoked="OnCaptionsKey" />
+        <!-- < y > (Shift+, y Shift+. en teclados de EE. UU.; la tecla < propia en los de España y Latinoamérica) se
+             añaden en el código: VirtualKey no tiene nombre para esas teclas. -->
     </Page.KeyboardAccelerators>
 
     <!-- El video ocupa toda la ventana, también detrás de la barra de título (que aquí solo tiene atrás y los botones
@@ -119,6 +122,8 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Button x:Name="PlayButton" AutomationProperties.Name="Reproducir o pausar" Click="OnPlayPause"
                                 Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Pausa (espacio o K)">
@@ -137,26 +142,58 @@
                         <TextBlock x:Name="TimeText" Grid.Column="3" Text="0:00 / 0:00" Foreground="White" FontSize="13"
                                    VerticalAlignment="Center" Margin="10,0,0,0" />
 
-                        <!-- Subtítulos: llegan en otro paso. -->
-                        <Button Grid.Column="5" IsEnabled="False" AutomationProperties.Name="Subtítulos"
-                                Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Subtítulos (próximamente)">
-                            <FontIcon Glyph="&#xE7F0;" FontSize="16" />
+                        <!-- Menús de velocidad, subtítulos, audio y calidad (PlayerPage.Menus.cs): se rellenan al abrirse. -->
+                        <Button x:Name="SpeedButton" Grid.Column="5" AutomationProperties.Name="Velocidad"
+                                Style="{StaticResource CapsuleButtonStyle}" Width="NaN" MinWidth="36" Padding="6,0"
+                                ToolTipService.ToolTip="Velocidad (&lt; y &gt;)">
+                            <Button.Flyout>
+                                <MenuFlyout x:Name="SpeedMenu" Placement="Top" Opening="OnSpeedMenuOpening" Opened="OnMenuOpened" Closed="OnMenuClosed" />
+                            </Button.Flyout>
+                            <TextBlock x:Name="SpeedText" Text="1×" FontSize="13" FontWeight="SemiBold" />
                         </Button>
-                        <Border x:Name="QualityBadge" Grid.Column="6" Visibility="Collapsed" VerticalAlignment="Center"
-                                Margin="4,0" Padding="6,1" CornerRadius="4" BorderThickness="1" BorderBrush="#66FFFFFF">
-                            <TextBlock x:Name="QualityText" Foreground="White" FontSize="11" FontWeight="SemiBold" />
-                        </Border>
-                        <Button x:Name="MuteButton" Grid.Column="7" AutomationProperties.Name="Silenciar" Click="OnMute"
+                        <Button x:Name="CaptionsButton" Grid.Column="6" AutomationProperties.Name="Subtítulos" IsEnabled="False"
+                                Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Subtítulos (C)">
+                            <Button.Flyout>
+                                <MenuFlyout x:Name="CaptionsMenu" Placement="Top" Opening="OnCaptionsMenuOpening" Opened="OnMenuOpened" Closed="OnMenuClosed" />
+                            </Button.Flyout>
+                            <Grid>
+                                <FontIcon x:Name="CaptionsIcon" Glyph="&#xE7F0;" FontSize="16" />
+                                <Border x:Name="CaptionsOnMark" Visibility="Collapsed" Height="2" CornerRadius="1" Margin="2,0,2,-8"
+                                        VerticalAlignment="Bottom" Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                            </Grid>
+                        </Button>
+                        <Button x:Name="AudioButton" Grid.Column="7" AutomationProperties.Name="Pista de audio" Visibility="Collapsed"
+                                Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Pista de audio">
+                            <Button.Flyout>
+                                <MenuFlyout x:Name="AudioMenu" Placement="Top" Opening="OnAudioMenuOpening" Opened="OnMenuOpened" Closed="OnMenuClosed" />
+                            </Button.Flyout>
+                            <FontIcon Glyph="&#xF2B7;" FontSize="16" />
+                        </Button>
+                        <Button x:Name="QualityButton" Grid.Column="8" AutomationProperties.Name="Calidad" IsEnabled="False"
+                                Style="{StaticResource CapsuleButtonStyle}" Width="NaN" MinWidth="36" Padding="4,0"
+                                ToolTipService.ToolTip="Calidad">
+                            <Button.Flyout>
+                                <MenuFlyout x:Name="QualityMenu" Placement="Top" Opening="OnQualityMenuOpening" Opened="OnMenuOpened" Closed="OnMenuClosed" />
+                            </Button.Flyout>
+                            <Grid>
+                                <FontIcon x:Name="QualityIcon" Glyph="&#xE713;" FontSize="16" />
+                                <Border x:Name="QualityBadge" Visibility="Collapsed" VerticalAlignment="Center"
+                                        Padding="6,1" CornerRadius="4" BorderThickness="1" BorderBrush="#66FFFFFF">
+                                    <TextBlock x:Name="QualityText" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                </Border>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="MuteButton" Grid.Column="9" AutomationProperties.Name="Silenciar" Click="OnMute"
                                 Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Silenciar (M)">
                             <FontIcon x:Name="VolumeIcon" Glyph="&#xE767;" FontSize="16" />
                         </Button>
-                        <Slider x:Name="Volume" Grid.Column="8" AutomationProperties.Name="Volumen" Width="96" Minimum="0" Maximum="100"
+                        <Slider x:Name="Volume" Grid.Column="10" AutomationProperties.Name="Volumen" Width="96" Minimum="0" Maximum="100"
                                 Value="100" VerticalAlignment="Center" Margin="2,0,8,0" ValueChanged="OnVolumeChanged" />
-                        <Button Grid.Column="9" AutomationProperties.Name="Mini reproductor" Click="OnMini"
+                        <Button Grid.Column="11" AutomationProperties.Name="Mini reproductor" Click="OnMini"
                                 Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Mini reproductor (I)">
                             <FontIcon Glyph="&#xEE49;" FontSize="16" />
                         </Button>
-                        <Button Grid.Column="10" AutomationProperties.Name="Pantalla completa" Click="OnFullScreen"
+                        <Button Grid.Column="12" AutomationProperties.Name="Pantalla completa" Click="OnFullScreen"
                                 Style="{StaticResource CapsuleButtonStyle}" ToolTipService.ToolTip="Pantalla completa (F)">
                             <FontIcon x:Name="FullScreenIcon" Glyph="&#xE740;" FontSize="16" />
                         </Button>
@@ -178,6 +215,16 @@
                 <TextBlock x:Name="SkipText" Text="Saltar patrocinio" FontWeight="SemiBold" />
             </StackPanel>
         </Button>
+
+        <!-- Aviso breve arriba al centro: velocidad, subtítulos, calidad… (ShowOsd). -->
+        <Border x:Name="Osd" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,64,0,0" Padding="16,8"
+                CornerRadius="12" BorderThickness="1" BorderBrush="#26FFFFFF" Opacity="0" IsHitTestVisible="False">
+            <Border.OpacityTransition><ScalarTransition Duration="0:0:0.2" /></Border.OpacityTransition>
+            <Border.Background>
+                <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+            </Border.Background>
+            <TextBlock x:Name="OsdText" Foreground="White" FontSize="15" FontWeight="SemiBold" />
+        </Border>
 
         <!-- Mini reproductor: solo al pasar el ratón; reproducir/pausa, tiempo y volver a la ventana. -->
         <Grid x:Name="MiniControls" Visibility="Collapsed" Opacity="0">

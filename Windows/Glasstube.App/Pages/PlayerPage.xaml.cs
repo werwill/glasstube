@@ -42,6 +42,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         Progress.AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => dragging = true), true);
         Progress.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, _) => EndDrag()), true);
         Progress.AddHandler(PointerCaptureLostEvent, new PointerEventHandler((_, _) => EndDrag()), true);
+        AddSpeedKeys();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -51,13 +52,14 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         TitleText.Text = video.Title;
         ChannelText.Text = channelName = video.Channel ?? "";
         Volume.Value = lastVolume;
+        SpeedText.Text = speed.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + "×";
 
         hideTimer = DispatcherQueue.CreateTimer();
         hideTimer.Interval = TimeSpan.FromSeconds(3);
         hideTimer.IsRepeating = false;
         hideTimer.Tick += (_, _) =>
         {
-            if (!state.Paused.AsBool() && player != null && !dragging && !overCapsule) SetControlsVisible(false);
+            if (!state.Paused.AsBool() && player != null && !dragging && !overCapsule && openMenus == 0) SetControlsVisible(false);
         };
         if (App.Window is { } window) window.MiniChanged += OnMiniChanged;
 
@@ -66,9 +68,10 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         {
             await App.Ready;
             _ = LoadExtras(video.Id);
+            _ = LoadCaptions(video.Id);
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
             var saved = GlasstubeFFI.SavedPositionOf(video.Id);
-            var resolved = await GlasstubeFFI.ResolveStream(video.Id).WaitAsync(ResolveTimeout);
+            var resolved = await GlasstubeFFI.ResolveStream(video.Id, Settings.Quality, null).WaitAsync(ResolveTimeout);
             if (closed) return;
             Start(resolved, ResumePosition(await saved));
         }
@@ -109,6 +112,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         closed = true;
         poll?.Stop();
         hideTimer?.Stop();
+        osdTimer?.Stop();
         player?.Dispose();
         player = null;
         SetCursorHidden(false);
@@ -133,6 +137,10 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             return;
         }
         player.SetVolume(Volume.Value);
+        player.SetSpeed(speed);
+        player.SetProperty("sub-font-size", "40"); // el 55 de mpv tapa media imagen con subtítulos largos
+        UpdateStreamMenus();
+        UpdateSubtitleMargin();
         var url = resolved.Hls ?? resolved.Video?.Url;
         if (url == null)
         {
@@ -186,7 +194,8 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
                       + (string.IsNullOrEmpty(player.LastError) ? "" : $" mpv: {player.LastError}"));
             return;
         }
-        var waiting = !state.HasVideo.AsBool() || state.Buffering.AsBool();
+        ApplyCaptions();
+        var waiting = !state.HasVideo.AsBool() || state.Buffering.AsBool() || reloading;
         Spinner.Visibility = waiting && !state.Paused.AsBool() ? Visibility.Visible : Visibility.Collapsed;
 
         var paused = state.Paused.AsBool() || state.Ended.AsBool();
@@ -217,6 +226,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         label ??= stream?.Hls == null ? stream?.Video?.Label : null;
         QualityText.Text = label ?? "";
         QualityBadge.Visibility = string.IsNullOrEmpty(label) ? Visibility.Collapsed : Visibility.Visible;
+        QualityIcon.Visibility = string.IsNullOrEmpty(label) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public static string Time(double seconds)
@@ -267,6 +277,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         MiniControls.Opacity = visible && IsMini ? 1 : 0;
         App.Window?.SetChromeFaded(!visible);
         SetCursorHidden(!visible);
+        UpdateSubtitleMargin();
     }
 
     void ShowControls()

@@ -85,7 +85,8 @@ public sealed record StreamTrack(string Url, int Itag, string Codec, string Labe
 
 public sealed record StreamInfo(string VideoId, string? Title, string? Author, string? Client, StreamTrack? Video,
                                 StreamTrack? Audio, string? Hls, double? DurationSeconds, string UserAgent,
-                                Dictionary<string, string> Headers);
+                                Dictionary<string, string> Headers, List<QualityOption>? Qualities = null,
+                                List<AudioTrackOption>? AudioTracks = null, string? AudioTrackId = null);
 
 /// <summary>
 /// Inicio con carga incremental: GridView pide más al acercarse al final (ISupportIncrementalLoading) y esto llama a

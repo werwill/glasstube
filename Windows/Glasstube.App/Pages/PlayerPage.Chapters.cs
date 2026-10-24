@@ -165,6 +165,9 @@ public sealed partial class PlayerPage
     void OnProgressSizeChanged(object sender, SizeChangedEventArgs e) => BuildTrack();
 
     /// <summary>La píldora va justo encima de la cápsula, que cambia de alto con el ancho de la ventana.</summary>
-    void OnCapsuleSizeChanged(object sender, SizeChangedEventArgs e) =>
+    void OnCapsuleSizeChanged(object sender, SizeChangedEventArgs e)
+    {
         SkipButton.Margin = new Thickness(0, 0, 24 + 8, Capsule.Margin.Bottom + e.NewSize.Height + 12);
+        UpdateSubtitleMargin();
+    }
 }
