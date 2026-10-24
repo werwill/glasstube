@@ -121,7 +121,7 @@ public func gt_shutdown() {
     Task { @MainActor in Engine.shared = nil }
 }
 
-let version = "0.2.0"
+let version = "0.3.0"
 
 @_cdecl("gt_version")
 public func gt_version() -> UnsafeMutablePointer<CChar>? {
@@ -288,6 +288,11 @@ struct StreamPayload: Encodable {
     var durationSeconds: Double?
     var userAgent: String
     var headers: [String: String]
+    // Desde la 0.3 (Quality.swift): alturas disponibles y pistas de audio (doblajes) del cliente elegido.
+    var qualities: [QualityOption]?
+    var audioTracks: [AudioTrackOption]?
+    /// La pista de audio que va en `audio` (nil si el video solo tiene una).
+    var audioTrackId: String?
 }
 
 extension StreamPayload.Track {
@@ -319,73 +324,81 @@ public func gt_resolve_stream(_ videoId: UnsafePointer<CChar>?, _ maxHeight: Int
                               _ context: UnsafeMutableRawPointer?) {
     let reply = Reply(callback: callback, context: context)
     guard let videoId = string(videoId) else { return reply.fail("falta el videoId") }
-    Task { @MainActor in
-        do {
-            let engine = try Engine.require()
-            var options = ResolveOptions()
-            options.maxHeight = maxHeight > 0 ? Int(maxHeight) : 1080
-            options.codecOrder = [.vp9, .avc, .av1]
-            log("resolver \(videoId) (hasta \(options.maxHeight ?? 0)p)…")
-            let start = Date()
-            let report = await engine.service.formatInfo(videoId: videoId, options: options)
-            // Cada intento ya lo anota YTKit (`Log.info`), con su HTTP, playability y comprobación de URLs.
-            let elapsed = String(format: "%.1f s", Date().timeIntervalSince(start))
-            var headers = StreamResolver.streamHeaders
-            // Un directo en curso va por HLS: sus formatos adaptativos son URLs de un solo segmento (`sq`) y mpv se
-            // detiene a los pocos segundos.
-            // TV_DOWNGRADED no marca `isLive` ni trae HLS; se nota en que sus formatos no tienen `contentLength`.
-            let isLive = report.attempts.contains(where: \.isLive)
-                || (report.chosen.map { $0.video?.contentLength == nil && $0.audio?.contentLength == nil } ?? false)
-            if isLive {
-                if let attempt = report.attempts.first(where: { $0.playability == "OK" && $0.hlsManifestURL != nil }),
-                   let hls = attempt.hlsManifestURL {
-                    headers["User-Agent"] = attempt.client.userAgent
-                    log("resuelto \(videoId) en \(elapsed): \(attempt.client.id), directo por HLS")
-                    return reply.ok(StreamPayload(
-                        videoId: videoId, title: report.title, author: report.author, client: attempt.client.id, hls: hls,
-                        userAgent: attempt.client.userAgent, headers: headers))
-                }
-                do {
-                    let (client, hls, title) = try await liveManifest(videoId: videoId, catalog: engine.service.catalog)
-                    headers["User-Agent"] = client.userAgent
-                    log("resuelto \(videoId): directo por HLS de \(client.id)")
-                    return reply.ok(StreamPayload(
-                        videoId: videoId, title: title ?? report.title, author: report.author, client: client.id,
-                        hls: hls, userAgent: client.userAgent, headers: headers))
-                } catch {
-                    log("directo \(videoId) sin HLS (\(error)); se prueba con los formatos adaptativos")
-                }
-            }
-            if let chosen = report.chosen, let video = StreamPayload.Track(chosen.video),
-               let audio = StreamPayload.Track(chosen.audio) {
-                let duration = (chosen.video?.approxDurationMs ?? chosen.audio?.approxDurationMs).map { Double($0) / 1000 }
-                headers["User-Agent"] = chosen.client.userAgent
-                log("resuelto \(videoId) en \(elapsed): \(chosen.client.id), video \(video.itag) \(video.codec) \(video.label), audio \(audio.itag) \(audio.codec)")
-                log("  video: \(StreamDiagnostics.summary(chosen.video))")
-                log("  audio: \(StreamDiagnostics.summary(chosen.audio))")
-                return reply.ok(StreamPayload(
-                    videoId: videoId, title: report.title, author: report.author, client: chosen.client.id,
-                    video: video, audio: audio, durationSeconds: duration, userAgent: chosen.client.userAgent,
-                    headers: headers))
-            }
-            // Directos: el manifiesto HLS de cualquier intento que lo haya traído.
+    Task { @MainActor in await resolveStream(videoId: videoId, maxHeight: maxHeight, audioTrackId: nil, reply: reply) }
+}
+
+/// La resolución de `gt_resolve_stream` y `gt_resolve_stream_with` (Quality.swift): con `audioTrackId`, el audio de esa
+/// pista (doblaje) en lugar del predeterminado.
+@MainActor
+func resolveStream(videoId: String, maxHeight: Int32, audioTrackId: String?, reply: Reply) async {
+    do {
+        let engine = try Engine.require()
+        var options = ResolveOptions()
+        options.maxHeight = maxHeight > 0 ? Int(maxHeight) : 1080
+        options.codecOrder = [.vp9, .avc, .av1]
+        log("resolver \(videoId) (hasta \(options.maxHeight ?? 0)p)…")
+        let start = Date()
+        let report = await engine.service.formatInfo(videoId: videoId, options: options)
+        // Cada intento ya lo anota YTKit (`Log.info`), con su HTTP, playability y comprobación de URLs.
+        let elapsed = String(format: "%.1f s", Date().timeIntervalSince(start))
+        var headers = StreamResolver.streamHeaders
+        // Un directo en curso va por HLS: sus formatos adaptativos son URLs de un solo segmento (`sq`) y mpv se
+        // detiene a los pocos segundos.
+        // TV_DOWNGRADED no marca `isLive` ni trae HLS; se nota en que sus formatos no tienen `contentLength`.
+        let isLive = report.attempts.contains(where: \.isLive)
+            || (report.chosen.map { $0.video?.contentLength == nil && $0.audio?.contentLength == nil } ?? false)
+        if isLive {
             if let attempt = report.attempts.first(where: { $0.playability == "OK" && $0.hlsManifestURL != nil }),
                let hls = attempt.hlsManifestURL {
                 headers["User-Agent"] = attempt.client.userAgent
-                log("resuelto \(videoId) en \(elapsed): \(attempt.client.id), HLS")
+                log("resuelto \(videoId) en \(elapsed): \(attempt.client.id), directo por HLS")
                 return reply.ok(StreamPayload(
                     videoId: videoId, title: report.title, author: report.author, client: attempt.client.id, hls: hls,
                     userAgent: attempt.client.userAgent, headers: headers))
             }
-            let reasons = report.attempts.map { "\($0.client.id): \($0.error ?? $0.reason ?? $0.playability ?? "?")" }
-            log("sin streams para \(videoId) en \(elapsed)")
-            // La razón que da YouTube (edad, región, privado…) va primero; los detalles, después.
-            let reason = report.attempts.lazy.compactMap(\.reason).first
-            reply.fail((reason.map { "YouTube: \($0)" } ?? "Ningún cliente de YouTube dio streams reproducibles.")
-                       + "\n\nDetalles: " + reasons.joined(separator: "; "))
-        } catch {
-            log("resolver \(videoId) falló: \(error)")
-            reply.fail(error)
+            do {
+                let (client, hls, title) = try await liveManifest(videoId: videoId, catalog: engine.service.catalog)
+                headers["User-Agent"] = client.userAgent
+                log("resuelto \(videoId): directo por HLS de \(client.id)")
+                return reply.ok(StreamPayload(
+                    videoId: videoId, title: title ?? report.title, author: report.author, client: client.id,
+                    hls: hls, userAgent: client.userAgent, headers: headers))
+            } catch {
+                log("directo \(videoId) sin HLS (\(error)); se prueba con los formatos adaptativos")
+            }
         }
+        if let chosen = report.chosen, let video = StreamPayload.Track(chosen.video),
+           case let selectedAudio = audioFormat(in: chosen, trackId: audioTrackId) ?? chosen.audio,
+           let audio = StreamPayload.Track(selectedAudio) {
+            let audioTracks = audioTrackOptions(in: chosen)
+            let duration = (chosen.video?.approxDurationMs ?? chosen.audio?.approxDurationMs).map { Double($0) / 1000 }
+            headers["User-Agent"] = chosen.client.userAgent
+            log("resuelto \(videoId) en \(elapsed): \(chosen.client.id), video \(video.itag) \(video.codec) \(video.label), audio \(audio.itag) \(audio.codec)")
+            log("  video: \(StreamDiagnostics.summary(chosen.video))")
+            log("  audio: \(StreamDiagnostics.summary(selectedAudio))")
+            return reply.ok(StreamPayload(
+                videoId: videoId, title: report.title, author: report.author, client: chosen.client.id,
+                video: video, audio: audio, durationSeconds: duration, userAgent: chosen.client.userAgent,
+                headers: headers, qualities: qualityOptions(in: chosen), audioTracks: audioTracks,
+                audioTrackId: audioTracks.isEmpty ? nil : selectedAudio?.audioTrackId))
+        }
+        // Directos: el manifiesto HLS de cualquier intento que lo haya traído.
+        if let attempt = report.attempts.first(where: { $0.playability == "OK" && $0.hlsManifestURL != nil }),
+           let hls = attempt.hlsManifestURL {
+            headers["User-Agent"] = attempt.client.userAgent
+            log("resuelto \(videoId) en \(elapsed): \(attempt.client.id), HLS")
+            return reply.ok(StreamPayload(
+                videoId: videoId, title: report.title, author: report.author, client: attempt.client.id, hls: hls,
+                userAgent: attempt.client.userAgent, headers: headers))
+        }
+        let reasons = report.attempts.map { "\($0.client.id): \($0.error ?? $0.reason ?? $0.playability ?? "?")" }
+        log("sin streams para \(videoId) en \(elapsed)")
+        // La razón que da YouTube (edad, región, privado…) va primero; los detalles, después.
+        let reason = report.attempts.lazy.compactMap(\.reason).first
+        reply.fail((reason.map { "YouTube: \($0)" } ?? "Ningún cliente de YouTube dio streams reproducibles.")
+                   + "\n\nDetalles: " + reasons.joined(separator: "; "))
+    } catch {
+        log("resolver \(videoId) falló: \(error)")
+        reply.fail(error)
     }
 }

@@ -3,7 +3,8 @@
 
 // GlasstubeFFI.dll: YTKit + GlasstubeCore (Swift) para la interfaz de Windows. Implementación en
 // Sources/GlasstubeFFI/ (GlasstubeFFI.swift: motor, sesión, Inicio y streams; Cards.swift: biblioteca local y Bandeja;
-// Subscriptions.swift, Details.swift y Search.swift).
+// Subscriptions.swift, Details.swift y Search.swift; desde la 0.3, Quality.swift, Captions.swift, WatchNext.swift y
+// Comments.swift).
 //
 // Reglas:
 // - Lo asíncrono responde por `gt_callback`: status 0 = bien y `json` es el resultado; distinto de 0 = error y `json` es
@@ -31,7 +32,7 @@ void gt_pump(void);
 /// Suelta el motor.
 void gt_shutdown(void);
 
-/// "GlasstubeFFI 0.1.0". Se libera con gt_free.
+/// "GlasstubeFFI 0.3.0". Se libera con gt_free.
 char *gt_version(void);
 void gt_free(char *string);
 
@@ -57,7 +58,12 @@ void gt_home_more(gt_callback callback, void *context);
 /// URLs para mpv: {"videoId", "title", "author", "client", "video": Track | null, "audio": Track | null,
 /// "hls": string | null, "durationSeconds", "userAgent", "headers": {…}}, con Track = {"url", "itag", "codec", "label",
 /// "height"}. `max_height` 0 = 1080.
+/// Desde la 0.3, también "qualities": [{"height", "fps", "label"}] (de mayor a menor, las que trae el cliente elegido),
+/// "audioTracks": [{"id", "name", "isDefault"}] (vacío si hay una sola) y "audioTrackId" (la pista de `audio`).
 void gt_resolve_stream(const char *video_id, int32_t max_height, gt_callback callback, void *context);
+/// Como gt_resolve_stream con la pista de audio `audio_track_id` (un "id" de "audioTracks"; NULL = la predeterminada).
+void gt_resolve_stream_with(const char *video_id, int32_t max_height, const char *audio_track_id, gt_callback callback,
+                            void *context);
 
 // MARK: Suscripciones (con sesión)
 
@@ -93,6 +99,20 @@ void gt_video_details(const char *video_id, gt_callback callback, void *context)
 /// Resultados de búsqueda (solo videos): {"items", "hasMore", "notice", "signedIn"}.
 void gt_search(const char *query, gt_callback callback, void *context);
 void gt_search_more(gt_callback callback, void *context);
+
+// MARK: Reproductor (0.3)
+
+/// Subtítulos: {"videoId", "tracks": [{"languageCode", "name", "title", "isAutomatic", "url"}]}, con `url` en WebVTT
+/// (para `sub-add` de mpv). Sin subtítulos, `tracks` vacío.
+void gt_captions(const char *video_id, gt_callback callback, void *context);
+/// Sugeridos y comentarios: {"videoId", "suggestions": [VideoCard…], "next": VideoCard | null, "commentsToken",
+/// "commentsCount", "commentSorts": [{"title", "token", "isSelected"}]}. `next` es el de la reproducción automática.
+void gt_watch_next(const char *video_id, gt_callback callback, void *context);
+/// Una página de comentarios: {"comments": [{"id", "author", "authorChannelId", "avatar", "text", "published", "likes",
+/// "replyCount", "replyCountText", "repliesToken", "isPinned", "isHearted", "authorIsChannelOwner"}], "continuation"}.
+/// `replies` 0: `token` es "commentsToken", el de un orden o una "continuation"; 1: el "repliesToken" de un comentario
+/// (sus respuestas, sin él).
+void gt_comments(const char *token, int32_t replies, gt_callback callback, void *context);
 
 #ifdef __cplusplus
 }
