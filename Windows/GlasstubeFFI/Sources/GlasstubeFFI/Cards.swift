@@ -105,6 +105,8 @@ final class Library {
     let groups = ChannelGroupStore()
     let sponsorBlock = SponsorBlockClient()
     private(set) var inbox = InboxState()
+    /// Videos guardados sin título que ya se intentaron reparar en esta sesión (`repairTitles`).
+    var repairTried: Set<String> = []
 
     private let inboxURL: URL = {
         let base = ProcessInfo.processInfo.environment["LOCALAPPDATA"].map { URL(fileURLWithPath: $0) }
@@ -130,6 +132,45 @@ final class Library {
     }
 }
 
+// MARK: - Títulos que faltan
+
+extension MediaItem {
+    /// Guardado sin datos: abierto solo con el id (`--abrir`, enlaces), la tarjeta llevaba el id como título.
+    var lacksTitle: Bool {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return title.isEmpty || title == videoId
+    }
+}
+
+extension Library {
+    /// Rellena título, canal y miniatura de los videos guardados sin título, con los detalles de `/next`. Cada id se
+    /// intenta una vez por sesión (si falla, se vuelve a intentar en el próximo arranque).
+    func repairTitles(service: YouTubeService) async {
+        let broken = Set((local.history + local.watchLater).map(\.item).filter(\.lacksTitle).compactMap(\.videoId))
+            .subtracting(repairTried)
+        guard !broken.isEmpty else { return }
+        repairTried.formUnion(broken)
+        var fixed = 0
+        await withTaskGroup(of: (String, MediaItemMetadata?).self) { group in
+            for id in broken { group.addTask { (id, try? await service.metadata(videoId: id)) } }
+            for await (id, metadata) in group {
+                guard let metadata, let title = metadata.title, !title.isEmpty else { continue }
+                local.updateItem(videoId: id) { item in
+                    item.title = title
+                    if item.author == nil { item.author = metadata.author }
+                    if item.channelId == nil { item.channelId = metadata.channelId }
+                    if item.authorThumbnails.isEmpty { item.authorThumbnails = metadata.authorThumbnails }
+                    if item.thumbnails.isEmpty {
+                        item.thumbnails = [Thumbnail(url: "https://i.ytimg.com/vi/\(id)/hqdefault.jpg", width: 480, height: 360)]
+                    }
+                }
+                fixed += 1
+            }
+        }
+        log("biblioteca: \(fixed) de \(broken.count) videos sin título reparados")
+    }
+}
+
 struct LibraryPayload: Encodable {
     var history: [VideoCard]
     /// Empezados y sin terminar (entre el 2 % y el 95 %), para "Continuar viendo".
@@ -145,6 +186,7 @@ public func gt_library(_ callback: GTCallback, _ context: UnsafeMutableRawPointe
     let reply = Reply(callback: callback, context: context)
     Task { @MainActor in
         let library = Library.shared
+        if let engine = Engine.shared { await library.repairTitles(service: engine.service) }
         reply.ok(LibraryPayload(
             history: library.local.history.map { VideoCard(saved: $0) },
             continueWatching: library.local.continueWatching.map { VideoCard(saved: $0) },
@@ -163,9 +205,20 @@ func decodeCard(_ json: UnsafePointer<CChar>?) -> VideoCard? {
 public func gt_library_record(_ card: UnsafePointer<CChar>?, _ position: Double, _ duration: Double,
                               _ callback: GTCallback, _ context: UnsafeMutableRawPointer?) {
     let reply = Reply(callback: callback, context: context)
-    guard let card = decodeCard(card) else { return reply.fail("tarjeta inválida") }
+    guard var card = decodeCard(card) else { return reply.fail("tarjeta inválida") }
     Task { @MainActor in
-        Library.shared.local.recordPlayback(of: card.mediaItem, position: max(0, position), duration: duration > 0 ? duration : nil)
+        // Una tarjeta sin título (abierta solo con el id) no pisa los datos buenos que ya hubiera en el historial.
+        var item = card.mediaItem
+        if item.lacksTitle,
+           let saved = Library.shared.local.history.first(where: { $0.item.videoId == card.id })?.item, !saved.lacksTitle {
+            card.title = saved.title
+            card.channel = card.channel ?? saved.author
+            card.channelId = card.channelId ?? saved.channelId
+            item = card.mediaItem
+            if item.thumbnails.isEmpty { item.thumbnails = saved.thumbnails }
+            if item.authorThumbnails.isEmpty { item.authorThumbnails = saved.authorThumbnails }
+        }
+        Library.shared.local.recordPlayback(of: item, position: max(0, position), duration: duration > 0 ? duration : nil)
         reply.ok([String: String]())
     }
 }

@@ -97,6 +97,21 @@ public final class LocalLibrary {
         scheduleSave()
     }
 
+    /// Corrige los datos de un video guardado (título, canal, miniatura) en el historial y en Ver más tarde, sin
+    /// moverlo ni tocar su posición.
+    public func updateItem(videoId: String, _ change: (inout MediaItem) -> Void) {
+        var changed = false
+        for index in history.indices where history[index].item.videoId == videoId {
+            change(&history[index].item)
+            changed = true
+        }
+        for index in watchLater.indices where watchLater[index].item.videoId == videoId {
+            change(&watchLater[index].item)
+            changed = true
+        }
+        if changed { scheduleSave() }
+    }
+
     public func removeFromHistory(_ item: MediaItem) {
         history.removeAll { $0.item.id == item.id }
         scheduleSave()

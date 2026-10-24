@@ -138,9 +138,28 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         }
     }
 
+    /// <summary>
+    /// La tarjeta con la que se abrió puede venir incompleta (--abrir, enlaces): se completa con lo resuelto para que el
+    /// historial guarde título, canal, miniatura y duración y no el id.
+    /// </summary>
+    void CompleteCard(string? title, string? author, string? channelId, double? duration)
+    {
+        if (video == null) return;
+        if (!string.IsNullOrWhiteSpace(title) && (string.IsNullOrWhiteSpace(video.Title) || video.Title == video.Id)) video.Title = title;
+        if (string.IsNullOrWhiteSpace(video.Channel) && !string.IsNullOrWhiteSpace(author)) video.Channel = author;
+        video.ChannelId ??= channelId;
+        video.Thumbnail ??= $"https://i.ytimg.com/vi/{video.Id}/hqdefault.jpg";
+        if (video.DurationSeconds == null && duration > 0 && stream?.Hls == null)
+        {
+            video.DurationSeconds = (int)duration.Value;
+            video.Duration ??= Time(duration.Value);
+        }
+    }
+
     void Start(StreamInfo resolved, double resumeAt)
     {
         stream = resolved;
+        CompleteCard(resolved.Title, resolved.Author, null, resolved.DurationSeconds);
         if (!string.IsNullOrEmpty(resolved.Title)) TitleText.Text = resolved.Title;
         if (!string.IsNullOrEmpty(resolved.Author)) ChannelText.Text = channelName = resolved.Author;
         var (width, height, scale) = PanelPixels();

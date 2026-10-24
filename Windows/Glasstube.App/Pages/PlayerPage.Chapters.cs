@@ -41,6 +41,7 @@ public sealed partial class PlayerPage
             // Abierto solo con el id (--abrir, enlaces): el título y el canal salen de aquí.
             if (TitleText.Text == videoId && !string.IsNullOrEmpty(details.Title)) TitleText.Text = details.Title;
             if (channelName.Length == 0 && !string.IsNullOrEmpty(details.Author)) ChannelText.Text = channelName = details.Author;
+            CompleteCard(details.Title, details.Author, details.ChannelId, null);
             chapterIndex = -2; // que se vuelva a escribir la línea del canal
             FillDescription(details);
             GlasstubeFFI.Log("app", $"{videoId}: {chapters.Count} capítulos, {segments.Count} segmentos de SponsorBlock");
