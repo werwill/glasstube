@@ -115,6 +115,13 @@ General › Actualizaciones**, donde también está «Buscar ahora». Una copia 
 
 ### Windows
 
+| | | |
+|---|---|---|
+| ![Glasstube para Windows: el reproductor con la cápsula de controles](docs/capturas/windows/reproductor.png) | ![Glasstube para Windows: el panel lateral con los comentarios](docs/capturas/windows/comentarios.png) | ![Glasstube para Windows: resultados de búsqueda](docs/capturas/windows/busqueda.png) |
+
+<sub>En las capturas: *Big Buck Bunny* © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+Quienes comentan aparecen como @persona1, @persona2…</sub>
+
 Baja **`Glasstube-<versión>-Windows-x64-Setup.exe`** de su [versión en Releases](https://github.com/werwill/glasstube/releases/tag/windows-v0.1.0). Las de Windows van aparte,
 con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de la app de Mac no las toma por suyas.
 

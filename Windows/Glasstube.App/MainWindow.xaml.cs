@@ -90,6 +90,7 @@ public sealed partial class MainWindow : Window
         UpdateCaptionColors();
 
         NavList.SelectedItem = HomeItem;
+        if (CaptureMode.Enabled) return; // sin la cuenta ni sus canales
         _ = LoadAccount();
         SubscriptionsStore.Shared.Changed += (_, _) => UpdateChannels();
         _ = SubscriptionsStore.Shared.LoadAsync();
@@ -225,6 +226,13 @@ public sealed partial class MainWindow : Window
     /// <summary>Abre el reproductor de un video.</summary>
     public void Play(Models.VideoCard video) =>
         ContentFrame.Navigate(typeof(PlayerPage), video, new DrillInNavigationTransitionInfo());
+
+    /// <summary>Busca <paramref name="text"/> como si se escribiera en la barra (`--buscar`).</summary>
+    public void Search(string text)
+    {
+        SearchBox.Text = text;
+        ContentFrame.Navigate(typeof(SearchPage), text, new EntranceNavigationTransitionInfo());
+    }
 
     /// <summary>
     /// Abre otro video desde el reproductor (sugeridos, reproducción automática). Con <paramref name="replacePlayer"/>,

@@ -117,6 +117,13 @@ you build yourself checks the same repository; `GITHUB_REPO= App/Scripts/package
 
 ### Windows
 
+| | | |
+|---|---|---|
+| ![Glasstube for Windows: the player with its control capsule](docs/capturas/windows/reproductor.png) | ![Glasstube for Windows: the side panel with comments](docs/capturas/windows/comentarios.png) | ![Glasstube for Windows: search results](docs/capturas/windows/busqueda.png) |
+
+<sub>In the screenshots: *Big Buck Bunny* © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+Commenters appear as @persona1, @persona2…</sub>
+
 Get **`Glasstube-<version>-Windows-x64-Setup.exe`** from [its release](https://github.com/werwill/glasstube/releases/tag/windows-v0.1.0). Windows releases are separate, tagged
 `windows-v…`, and are not marked as the latest, so the Mac app's update notice does not mistake them for its own.
 

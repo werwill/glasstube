@@ -51,8 +51,12 @@ public partial class App : Application
         if (index >= 0 && index + 1 < arguments.Length)
             Window.Play(new Models.VideoCard { Id = arguments[index + 1], Title = arguments[index + 1] });
         if (arguments.Contains("--probar-ffi")) _ = ProbeFFI();
+        // `--buscar <texto>`: abre esa búsqueda (capturas).
+        var search = Array.IndexOf(arguments, "--buscar");
+        if (search >= 0 && search + 1 < arguments.Length) Window.Search(arguments[search + 1]);
         // `--sin-aviso-de-versiones`: no consulta GitHub (capturas y pruebas).
-        if (!arguments.Contains("--sin-aviso-de-versiones") && Window.Content is Microsoft.UI.Xaml.Controls.Grid root)
+        if (!arguments.Contains("--sin-aviso-de-versiones") && !Models.CaptureMode.Enabled
+            && Window.Content is Microsoft.UI.Xaml.Controls.Grid root)
             _ = Models.UpdateCheck.RunAsync(root);
     }
 
