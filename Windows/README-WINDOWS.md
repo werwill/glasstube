@@ -58,7 +58,14 @@ y GlasstubeFFI (31 MB en release).
 - Una app de ventana lanzada con doble clic **no tiene stderr**: `FileHandle.write(_: Data)` aborta el proceso si falla
   (crash `0xc000001d` en swiftCore.dll). Por eso `Log` de YTKit tiene `sink` y usa `write(contentsOf:)` con `try?`.
   No uses `FileHandle.standardError.write(Data)` en código que corra dentro de la DLL.
-- `Glasstube.exe --abrir <videoId>` abre ese video al arrancar (pruebas).
+- `Glasstube.exe --abrir <videoId>` abre ese video al arrancar (pruebas). Con `--medir`, el reproductor anota cada 5 s la
+  posición, los segundos en caché y si está esperando datos (`[medir]`); con `--volcar-urls`, guarda las URLs y cabeceras
+  que recibe mpv en `logs\stream-<id>.json` (para medirlas con curl). Cada resolución anota además, sin la URL, lo que
+  importa de ella: itag, bitrate, tamaño, servidor y si lleva `n`, `pot`, `ratebypass` o `sabr`.
+- **Rangos de 10 MB.** YouTube frena las peticiones con rango abierto (`Range: bytes=0-`, lo que pide FFmpeg) de archivos
+  de más de ~10 MB: medido con curl, el video a 300–475 KB/s y el audio hasta 30 KB/s, contra ~15 MB/s pidiendo rangos de
+  10 MB con las mismas URLs. Si el freno queda por debajo del pico del video, se atasca (un segundo de video cada 20 s).
+  Por eso MPVBridge pone `stream-lavf-o=request_size=10485760` (y `curl-max-request-size`), como el ytdl_hook de mpv.
 - El reproductor da error claro si la resolución pasa de 45 s o mpv no muestra imagen en 30 s.
 
 ## Qué funciona (probado el 24-oct-2026 en esta PC)
@@ -90,8 +97,7 @@ y GlasstubeFFI (31 MB en release).
 
 - **SABR.** El reproductor usa URLs directas (cliente TV_DOWNGRADED hoy). Si YouTube deja de darlas, hay que llevar
   `SabrMediaSource` de PlaybackKit a la FFI (mpv leyendo por `stream_cb`), como en la app de Mac.
-- Calidad elegible, subtítulos y reportar el historial a YouTube (`watchtime`). Algunos videos cargan muy lento (unos
-  segundos de video por cada 20 s) con las URLs de TV_DOWNGRADED; otros van bien con la misma conexión.
+- Calidad elegible, subtítulos y reportar el historial a YouTube (`watchtime`).
 - Página del video: descripción, comentarios, sugeridos y siguiente automático.
 - Biblioteca e Historial como páginas, página de canal, ajustes, iniciar y cerrar sesión desde la app (hoy se usa la sesión
   que dejó `ytkit signin`). Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.

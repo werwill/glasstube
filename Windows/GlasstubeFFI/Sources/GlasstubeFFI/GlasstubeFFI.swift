@@ -361,6 +361,8 @@ public func gt_resolve_stream(_ videoId: UnsafePointer<CChar>?, _ maxHeight: Int
                 let duration = (chosen.video?.approxDurationMs ?? chosen.audio?.approxDurationMs).map { Double($0) / 1000 }
                 headers["User-Agent"] = chosen.client.userAgent
                 log("resuelto \(videoId) en \(elapsed): \(chosen.client.id), video \(video.itag) \(video.codec) \(video.label), audio \(audio.itag) \(audio.codec)")
+                log("  video: \(StreamDiagnostics.summary(chosen.video))")
+                log("  audio: \(StreamDiagnostics.summary(chosen.audio))")
                 return reply.ok(StreamPayload(
                     videoId: videoId, title: report.title, author: report.author, client: chosen.client.id,
                     video: video, audio: audio, durationSeconds: duration, userAgent: chosen.client.userAgent,

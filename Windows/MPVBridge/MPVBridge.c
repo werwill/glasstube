@@ -95,6 +95,12 @@ MPVB_API mpvb_player *mpvb_create(void *panel, int32_t width, int32_t height, fl
     set_option(p, "osc", "no");
     set_option(p, "ytdl", "no");
     set_option(p, "input-default-bindings", "no");
+    // YouTube frena los rangos abiertos ("bytes=0-") de archivos de más de ~10 MB hasta unos cientos de KB/s (el audio,
+    // hasta 30 KB/s), menos que el pico del video: se atasca. Con rangos de 10 MB como mucho sirve a toda velocidad
+    // (~15 MB/s medidos). Es lo mismo que hace el ytdl_hook de mpv: `request_size` en el http de FFmpeg y
+    // `curl-max-request-size` si mpv usa su propio http.
+    set_option(p, "stream-lavf-o", "request_size=10485760,multiple_requests=1");
+    set_option(p, "curl-max-request-size", "10485760");
     set_option(p, "cache", "yes");
     set_option(p, "demuxer-max-bytes", "150MiB");
     set_option(p, "demuxer-readahead-secs", "30");

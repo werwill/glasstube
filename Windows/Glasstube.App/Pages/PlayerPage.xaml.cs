@@ -17,6 +17,7 @@ namespace Glasstube.Pages;
 public sealed partial class PlayerPage : Page, IFullBleedPage
 {
     static double lastVolume = 100;
+    static readonly bool measuring = Environment.GetCommandLineArgs().Contains("--medir");
 
     VideoCard? video;
     StreamInfo? stream;
@@ -147,6 +148,16 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             return;
         }
         GlasstubeFFI.Log("app", $"{resolved.VideoId}: cliente {resolved.Client}, video {resolved.Video?.Label} {resolved.Video?.Codec}, audio {resolved.Audio?.Label}{(resolved.Hls != null ? ", HLS" : "")}");
+        // `--volcar-urls`: las URLs y cabeceras que recibe mpv, en logs\stream-<id>.json (para medirlas con curl).
+        if (Environment.GetCommandLineArgs().Contains("--volcar-urls"))
+        {
+            try
+            {
+                var path = Path.Combine(GlasstubeFFI.LogDirectory(), $"stream-{resolved.VideoId}.json");
+                File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(resolved));
+            }
+            catch (Exception error) { GlasstubeFFI.Log("app", $"volcar URLs: {error.Message}"); }
+        }
         SpinnerText.Text = "Cargando…";
         loadedAt = DateTime.UtcNow;
         poll = DispatcherQueue.CreateTimer();
@@ -190,6 +201,9 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             updatingProgress = false;
         }
         UpdateExtras(dragging ? Progress.Value : state.Position);
+        // `--medir`: cada 5 s, cómo va la reproducción (para diagnosticar atascos de red).
+        if (ticks % 150 == 0 && measuring)
+            GlasstubeFFI.Log("medir", $"{video?.Id} t={(DateTime.UtcNow - loadedAt).TotalSeconds:0}s pos={state.Position:0.0}s caché={state.Buffered:0.0}s esperando={state.Buffering} imagen={state.HasVideo}");
         if (ticks++ % 15 == 0) UpdateQuality();
         if (ticks % 300 == 0) RecordPosition();
     }
