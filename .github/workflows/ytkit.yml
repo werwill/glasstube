@@ -1,0 +1,47 @@
+# YTKit en las tres plataformas: macOS (JavaScriptCore, WKWebView, Llavero, CryptoKit), Windows (QuickJS, WebView2,
+# Administrador de credenciales, swift-crypto) y Linux (las mismas rutas sin Apple, con pruebas). Las pruebas de YTKit
+# no usan la red.
+name: YTKit
+
+on:
+  push:
+    paths: ["YTKit/**", ".github/workflows/ytkit.yml"]
+  pull_request:
+    paths: ["YTKit/**", ".github/workflows/ytkit.yml"]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: YTKit
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build
+      - run: swift test
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: YTKit
+    steps:
+      - uses: compnerd/gha-setup-swift@v0.5.1
+        with:
+          swift-version: swift-6.2.4-release
+          swift-build: 6.2.4-RELEASE
+      - uses: actions/checkout@v4
+      - run: swift build
+      - run: swift test
+
+  linux:
+    runs-on: ubuntu-latest
+    container: swift:6.2-noble
+    defaults:
+      run:
+        working-directory: YTKit
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build
+      - run: swift test

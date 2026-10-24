@@ -1,4 +1,10 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
 
 // Feeds RSS de canal (`RssService` + `YouTubeRssParser` de SmartTube): `https://www.youtube.com/feeds/videos.xml?
 // channel_id=UC…`, sin cuenta ni Innertube. Cada feed trae los últimos 15 videos del canal con título, fecha,
@@ -232,12 +238,20 @@ public actor RSSFeedService {
             for item in cached.feed.items where known.insert(item.id).inserted { items.append(item) }
         }
         let now = Date()
+        #if canImport(Darwin)
         let relative = RelativeDateTimeFormatter()
         relative.locale = Locale(identifier: locale.language)
         relative.unitsStyle = .full
+        let relativeText = { (date: Date) in relative.localizedString(for: date, relativeTo: now) }
+        #else
+        // Sin RelativeDateTimeFormatter fuera de Apple: el estilo de swift-foundation (relativo a este momento).
+        let relative = Date.RelativeFormatStyle(presentation: .numeric, unitsStyle: .wide,
+                                                locale: Locale(identifier: locale.language))
+        let relativeText = { (date: Date) in relative.format(date) }
+        #endif
         items = items.map { item in
             var item = item
-            if let date = item.publishedAt { item.publishedText = relative.localizedString(for: min(date, now), relativeTo: now) }
+            if let date = item.publishedAt { item.publishedText = relativeText(min(date, now)) }
             if let views = item.viewCount { item.viewCountText = Self.viewsText(views, language: locale.language) }
             return item
         }

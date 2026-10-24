@@ -463,6 +463,35 @@ Los tres formatos de SmartTube (`ChannelGroupServiceImpl` prueba PocketTube, Gra
 - CLI: `ytkit rss <UC…>… [--refrescar]`, `ytkit shorts [--pages N]`, `ytkit search … --filtro
   tipo=video,fecha=semana,duracion=3-20,prioridad=popularidad,cc` y `ytkit importar <archivo>`.
 
+## Windows (24-oct-2026)
+
+YTKit compila fuera de Apple. Las cuatro piezas de Apple quedaron detrás de un protocolo, y en macOS el código es el
+mismo de antes (solo cambió de archivo):
+
+| Pieza | macOS | Windows | Dónde |
+|---|---|---|---|
+| Solver de firma y `n` | JavaScriptCore | QuickJS (quickjs-ng 0.17.0, vendorizado en `Sources/CQuickJS`) | `ScriptEngine.swift`, `QuickJSEngine.swift` |
+| PoToken (BotGuard) | WKWebView en una ventana fuera de pantalla | WebView2 en su propio hilo STA, puente en C (`Sources/CWebView2`) | `BotGuardPage.swift`, `WebView2BotGuardPage.swift` |
+| Bóveda de cuentas | Llavero (`KeychainStore`) | Administrador de credenciales (`WindowsCredentialStore`) | `CredentialStore.swift`, `WindowsCredentialStore.swift` |
+| SHA-256 de DeArrow | CryptoKit | swift-crypto (misma API) | `DeArrow.swift` |
+
+- **QuickJS**: meriyah parsea el player con recursión profunda, así que cada evaluación corre en un hilo de 64 MB de
+  pila y llama a `JS_UpdateStackTop` ahí (el actor salta de hilo y QuickJS mide la pila contra el último).
+  `ScriptEngineTests` corre igual con los dos motores. Falta medir el tiempo del solver con un player real en Windows
+  (JavaScriptCore lo hace en ~1 s; QuickJS es un intérprete y puede tardar varias veces más la primera vez; luego
+  sirve la caché preprocesada).
+- **WebView2**: la página se sirve desde `WebResourceRequested` (se navega a https://www.youtube.com/ y esa petición
+  recibe `po_token2.html`; las demás reciben 403, como la regla de contenido de macOS). `callAsyncJavaScript` se emula
+  con `ExecuteScript` + `chrome.webview.postMessage` con un id. Modo InPrivate si el entorno lo permite. Necesita
+  `WebView2Loader.dll` junto al ejecutable (se carga en tiempo de ejecución) y el entorno de ejecución Evergreen.
+- **Credenciales**: una credencial guarda a lo más 2560 B, y la bóveda con avatares pasa de eso, así que va partida en
+  `mx.glasstube.cuentas/boveda/0`, `/1`, …
+- **Foundation**: fuera de Apple `URLSession` vive en `FoundationNetworking` y `XMLParser` en `FoundationXML`; no hay
+  `URLSession.bytes(for:)` (Lounge usa un delegado) ni `RelativeDateTimeFormatter` (RSS usa `Date.RelativeFormatStyle`).
+- El CLI usa `dispatchMain()` en lugar de `NSApplication`.
+- `.github/workflows/ytkit.yml` compila y prueba en macOS, Windows y Linux. En Linux el PoToken lanza un error (no hay
+  WebView) y la bóveda es en memoria: Linux solo sirve para compilar y probar.
+
 ## Cómo se parsean los renderers
 
 - **Campos tolerantes.** Todos los campos de los modelos (`Renderers.swift`, `WatchNext.swift`, `Channel.swift`) van

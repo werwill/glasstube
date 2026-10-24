@@ -1,5 +1,4 @@
 import Foundation
-import JavaScriptCore
 
 public struct ChallengeError: Error, CustomStringConvertible {
     public let description: String
@@ -12,14 +11,14 @@ public struct SolveResult: Sendable {
     public var sig: [String: String] = [:]
     public var nError: String?
     public var sigError: String?
-    /// Segundos dentro de JavaScriptCore (incluye parsear el player con meriyah si no estaba en caché).
+    /// Segundos dentro del motor de JavaScript (incluye parsear el player con meriyah si no estaba en caché).
     public var jsSeconds: TimeInterval = 0
     public var usedPreprocessedCache = false
 }
 
-/// Solver de firma y parámetro `n` sobre JavaScriptCore con los scripts de yt-dlp/ejs que trae SmartTube
+/// Solver de firma y parámetro `n` sobre JavaScriptCore (QuickJS fuera de Apple, ver `ScriptEngine`) con los scripts de yt-dlp/ejs que trae SmartTube
 /// (`V8ChallengeProvider` + `JsRuntimeChalBaseJCP`) y el solver de players TCL (`TclChallengeProvider`).
-/// Un `JSContext` por tipo de solver, reutilizado; el actor serializa el acceso.
+/// Un motor por tipo de solver, reutilizado; el actor serializa el acceso.
 public actor ChallengeSolver {
     public static let shared = ChallengeSolver()
 
@@ -27,8 +26,8 @@ public actor ChallengeSolver {
     private static let tclSection = "tcl-challenge-solver"
     private static let libFiles = ["polyfill.js", "meriyah-6.1.4.min.js", "astring-1.9.0.min.js"]
 
-    private var ejsContext: JSContext?
-    private var tclContext: JSContext?
+    private var ejsContext: ScriptEngine?
+    private var tclContext: ScriptEngine?
 
     // MARK: - yt-dlp/ejs (players web y tv normales)
 
@@ -125,56 +124,60 @@ public actor ChallengeSolver {
         return result
     }
 
-    // MARK: - JavaScriptCore
+    // MARK: - Motor de JavaScript
 
-    private func ejsContextLoaded() throws -> JSContext {
+    /// Los scripts de yt-dlp/ejs y del solver TCL.
+    static var resourceDirectory: URL { Bundle.module.url(forResource: "nsigsolver", withExtension: nil)! }
+
+    /// Carga los dos solvers en su motor sin resolver nada (pruebas y precalentado).
+    func warmUp() throws {
+        _ = try ejsContextLoaded()
+        _ = try tclContextLoaded()
+    }
+
+    private func ejsContextLoaded() throws -> ScriptEngine {
         if let ejsContext { return ejsContext }
         let context = try makeContext(files: Self.libFiles + ["yt.solver.core.js"])
         ejsContext = context
         return context
     }
 
-    private func tclContextLoaded() throws -> JSContext {
+    private func tclContextLoaded() throws -> ScriptEngine {
         if let tclContext { return tclContext }
         let context = try makeContext(files: Self.libFiles + ["tcl.solver.js"])
         tclContext = context
         return context
     }
 
-    private func makeContext(files: [String]) throws -> JSContext {
-        guard let context = JSContext() else { throw ChallengeError("no se pudo crear JSContext") }
-        context.name = "glasstube-solver"
-        // Se invoca de forma síncrona dentro de evaluateScript, en el hilo del actor.
-        context.exceptionHandler = { _, exception in
-            let message = exception?.toString() ?? "excepción"
-            let stack = exception?.objectForKeyedSubscript("stack")?.toString() ?? ""
-            Self.lastSyncException = "\(message)\n\(stack.prefix(600))"
+    private func makeContext(files: [String]) throws -> ScriptEngine {
+        let context: ScriptEngine
+        do {
+            context = try ScriptEngines.make(name: "glasstube-solver")
+        } catch {
+            throw ChallengeError("\(error)")
         }
-        let dir = Bundle.module.url(forResource: "nsigsolver", withExtension: nil)!
+        let dir = Self.resourceDirectory
         for file in files {
             let code = try String(contentsOf: dir.appendingPathComponent(file), encoding: .utf8)
-            Self.lastSyncException = nil
-            context.evaluateScript(code, withSourceURL: URL(string: "glasstube://nsigsolver/\(file)"))
-            if let exception = Self.lastSyncException {
+            do {
+                try context.evaluate(code, sourceURL: "glasstube://nsigsolver/\(file)")
+            } catch let exception as ScriptException {
                 throw ChallengeError("error cargando \(file): \(exception)")
             }
         }
         return context
     }
 
-    nonisolated(unsafe) private static var lastSyncException: String?
-
     /// `JSON.stringify(entry(JSON.parse(input)))`: el JSON se pasa como valor, no como código.
-    private func run(_ context: JSContext, entry: String, input: [String: Any]) throws -> [String: Any] {
+    private func run(_ context: ScriptEngine, entry: String, input: [String: Any]) throws -> [String: Any] {
         let json = String(decoding: try JSONSerialization.data(withJSONObject: input), as: UTF8.self)
-        context.setObject(json, forKeyedSubscript: "__glasstubeInput" as NSString)
-        Self.lastSyncException = nil
-        let value = context.evaluateScript("JSON.stringify(\(entry)(JSON.parse(__glasstubeInput)))")
-        context.setObject(nil, forKeyedSubscript: "__glasstubeInput" as NSString)
-        if let exception = Self.lastSyncException {
-            throw ChallengeError("JavaScriptCore: \(exception)")
+        let text: String?
+        do {
+            text = try context.callJSON(entry: entry, input: json)
+        } catch let exception as ScriptException {
+            throw ChallengeError("\(context.name): \(exception)")
         }
-        guard let text = value?.toString(), let data = text.data(using: .utf8),
+        guard let text, let data = text.data(using: .utf8),
               let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ChallengeError("salida del solver ilegible")
         }

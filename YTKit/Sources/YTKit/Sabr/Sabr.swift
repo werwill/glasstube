@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 // Cliente SABR (Server-side ABR de googlevideo): POST de `VideoPlaybackAbrRequest` (protobuf) a
 // `serverAbrStreamingUrl` y respuesta en UMP. Port de la parte necesaria de SmartTube:

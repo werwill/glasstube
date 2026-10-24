@@ -1,4 +1,8 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto // swift-crypto: la misma API de CryptoKit fuera de Apple
+#endif
 import Foundation
 
 // DeArrow (https://dearrow.ajay.app, de los autores de SponsorBlock): títulos y miniaturas que vota la comunidad en

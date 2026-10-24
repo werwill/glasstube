@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Registro a stderr; `verbose` lo activa el CLI con `-v`.
 public enum Log {
