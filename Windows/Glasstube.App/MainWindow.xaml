@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Glasstube.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Glasstube">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="Root">
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="TitleRow" Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Barra de título propia (la ventana extiende su contenido sobre ella). -->
+        <Grid x:Name="AppTitleBar" Padding="16,0,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="40,0,0,0">
+                <FontIcon Glyph="&#xE714;" FontSize="16" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                <TextBlock Text="Glasstube" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <NavigationView
+            x:Name="Nav"
+            Grid.Row="0" Grid.RowSpan="2"
+            IsSettingsVisible="False"
+            IsBackButtonVisible="Visible"
+            IsBackEnabled="{x:Bind ContentFrame.CanGoBack, Mode=OneWay}"
+            BackRequested="OnBackRequested"
+            SelectionChanged="OnSelectionChanged"
+            PaneDisplayMode="Auto"
+            OpenPaneLength="260"
+            IsTitleBarAutoPaddingEnabled="False"
+            Margin="0,48,0,0">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Inicio" Tag="home" x:Name="HomeItem">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Suscripciones" Tag="subscriptions">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE8F2;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Biblioteca" Tag="library">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE8F1;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+            <NavigationView.PaneFooter>
+                <StackPanel x:Name="AccountPanel" Orientation="Horizontal" Spacing="12" Padding="12,8" Visibility="Collapsed">
+                    <PersonPicture x:Name="AccountPicture" Width="32" Height="32" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="AccountName" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="AccountByline" Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </StackPanel>
+            </NavigationView.PaneFooter>
+            <Frame x:Name="ContentFrame" Navigated="OnNavigated" />
+        </NavigationView>
+    </Grid>
+</Window>
