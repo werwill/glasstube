@@ -27,6 +27,7 @@ sha256() {
     if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }
 
+# Primera línea: el paquete. Las siguientes (nombre terminado en .h): cabeceras que el paquete no trae.
 read -r name sha url < <(grep -v '^\s*\(#\|$\)' "$list" | head -1)
 archive="$downloads/$name.7z"
 if [[ ! -f "$archive" ]]; then
@@ -66,6 +67,21 @@ rm -rf "$out"
 mkdir -p "$out/bin" "$out/include/mpv" "$out/lib"
 cp "$dll" "$out/bin/"
 cp "$(dirname "$client")"/*.h "$out/include/mpv/"
+
+# render_d3d11.h: render.h ya la anuncia (API 2.6) pero el paquete de zhongfly no la incluye. Se baja del repositorio de
+# mpv en el mismo commit que el paquete y se verifica igual que el .7z.
+while read -r header hsha hurl; do
+    [[ "$header" == *.h && ! -f "$out/include/mpv/$header" ]] || continue
+    file="$downloads/$header"
+    [[ -f "$file" ]] || curl -fL --retry 3 --silent --show-error -o "$file" "$hurl"
+    if [[ "$(sha256 "$file")" != "$hsha" ]]; then
+        echo "ERROR: SHA-256 de $header no coincide: esperado $hsha, obtenido $(sha256 "$file")" >&2
+        rm -f "$file"
+        exit 1
+    fi
+    cp "$file" "$out/include/mpv/"
+    echo "ok $header $hsha (aparte del paquete)"
+done < <(grep -v '^\s*\(#\|$\)' "$list" | tail -n +2)
 
 # Biblioteca de importación: las funciones que las cabeceras marcan con MPV_EXPORT (las mismas que exporta la DLL).
 # Se hace aquí y no se usa el libmpv.dll.a del paquete porque ese es de MinGW y el enlazador de MSVC no lo lee.

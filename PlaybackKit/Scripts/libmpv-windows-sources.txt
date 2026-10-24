@@ -9,3 +9,6 @@
 # zhongfly solo guarda sus últimas 64 compilaciones (unos dos meses): el .7z se queda en Vendor/downloads/ y el script lo
 # reutiliza. Si GitHub da 404, hay que fijar una compilación más nueva.
 mpv-dev-lgpl-x86_64 7bde835900796b57b46cc5a1b497a356f390dec35ee403a8972e3dd3160b71ca https://github.com/zhongfly/mpv-winbuild/releases/download/2026-10-23-fa0534a729/mpv-dev-lgpl-x86_64-20261023-git-fa0534a729.7z
+# El paquete no trae include/mpv/render_d3d11.h (la API de render D3D11): se baja del repositorio de mpv en el mismo
+# commit (fa0534a729). Licencia ISC, como las demás cabeceras.
+render_d3d11.h 7b880453ee3c780b0d0f1c3f8ecaa1d23b289522f4c687e6857c8475f4a3f6fb https://raw.githubusercontent.com/mpv-player/mpv/fa0534a729/include/mpv/render_d3d11.h
