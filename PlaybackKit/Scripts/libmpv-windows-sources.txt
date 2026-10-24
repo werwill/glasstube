@@ -3,7 +3,9 @@
 # Se excluyen los paquetes `mpv-dev-*` sin «lgpl» (GPL) y las variantes x86_64-v3 (exigen AVX2: Haswell o posterior).
 # Formato igual que libmpv-sources.txt: nombre, SHA-256 y URL. Lo usa fetch-libmpv-windows.sh.
 #
-# Versión: mpv git 49418246f3 (21 de agosto de 2026, API cliente 2.5; misma API que la 0.41.0 de MPVKit en macOS).
-# El SHA-256 es el que GitHub muestra para el archivo en la página de la versión; el script lo comprueba al descargar
-# y se niega a seguir si no coincide.
-mpv-dev-lgpl-x86_64 317dfd9ee814be76e5f6e20b45efcc07440389a62b55dd85201829b4880510e0 https://github.com/zhongfly/mpv-winbuild/releases/download/2026-08-21-49418246f3/mpv-dev-lgpl-x86_64-20260821-git-49418246f3.7z
+# Versión: mpv git fa0534a729 (23 de octubre de 2026, API cliente 2.6: trae render_d3d11.h, la API de render D3D11 de
+# mpv 0.42). El SHA-256 es el que GitHub muestra para el archivo en la página de la versión; el script lo comprueba al
+# descargar y se niega a seguir si no coincide.
+# zhongfly solo guarda sus últimas 64 compilaciones (unos dos meses): el .7z se queda en Vendor/downloads/ y el script lo
+# reutiliza. Si GitHub da 404, hay que fijar una compilación más nueva.
+mpv-dev-lgpl-x86_64 7bde835900796b57b46cc5a1b497a356f390dec35ee403a8972e3dd3160b71ca https://github.com/zhongfly/mpv-winbuild/releases/download/2026-10-23-fa0534a729/mpv-dev-lgpl-x86_64-20261023-git-fa0534a729.7z

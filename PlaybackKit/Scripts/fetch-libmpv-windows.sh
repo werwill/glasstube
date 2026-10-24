@@ -9,8 +9,9 @@
 #
 #   Scripts/fetch-libmpv-windows.sh
 #
-# Corre en Git Bash (Windows), Linux o macOS. Necesita curl, sha256sum o shasum, 7z o un tar que lea .7z (bsdtar),
-# y una de estas para la biblioteca de importación: llvm-dlltool, x86_64-w64-mingw32-dlltool o lib.exe (MSVC).
+# Corre en Git Bash (Windows), Linux o macOS. Necesita curl, sha256sum o shasum, 7z o un tar que lea .7z (bsdtar, como
+# el tar.exe de Windows 10/11) y una de estas para la biblioteca de importación: llvm-dlltool,
+# x86_64-w64-mingw32-dlltool o lib.exe (MSVC).
 # Si el .7z ya está en Vendor/downloads/ (p. ej. bajado con el navegador) no se vuelve a descargar.
 set -euo pipefail
 
@@ -45,10 +46,14 @@ dest="$extracted/$name"
 if [[ ! -d "$dest" ]]; then
     rm -rf "$dest.tmp"
     mkdir -p "$dest.tmp"
+    wintar=""
+    if command -v cygpath >/dev/null; then wintar="$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe"; fi
     if command -v 7z >/dev/null; then
         7z x -y -bd -o"$dest.tmp" "$archive" >/dev/null
+    elif [[ -x "$wintar" ]]; then
+        "$wintar" -xf "$archive" -C "$dest.tmp" # bsdtar de Windows 10/11: lee .7z; el tar de Git Bash (GNU) no
     else
-        tar -xf "$archive" -C "$dest.tmp" # bsdtar (el tar.exe de Windows 10/11) lee .7z
+        tar -xf "$archive" -C "$dest.tmp" # bsdtar (macOS) lee .7z
     fi
     mv "$dest.tmp" "$dest"
 fi
