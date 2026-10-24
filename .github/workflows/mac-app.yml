@@ -1,0 +1,25 @@
+# La app de Mac (App/) compila con lo que comparte con la de Windows (YTKit y PlaybackKit). libmpv sale de los binarios
+# LGPL de MPVKit, verificados por SHA-256 (PlaybackKit/Scripts/fetch-libmpv.sh) y enlazados en Libmpv.xcframework.
+name: App de Mac
+
+on:
+  push:
+    paths: ["App/**", "YTKit/**", "PlaybackKit/**", ".github/workflows/mac-app.yml"]
+  pull_request:
+    paths: ["App/**", "YTKit/**", "PlaybackKit/**", ".github/workflows/mac-app.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: PlaybackKit/Vendor/downloads
+          key: libmpv-${{ hashFiles('PlaybackKit/Scripts/libmpv-sources.txt') }}
+      - run: PlaybackKit/Scripts/fetch-libmpv.sh && PlaybackKit/Scripts/link-libmpv.sh
+      - run: swift build
+        working-directory: PlaybackKit
+      - run: swift build
+        working-directory: App

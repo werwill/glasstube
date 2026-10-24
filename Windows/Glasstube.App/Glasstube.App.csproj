@@ -8,7 +8,7 @@
     <RootNamespace>Glasstube</RootNamespace>
     <AssemblyName>Glasstube</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon></ApplicationIcon>
+    <ApplicationIcon>Assets\Glasstube.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -28,6 +28,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250909003" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
+  </ItemGroup>
+
+  <!-- El icono (lo genera Windows/Installer/make-icon.py): en el exe y junto a él para AppWindow.SetIcon. -->
+  <ItemGroup>
+    <Content Include="Assets\Glasstube.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- DLL nativas que deja build.ps1 en Windows/out/native (runtime de Swift, GlasstubeFFI, MPVBridge, libmpv) y los

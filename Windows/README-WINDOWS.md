@@ -11,6 +11,7 @@ Windows/
   MPVBridge/           MPVBridge.c → MPVBridge.dll (libmpv en el SwapChainPanel; sale de winui-spike/step4-video)
   GlasstubeCore/       lógica sin interfaz (rama glasstube-core)
   Glasstube.App/       la app WinUI 3 (MainWindow, HomePage, PlayerPage, P/Invoke en Native/)
+  Installer/           instalador (Inno Setup) e icono
   out/                 salida del build (ignorada por git)
 ```
 
@@ -29,6 +30,23 @@ cd Windows
 
 `out/app` pesa ~250 MB: el runtime de Swift (~70 MB, se copia entero para no fallar por una DLL que falte), libmpv (~100 MB)
 y GlasstubeFFI (31 MB en release).
+
+## Instalador e icono
+
+```powershell
+winget install JRSoftware.InnoSetup          # una vez
+.\Installeruild-installer.ps1 -Version 0.1.0   # build.ps1, dotnet build e Inno Setup
+```
+
+Deja `dist/Glasstube-<versión>-Windows-x64-Setup.exe` y su `.sha256` (como el `.dmg` de la app de Mac: `dist/` no va al
+repositorio, se sube a GitHub Releases). La app va autocontenida (.NET 8 y Windows App SDK dentro), así que no pide
+ningún runtime aparte; solo WebView2, que Windows 11 trae y el instalador avisa si falta. Se instala por usuario en
+`%LOCALAPPDATA%\Programs\Glasstube` sin permisos de administrador (o para todos, si se elige al principio), con acceso
+en Inicio, acceso opcional en el escritorio y desinstalador. Sin firma, SmartScreen avisa la primera vez («Más
+información» → «Ejecutar de todas formas»).
+
+El icono (`Glasstube.App/Assets/Glasstube.ico`) sale del de la app de Mac con `python Installer/make-icon.py` (Pillow):
+cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg` hasta 32 px.
 
 ## Cómo encajan las piezas
 
@@ -103,6 +121,6 @@ y GlasstubeFFI (31 MB en release).
   que dejó `ytkit signin`). Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
 - Atajos de volumen; recordar tamaño de ventana.
 - Errores de red con reintento en el Inicio (hoy un aviso y el botón de actualizar).
-- Empaquetado MSIX, icono, instalador y firma. El runtime de Swift se copia entero (se puede recortar).
+- Firma del instalador y del exe (sin ella SmartScreen avisa) y actualizaciones automáticas. El runtime de Swift se copia entero (se puede recortar).
 - `gt_pump` con temporizador: se podría despertar solo cuando la cola tiene trabajo
   (`_dispatch_get_main_queue_handle_4CF`).

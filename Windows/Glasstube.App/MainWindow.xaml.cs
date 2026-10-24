@@ -84,6 +84,8 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         AppWindow.Resize(new SizeInt32(1440, 900));
+        // Sin empaquetar, la barra de tareas y Alt+Tab toman el icono de la ventana, no el del exe.
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Glasstube.ico"));
         AppTitleBar.LayoutUpdated += (_, _) => UpdatePassthrough();
         UpdateCaptionColors();
 
