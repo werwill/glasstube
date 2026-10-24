@@ -10,14 +10,16 @@ public partial class App : Application
     public static MainWindow? Window { get; private set; }
 
     /// <summary>Termina cuando el motor Swift está listo (catálogo, sesión y servicio).</summary>
-    public static Task<Models.InitInfo> Ready { get; private set; } = Task.FromException<Models.InitInfo>(new InvalidOperationException());
+    public static Task<Models.InitInfo> Ready { get; private set; } = new TaskCompletionSource<Models.InitInfo>().Task;
 
     DispatcherQueueTimer? pump;
 
     public App()
     {
         InitializeComponent();
-        UnhandledException += (_, e) => Console.Error.WriteLine($"[app] {e.Exception}");
+        UnhandledException += (_, e) => GlasstubeFFI.Log("app", $"excepción sin atrapar: {e.Exception}");
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => GlasstubeFFI.Log("app", $"excepción fatal: {e.ExceptionObject}");
+        TaskScheduler.UnobservedTaskException += (_, e) => GlasstubeFFI.Log("app", $"tarea sin observar: {e.Exception}");
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
@@ -31,11 +33,18 @@ public partial class App : Application
         pump.Start();
 
         var (language, region) = CatalogLocale(CultureInfo.CurrentUICulture, RegionInfo.CurrentRegion);
+        GlasstubeFFI.Log("app", $"arranque: {Environment.ProcessPath}, carpeta de trabajo {Environment.CurrentDirectory}");
         Ready = GlasstubeFFI.Init(language, region);
 
         Window = new MainWindow();
         Window.Closed += (_, _) => { pump?.Stop(); GlasstubeFFI.Shutdown(); };
         Window.Activate();
+
+        // `Glasstube.exe --abrir <videoId>`: abre ese video al arrancar (pruebas y enlaces).
+        var arguments = Environment.GetCommandLineArgs();
+        var index = Array.IndexOf(arguments, "--abrir");
+        if (index >= 0 && index + 1 < arguments.Length)
+            Window.Play(new Models.VideoCard { Id = arguments[index + 1], Title = arguments[index + 1] });
     }
 
     /// <summary>"es-MX" → ("es-419", "MX"), como CatalogLocale.current en YTKit.</summary>

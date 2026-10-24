@@ -18,6 +18,8 @@ public static class GlasstubeFFI
     [DllImport(Dll)] static extern unsafe void gt_shutdown();
     [DllImport(Dll)] static extern unsafe byte* gt_version();
     [DllImport(Dll)] static extern unsafe void gt_free(byte* pointer);
+    [DllImport(Dll)] static extern unsafe void gt_log(byte* source, byte* message);
+    [DllImport(Dll)] static extern unsafe byte* gt_log_directory();
     [DllImport(Dll)] static extern unsafe void gt_load_session(delegate* unmanaged<IntPtr, int, byte*, void> callback, IntPtr context);
     [DllImport(Dll)] static extern unsafe void gt_home(delegate* unmanaged<IntPtr, int, byte*, void> callback, IntPtr context);
     [DllImport(Dll)] static extern unsafe void gt_home_more(delegate* unmanaged<IntPtr, int, byte*, void> callback, IntPtr context);
@@ -69,6 +71,26 @@ public static class GlasstubeFFI
     public static unsafe string Version()
     {
         var pointer = gt_version();
+        try { return Marshal.PtrToStringUTF8((IntPtr)pointer) ?? ""; }
+        finally { gt_free(pointer); }
+    }
+
+    /// <summary>Una línea en %LOCALAPPDATA%\Glasstube\logs\glasstube.log (desde cualquier hilo).</summary>
+    public static unsafe void Log(string source, string message)
+    {
+        try
+        {
+            fixed (byte* s = Utf8(source), m = Utf8(message)) gt_log(s, m);
+        }
+        catch
+        {
+            // Sin la DLL no hay registro; no es motivo para caerse.
+        }
+    }
+
+    public static unsafe string LogDirectory()
+    {
+        var pointer = gt_log_directory();
         try { return Marshal.PtrToStringUTF8((IntPtr)pointer) ?? ""; }
         finally { gt_free(pointer); }
     }

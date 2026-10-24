@@ -80,14 +80,33 @@ public func gt_init(_ language: UnsafePointer<CChar>?, _ region: UnsafePointer<C
     let reply = Reply(callback: callback, context: context)
     let current = CatalogLocale.current
     let locale = CatalogLocale(language: string(language) ?? current.language, region: string(region) ?? current.region)
+    Log.sink = { FileLog.shared.write("ytkit", $0) }
+    log("gt_init \(version) · \(locale.language)-\(locale.region)")
     Task { @MainActor in
         do {
             if Engine.shared == nil { Engine.shared = try Engine(locale: locale) }
             reply.ok(["language": locale.language, "region": locale.region, "version": version])
         } catch {
+            log("gt_init falló: \(error)")
             reply.fail(error)
         }
     }
+}
+
+/// Una línea en el registro de la app, de parte de `source` ("app", "mpv"…). Se puede llamar desde cualquier hilo.
+@_cdecl("gt_log")
+public func gt_log(_ source: UnsafePointer<CChar>?, _ message: UnsafePointer<CChar>?) {
+    FileLog.shared.write(string(source) ?? "?", string(message) ?? "")
+}
+
+/// Carpeta del registro (%LOCALAPPDATA%\Glasstube\logs). Se libera con gt_free.
+@_cdecl("gt_log_directory")
+public func gt_log_directory() -> UnsafeMutablePointer<CChar>? {
+    #if os(Windows)
+    _strdup(FileLog.shared.directory.path)
+    #else
+    strdup(FileLog.shared.directory.path)
+    #endif
 }
 
 /// Vacía la cola principal (los trabajos del actor principal, incluidos los callbacks). Desde el hilo de la interfaz,
@@ -213,8 +232,11 @@ public func gt_home(_ callback: GTCallback, _ context: UnsafeMutableRawPointer?)
             let engine = try Engine.require()
             _ = try? await engine.session.load()
             engine.homeSeen = []
-            reply.ok(await engine.feed(try await engine.service.home()))
+            let feed = await engine.feed(try await engine.service.home())
+            log("Inicio: \(feed.items.count) videos, más: \(feed.hasMore), sesión: \(feed.signedIn)")
+            reply.ok(feed)
         } catch {
+            log("Inicio falló: \(error)")
             reply.fail(error)
         }
     }
@@ -232,6 +254,7 @@ public func gt_home_more(_ callback: GTCallback, _ context: UnsafeMutableRawPoin
             }
             reply.ok(await engine.feed(try await engine.service.continuePage(continuation)))
         } catch {
+            log("Inicio (más) falló: \(error)")
             reply.fail(error)
         }
     }
@@ -268,6 +291,21 @@ extension StreamPayload.Track {
     }
 }
 
+/// Directos: el manifiesto HLS del cliente VISIONOS (sin desafíos), como `YouTubeLive.hlsManifest` en PlaybackKit.
+@MainActor
+func liveManifest(videoId: String, catalog: ClientCatalog) async throws -> (ClientProfile, String, String?) {
+    guard let client = catalog.profile("VISIONOS") else { throw FFIError("clients.json no trae VISIONOS") }
+    var request = Innertube.PlayerRequest(videoId: videoId, client: client)
+    request.visitorData = try? await PlayerScriptStore.shared.appInfo().visitorData
+    let reply = try await Innertube().player(request)
+    guard reply.status == 200 else { throw FFIError("player HTTP \(reply.status)") }
+    let response = try JSONDecoder().decode(PlayerResponse.self, from: reply.data)
+    guard response.playabilityStatus?.status == "OK", let hls = response.streamingData?.hlsManifestUrl else {
+        throw FFIError("VISIONOS: \(response.playabilityStatus?.status ?? "?") \(response.playabilityStatus?.reason ?? "sin HLS")")
+    }
+    return (client, hls, response.videoDetails?.title)
+}
+
 /// URLs para mpv: la rotación de clientes de YTKit (firma, `n` y, si hace falta, PoToken de WebView2), hasta
 /// `maxHeight` (0 = 1080).
 @_cdecl("gt_resolve_stream")
@@ -281,12 +319,42 @@ public func gt_resolve_stream(_ videoId: UnsafePointer<CChar>?, _ maxHeight: Int
             var options = ResolveOptions()
             options.maxHeight = maxHeight > 0 ? Int(maxHeight) : 1080
             options.codecOrder = [.vp9, .avc, .av1]
+            log("resolver \(videoId) (hasta \(options.maxHeight ?? 0)p)…")
+            let start = Date()
             let report = await engine.service.formatInfo(videoId: videoId, options: options)
+            // Cada intento ya lo anota YTKit (`Log.info`), con su HTTP, playability y comprobación de URLs.
+            let elapsed = String(format: "%.1f s", Date().timeIntervalSince(start))
             var headers = StreamResolver.streamHeaders
+            // Un directo en curso va por HLS: sus formatos adaptativos son URLs de un solo segmento (`sq`) y mpv se
+            // detiene a los pocos segundos.
+            // TV_DOWNGRADED no marca `isLive` ni trae HLS; se nota en que sus formatos no tienen `contentLength`.
+            let isLive = report.attempts.contains(where: \.isLive)
+                || (report.chosen.map { $0.video?.contentLength == nil && $0.audio?.contentLength == nil } ?? false)
+            if isLive {
+                if let attempt = report.attempts.first(where: { $0.playability == "OK" && $0.hlsManifestURL != nil }),
+                   let hls = attempt.hlsManifestURL {
+                    headers["User-Agent"] = attempt.client.userAgent
+                    log("resuelto \(videoId) en \(elapsed): \(attempt.client.id), directo por HLS")
+                    return reply.ok(StreamPayload(
+                        videoId: videoId, title: report.title, author: report.author, client: attempt.client.id, hls: hls,
+                        userAgent: attempt.client.userAgent, headers: headers))
+                }
+                do {
+                    let (client, hls, title) = try await liveManifest(videoId: videoId, catalog: engine.service.catalog)
+                    headers["User-Agent"] = client.userAgent
+                    log("resuelto \(videoId): directo por HLS de \(client.id)")
+                    return reply.ok(StreamPayload(
+                        videoId: videoId, title: title ?? report.title, author: report.author, client: client.id,
+                        hls: hls, userAgent: client.userAgent, headers: headers))
+                } catch {
+                    log("directo \(videoId) sin HLS (\(error)); se prueba con los formatos adaptativos")
+                }
+            }
             if let chosen = report.chosen, let video = StreamPayload.Track(chosen.video),
                let audio = StreamPayload.Track(chosen.audio) {
                 let duration = (chosen.video?.approxDurationMs ?? chosen.audio?.approxDurationMs).map { Double($0) / 1000 }
                 headers["User-Agent"] = chosen.client.userAgent
+                log("resuelto \(videoId) en \(elapsed): \(chosen.client.id), video \(video.itag) \(video.codec) \(video.label), audio \(audio.itag) \(audio.codec)")
                 return reply.ok(StreamPayload(
                     videoId: videoId, title: report.title, author: report.author, client: chosen.client.id,
                     video: video, audio: audio, durationSeconds: duration, userAgent: chosen.client.userAgent,
@@ -296,13 +364,19 @@ public func gt_resolve_stream(_ videoId: UnsafePointer<CChar>?, _ maxHeight: Int
             if let attempt = report.attempts.first(where: { $0.playability == "OK" && $0.hlsManifestURL != nil }),
                let hls = attempt.hlsManifestURL {
                 headers["User-Agent"] = attempt.client.userAgent
+                log("resuelto \(videoId) en \(elapsed): \(attempt.client.id), HLS")
                 return reply.ok(StreamPayload(
                     videoId: videoId, title: report.title, author: report.author, client: attempt.client.id, hls: hls,
                     userAgent: attempt.client.userAgent, headers: headers))
             }
             let reasons = report.attempts.map { "\($0.client.id): \($0.error ?? $0.reason ?? $0.playability ?? "?")" }
-            reply.fail("ningún cliente dio streams reproducibles (\(reasons.joined(separator: "; ")))")
+            log("sin streams para \(videoId) en \(elapsed)")
+            // La razón que da YouTube (edad, región, privado…) va primero; los detalles, después.
+            let reason = report.attempts.lazy.compactMap(\.reason).first
+            reply.fail((reason.map { "YouTube: \($0)" } ?? "Ningún cliente de YouTube dio streams reproducibles.")
+                       + "\n\nDetalles: " + reasons.joined(separator: "; "))
         } catch {
+            log("resolver \(videoId) falló: \(error)")
             reply.fail(error)
         }
     }

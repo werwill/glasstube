@@ -16,6 +16,10 @@
 
 typedef struct mpvb_player mpvb_player;
 
+/// Recibe cada línea de registro del puente y los avisos/errores de mpv (en el hilo que llama a mpvb_poll).
+typedef void (*mpvb_logger)(const char *line);
+MPVB_API void mpvb_set_logger(mpvb_logger callback);
+
 /// Estado para la interfaz (se lee en cada `mpvb_poll`).
 typedef struct mpvb_state {
     double position;   // segundos

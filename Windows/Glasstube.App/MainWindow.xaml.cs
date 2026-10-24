@@ -37,7 +37,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception error)
         {
-            Console.Error.WriteLine($"[app] sesión: {error.Message}");
+            GlasstubeFFI.Log("app", $"sesión: {error.Message}");
         }
     }
 

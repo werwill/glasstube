@@ -34,6 +34,12 @@ void gt_shutdown(void);
 char *gt_version(void);
 void gt_free(char *string);
 
+/// Registro en %LOCALAPPDATA%\Glasstube\logs\glasstube.log (YTKit, la FFI y lo que mande el cliente). Una app de
+/// ventana no tiene stderr: todo lo que antes iba ahí va a este archivo. Desde cualquier hilo.
+void gt_log(const char *source, const char *message);
+/// Carpeta del registro. Se libera con gt_free.
+char *gt_log_directory(void);
+
 /// Sesión guardada: {"signedIn", "selected": {"name", "byline", "avatar", "isBrand"} | null, "accountCount"}.
 void gt_load_session(gt_callback callback, void *context);
 

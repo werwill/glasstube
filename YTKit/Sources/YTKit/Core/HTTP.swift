@@ -3,17 +3,26 @@ import Foundation
 import FoundationNetworking
 #endif
 
-/// Registro a stderr; `verbose` lo activa el CLI con `-v`.
+/// Registro a stderr (o a `sink`); `verbose` lo activa el CLI con `-v`.
 public enum Log {
     nonisolated(unsafe) public static var verbose = false
+    /// Destino en lugar de stderr (la app de Windows escribe a un archivo). Se fija una vez, al arrancar.
+    nonisolated(unsafe) public static var sink: (@Sendable (String) -> Void)?
 
     public static func debug(_ message: @autoclosure () -> String) {
         guard verbose else { return }
-        FileHandle.standardError.write(Data("· \(message())\n".utf8))
+        write("· \(message())")
     }
 
     public static func info(_ message: String) {
-        FileHandle.standardError.write(Data("\(message)\n".utf8))
+        write(message)
+    }
+
+    /// `write(_: Data)` de FileHandle aborta si falla, y una app de ventana lanzada con doble clic no tiene stderr: con
+    /// `write(contentsOf:)` el error se ignora.
+    static func write(_ line: String) {
+        if let sink { return sink(line) }
+        try? FileHandle.standardError.write(contentsOf: Data("\(line)\n".utf8))
     }
 }
 

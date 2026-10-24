@@ -20,7 +20,7 @@ public struct MpvState
 }
 
 /// <summary>libmpv dentro de un SwapChainPanel (MPVBridge.dll). Todo desde el hilo de la interfaz.</summary>
-public sealed class MpvPlayer : IDisposable
+public sealed unsafe class MpvPlayer : IDisposable
 {
     const string Dll = "MPVBridge.dll";
 
@@ -35,6 +35,12 @@ public sealed class MpvPlayer : IDisposable
     [DllImport(Dll)] static extern void mpvb_set_volume(IntPtr player, double volume);
     [DllImport(Dll)] static extern IntPtr mpvb_last_error(IntPtr player);
     [DllImport(Dll)] static extern void mpvb_destroy(IntPtr player);
+    [DllImport(Dll)] static extern unsafe void mpvb_set_logger(delegate* unmanaged<byte*, void> callback);
+
+    [UnmanagedCallersOnly]
+    static unsafe void OnLog(byte* line) => GlasstubeFFI.Log("mpv", Marshal.PtrToStringUTF8((IntPtr)line) ?? "");
+
+    static unsafe MpvPlayer() => mpvb_set_logger(&OnLog);
 
     IntPtr handle;
 

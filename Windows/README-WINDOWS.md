@@ -42,10 +42,24 @@ y GlasstubeFFI (31 MB en release).
   arranca con la cuenta ya iniciada. Con sesión, el Inicio es el de la cuenta (por TV).
 - **Streams.** `gt_resolve_stream` usa la rotación de clientes de YTKit (`formatInfo`: firma, `n`, validación de las URLs y,
   si hace falta, PoToken con WebView2), hasta 1080p, VP9 > H.264 > AV1. Devuelve la URL de video y la de audio, y mpv las
-  abre con `audio-files`, el `User-Agent` del cliente y `Origin`/`Referer`. Los directos usan el manifiesto HLS.
+  abre con `audio-files`, el `User-Agent` del cliente y `Origin`/`Referer`. Los directos en curso (TV_DOWNGRADED no los
+  marca: se notan en que los formatos no traen `contentLength`) usan el manifiesto HLS del cliente VISIONOS, como
+  `YouTubeLive` en PlaybackKit. Los videos con restricción de edad fallan con «Sign in to confirm your age» (falta pedir el
+  player con la cuenta).
 - **Video.** `d3d11-output-mode=composition`: mpv crea su swapchain, el puente la lee de `display-swapchain` y la pone con
   `ISwapChainPanelNative::SetSwapChain`. El tamaño en píxeles físicos va a `d3d11-composition-size` y la escala con
   `SetMatrixTransform`. El manifiesto declara PerMonitorV2 (sin él, todo sale borroso al 125 %).
+
+## Registro y diagnóstico
+
+- Todo va a `%LOCALAPPDATA%\Glasstube\logs\glasstube.log`: `[app]` (C#), `[ffi]` (resolución: cliente, formatos, tiempo),
+  `[ytkit]` (cada intento de la rotación con HTTP, playability y comprobación de URLs) y `[mpv]` (avisos y errores).
+  Pasa de 5 MB → `glasstube.old.log`. La ruta sale también en el mensaje de error del reproductor.
+- Una app de ventana lanzada con doble clic **no tiene stderr**: `FileHandle.write(_: Data)` aborta el proceso si falla
+  (crash `0xc000001d` en swiftCore.dll). Por eso `Log` de YTKit tiene `sink` y usa `write(contentsOf:)` con `try?`.
+  No uses `FileHandle.standardError.write(Data)` en código que corra dentro de la DLL.
+- `Glasstube.exe --abrir <videoId>` abre ese video al arrancar (pruebas).
+- El reproductor da error claro si la resolución pasa de 45 s o mpv no muestra imagen en 30 s.
 
 ## Qué funciona (probado el 23-oct-2026 en esta PC)
 

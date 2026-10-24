@@ -40,6 +40,13 @@ foreach ($name in 'SDKROOT', 'DEVELOPER_DIR') {
 
 function Step($text) { Write-Host "`n== $text" -ForegroundColor Cyan }
 function Check($what) { if ($LASTEXITCODE -ne 0) { throw "$what falló (código $LASTEXITCODE)" } }
+# Los compiladores escriben avisos por stderr, y con 'Stop' PowerShell 5.1 los toma por errores cuando la salida va
+# redirigida. Los fallos de verdad se ven en el código de salida (Check).
+function Native([scriptblock] $command) {
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $command 2>&1 | ForEach-Object { "$_" } } finally { $ErrorActionPreference = $previous }
+}
 
 if (-not (Test-Path "$vendor\bin\libmpv-2.dll")) {
     throw "Falta libmpv en $vendor. Bájala con: bash PlaybackKit/Scripts/fetch-libmpv-windows.sh"
@@ -50,7 +57,7 @@ $ffi = Join-Path $windows 'GlasstubeFFI'
 if (-not $SkipSwift) {
     Step "GlasstubeFFI ($Configuration)"
     Push-Location $ffi
-    try { swift build -c $Configuration --product GlasstubeFFI; Check 'swift build' } finally { Pop-Location }
+    try { Native { swift build -c $Configuration --product GlasstubeFFI }; Check 'swift build' } finally { Pop-Location }
 }
 $swiftConfig = if ($Configuration -eq 'release') { 'Release' } else { 'Debug' }
 $products = Join-Path $ffi ".build\out\Products\$swiftConfig-windows-x86_64"
@@ -60,8 +67,8 @@ if (-not (Test-Path "$products\GlasstubeFFI.dll")) { throw "No está $products\G
 Step 'MPVBridge'
 $bridgeOut = Join-Path $out 'mpvbridge'
 New-Item -ItemType Directory -Force $bridgeOut | Out-Null
-clang -O2 -shared -D_CRT_SECURE_NO_WARNINGS -o "$bridgeOut\MPVBridge.dll" "$windows\MPVBridge\MPVBridge.c" `
-    -I "$vendor\include" -L "$vendor\lib" -lmpv -ld3d11 -ldxgi -ldxguid -luuid
+Native { clang -O2 -shared -D_CRT_SECURE_NO_WARNINGS -o "$bridgeOut\MPVBridge.dll" "$windows\MPVBridge\MPVBridge.c" `
+    -I "$vendor\include" -L "$vendor\lib" -lmpv -ld3d11 -ldxgi -ldxguid -luuid }
 Check 'clang MPVBridge'
 
 # 3. DLL nativas junto al exe
@@ -81,7 +88,7 @@ Write-Host ("{0:n0} MB en {1} (runtime de Swift {2})" -f $size, $native, $runtim
 Step 'Glasstube.App'
 $appOut = Join-Path $out 'app'
 $dotnetConfig = if ($Configuration -eq 'release') { 'Release' } else { 'Debug' }
-dotnet build "$windows\Glasstube.App\Glasstube.App.csproj" -c $dotnetConfig -p:Platform=x64 -o $appOut --nologo -v minimal
+Native { dotnet build "$windows\Glasstube.App\Glasstube.App.csproj" -c $dotnetConfig -p:Platform=x64 -o $appOut --nologo -v minimal }
 Check 'dotnet build'
 Write-Host "`nListo: $appOut\Glasstube.exe" -ForegroundColor Green
 

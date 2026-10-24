@@ -48,18 +48,31 @@ public sealed partial class PlayerPage : Page
         hideTimer.IsRepeating = false;
         hideTimer.Tick += (_, _) => { if (!state.Paused.AsBool() && player != null && !dragging) Controls.Opacity = 0; };
 
+        GlasstubeFFI.Log("app", $"abrir {video.Id} «{video.Title}»");
         try
         {
             await App.Ready;
-            var stream = await GlasstubeFFI.ResolveStream(video.Id);
+            // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
+            var stream = await GlasstubeFFI.ResolveStream(video.Id).WaitAsync(ResolveTimeout);
             if (closed) return;
             Start(stream);
         }
+        catch (TimeoutException)
+        {
+            GlasstubeFFI.Log("app", $"{video.Id}: la resolución pasó de {ResolveTimeout.TotalSeconds} s");
+            if (!closed) ShowError($"YouTube no respondió en {ResolveTimeout.TotalSeconds:0} s. Prueba otra vez.");
+        }
         catch (Exception error)
         {
-            ShowError(error.Message);
+            GlasstubeFFI.Log("app", $"{video.Id}: no se pudo resolver: {error.Message}");
+            if (!closed) ShowError(error.Message);
         }
     }
+
+    static readonly TimeSpan ResolveTimeout = TimeSpan.FromSeconds(45);
+    /// <summary>Si mpv no muestra el primer cuadro en este tiempo, se da por fallido.</summary>
+    static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(30);
+    DateTime loadedAt;
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
@@ -95,8 +108,9 @@ public sealed partial class PlayerPage : Page
             ShowError(player.LastError);
             return;
         }
-        Console.Error.WriteLine($"[app] {stream.VideoId}: cliente {stream.Client}, video {stream.Video?.Label} {stream.Video?.Codec}, audio {stream.Audio?.Label}");
+        GlasstubeFFI.Log("app", $"{stream.VideoId}: cliente {stream.Client}, video {stream.Video?.Label} {stream.Video?.Codec}, audio {stream.Audio?.Label}{(stream.Hls != null ? ", HLS" : "")}");
         SpinnerText.Text = "Cargando…";
+        loadedAt = DateTime.UtcNow;
         poll = DispatcherQueue.CreateTimer();
         poll.Interval = TimeSpan.FromMilliseconds(33);
         poll.Tick += (_, _) => Tick();
@@ -111,7 +125,16 @@ public sealed partial class PlayerPage : Page
         if (state.Error.AsBool())
         {
             poll?.Stop();
-            ShowError(player.LastError);
+            GlasstubeFFI.Log("app", $"mpv falló: {player.LastError}");
+            ShowError($"mpv no pudo abrir el video: {player.LastError}");
+            return;
+        }
+        if (!state.HasVideo.AsBool() && DateTime.UtcNow - loadedAt > StartTimeout)
+        {
+            poll?.Stop();
+            GlasstubeFFI.Log("app", $"sin imagen tras {StartTimeout.TotalSeconds} s (último error de mpv: {player.LastError})");
+            ShowError($"El video no empezó en {StartTimeout.TotalSeconds:0} s."
+                      + (string.IsNullOrEmpty(player.LastError) ? "" : $" mpv: {player.LastError}"));
             return;
         }
         var waiting = !state.HasVideo.AsBool() || state.Buffering.AsBool();
@@ -139,7 +162,10 @@ public sealed partial class PlayerPage : Page
     void ShowError(string message)
     {
         Spinner.Visibility = Visibility.Collapsed;
-        ErrorBar.Message = string.IsNullOrWhiteSpace(message) ? "Error desconocido." : message;
+        string logs;
+        try { logs = Path.GetFullPath(GlasstubeFFI.LogDirectory()); } catch { logs = @"%LOCALAPPDATA%\Glasstube\logs"; }
+        ErrorBar.Message = (string.IsNullOrWhiteSpace(message) ? "Error desconocido." : message)
+                           + $"\n\nRegistro: {logs}\\glasstube.log";
         ErrorBar.IsOpen = true;
         Controls.Opacity = 1;
     }

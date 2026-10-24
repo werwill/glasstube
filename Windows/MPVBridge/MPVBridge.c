@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <d3d11.h>
 #include <dxgi1_3.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +25,21 @@ static const IID IID_ISwapChainPanelNative_WinUI = {0x63aad0b8, 0x7c24, 0x40ff, 
 // Propiedades observadas (el `reply_userdata` de cada una).
 enum { P_TIME = 1, P_DURATION, P_PAUSE, P_VOLUME, P_IDLE, P_CACHE_PAUSE, P_CACHE_DURATION, P_EOF };
 
+static mpvb_logger logger;
+
+MPVB_API void mpvb_set_logger(mpvb_logger callback) { logger = callback; }
+
+// Al registro de la app (si hay) y a stderr.
+static void say(const char *format, ...) {
+    char line[1024];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(line, sizeof line, format, args);
+    va_end(args);
+    if (logger) logger(line);
+    fprintf(stderr, "[mpvb] %s\n", line);
+}
+
 struct mpvb_player {
     mpv_handle *mpv;
     ISwapChainPanelNative *panel;
@@ -35,7 +51,7 @@ struct mpvb_player {
 
 static void set_option(mpvb_player *p, const char *name, const char *value) {
     int r = mpv_set_option_string(p->mpv, name, value);
-    if (r < 0) fprintf(stderr, "[mpvb] opcion %s=%s: %s\n", name, value, mpv_error_string(r));
+    if (r < 0) say("opcion %s=%s: %s", name, value, mpv_error_string(r));
 }
 
 // Una opción de lista (audio-files, http-header-fields) con un elemento por cadena: así las comas de las URLs no
@@ -46,7 +62,7 @@ static int set_list(mpvb_player *p, const char *name, const char **values, int c
     mpv_node_list list = {.num = count, .values = items};
     mpv_node node = {.format = MPV_FORMAT_NODE_ARRAY, .u.list = &list};
     int r = mpv_set_option(p->mpv, name, MPV_FORMAT_NODE, &node);
-    if (r < 0) fprintf(stderr, "[mpvb] opcion %s: %s\n", name, mpv_error_string(r));
+    if (r < 0) say("opcion %s: %s", name, mpv_error_string(r));
     free(items);
     return r;
 }
@@ -58,7 +74,7 @@ MPVB_API mpvb_player *mpvb_create(void *panel, int32_t width, int32_t height, fl
     p->state.idle = 1;
     IUnknown *unk = (IUnknown *)panel;
     HRESULT hr = unk->lpVtbl->QueryInterface(unk, &IID_ISwapChainPanelNative_WinUI, (void **)&p->panel);
-    if (FAILED(hr)) { fprintf(stderr, "[mpvb] QI ISwapChainPanelNative: 0x%08lx\n", hr); free(p); return NULL; }
+    if (FAILED(hr)) { say("QI ISwapChainPanelNative: 0x%08lx", hr); free(p); return NULL; }
 
     p->mpv = mpv_create();
     if (!p->mpv) { p->panel->lpVtbl->Release(p->panel); free(p); return NULL; }
@@ -84,13 +100,13 @@ MPVB_API mpvb_player *mpvb_create(void *panel, int32_t width, int32_t height, fl
     set_option(p, "msg-level", "all=warn");
     int r = mpv_initialize(p->mpv);
     if (r < 0) {
-        fprintf(stderr, "[mpvb] mpv_initialize: %s\n", mpv_error_string(r));
+        say("mpv_initialize: %s", mpv_error_string(r));
         mpv_terminate_destroy(p->mpv);
         p->panel->lpVtbl->Release(p->panel);
         free(p);
         return NULL;
     }
-    mpv_request_log_messages(p->mpv, "error");
+    mpv_request_log_messages(p->mpv, "warn");
     mpv_observe_property(p->mpv, P_TIME, "time-pos", MPV_FORMAT_DOUBLE);
     mpv_observe_property(p->mpv, P_DURATION, "duration", MPV_FORMAT_DOUBLE);
     mpv_observe_property(p->mpv, P_PAUSE, "pause", MPV_FORMAT_FLAG);
@@ -127,6 +143,7 @@ MPVB_API int32_t mpvb_load(mpvb_player *p, const char *url, const char *audio_ur
     p->error[0] = 0;
     const char *cmd[] = {"loadfile", url, NULL};
     int r = mpv_command(p->mpv, cmd);
+    say("loadfile (%s audio aparte) -> %s", audio_url && *audio_url ? "con" : "sin", mpv_error_string(r));
     if (r < 0) snprintf(p->error, sizeof p->error, "loadfile: %s", mpv_error_string(r));
     return r;
 }
@@ -153,7 +170,7 @@ static void attach_swapchain(mpvb_player *p) {
         p->state.has_video = 1;
         apply_scale(p);
     } else {
-        fprintf(stderr, "[mpvb] SetSwapChain: 0x%08lx\n", hr);
+        say("SetSwapChain: 0x%08lx", hr);
     }
 }
 
@@ -186,14 +203,21 @@ MPVB_API void mpvb_poll(mpvb_player *p, mpvb_state *state) {
         case MPV_EVENT_PLAYBACK_RESTART: p->state.buffering = 0; break;
         case MPV_EVENT_LOG_MESSAGE: {
             mpv_event_log_message *msg = e->data;
-            snprintf(p->error, sizeof p->error, "%s: %s", msg->prefix, msg->text);
-            size_t n = strlen(p->error);
-            if (n && p->error[n - 1] == '\n') p->error[n - 1] = 0;
-            fprintf(stderr, "[mpv] %s\n", p->error);
+            char text[512];
+            snprintf(text, sizeof text, "%s: %s", msg->prefix, msg->text);
+            size_t n = strlen(text);
+            if (n && text[n - 1] == '\n') text[n - 1] = 0;
+            say("%s %s", msg->level, text);
+            // Solo los errores quedan como "último error" (los avisos son ruido para la interfaz).
+            // "Failed to query swap chain's output information" sale siempre con una swapchain de composición (no tiene
+            // salida asociada) y no afecta a nada.
+            if (msg->log_level <= MPV_LOG_LEVEL_ERROR && !strstr(text, "output information"))
+                snprintf(p->error, sizeof p->error, "%s", text);
             break;
         }
         case MPV_EVENT_END_FILE: {
             mpv_event_end_file *end = e->data;
+            say("end-file: razón %d, error %s", end->reason, mpv_error_string(end->error));
             if (end->reason == MPV_END_FILE_REASON_ERROR) {
                 p->state.error = 1;
                 if (!p->error[0]) snprintf(p->error, sizeof p->error, "%s", mpv_error_string(end->error));
