@@ -45,7 +45,7 @@ import Testing
         #expect(try fields.message(4)?.int(1) == 7)
     }
 
-    @Test func umpDecoderIsIncremental() {
+    @Test func umpDecoderIsIncremental() throws {
         // Parte 21 (MEDIA) con 3 bytes y parte 58 (STREAM_PROTECTION_STATUS) con 1, entregadas a trozos.
         let bytes: [UInt8] = [21, 3, 0xAA, 0xBB, 0xCC, 58, 1, 0x08]
         var decoder = UMPDecoder()
@@ -57,6 +57,8 @@ import Testing
         #expect(second.map(\.type) == [58])
         #expect(decoder.pendingBytes == 0)
         // Varint de UMP de dos bytes: 0x80 | bajos 6 bits, luego el byte alto.
-        #expect(UMPDecoder.readVarint(Data([0x81, 0x02]), at: 0)?.0 == 1 + 2 << 6)
+        // Sin opcional: `#expect` con `Optional<UInt64> == literal` tumba a swiftc 6.4.1 en Windows (SILGen).
+        let varint = try #require(UMPDecoder.readVarint(Data([0x81, 0x02]), at: 0)).0
+        #expect(varint == 1 + 2 << 6)
     }
 }

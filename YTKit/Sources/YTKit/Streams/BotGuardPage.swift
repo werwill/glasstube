@@ -20,6 +20,7 @@ protocol BotGuardPage: AnyObject {
 }
 
 enum BotGuardPages {
+    @MainActor
     static func make() throws -> BotGuardPage {
         #if canImport(WebKit) && canImport(AppKit)
         WKWebViewBotGuardPage()
