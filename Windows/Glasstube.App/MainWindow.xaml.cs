@@ -17,11 +17,28 @@ using Windows.UI;
 
 namespace Glasstube;
 
-/// <summary>Página que ocupa toda la ventana, detrás del panel y de la barra de título (sin margen).</summary>
+/// <summary>Cómo se ve la barra de título sobre la página.</summary>
+public enum TitleBarStyle
+{
+    /// <summary>Sin fondo, con los colores del tema (páginas normales, que empiezan debajo de la barra).</summary>
+    Normal,
+    /// <summary>Sin fondo y en claro, sobre una imagen oscura (la portada del Inicio, el video).</summary>
+    OverImage,
+    /// <summary>Con fondo de acrílico, cuando el contenido pasa por debajo (el Inicio desplazado).</summary>
+    Solid,
+}
+
+/// <summary>
+/// Página que ocupa toda la ventana, detrás del panel y de la barra de título (sin margen). Deja libre
+/// <see cref="MainWindow.ContentInset"/> para su contenido normal.
+/// </summary>
 public interface IFullBleedPage
 {
     /// <summary>Si la ventana debe quedarse solo con el botón de atrás (reproductor).</summary>
     bool HidesChrome { get; }
+
+    /// <summary>La barra de título al entrar en la página (la página la cambia luego con SetTitleBarStyle).</summary>
+    TitleBarStyle InitialTitleBar => TitleBarStyle.OverImage;
 }
 
 public sealed partial class MainWindow : Window
@@ -44,7 +61,17 @@ public sealed partial class MainWindow : Window
     bool chromeFaded;
     bool selectingFromNavigation;
     bool searchFocused;
+    TitleBarStyle titleBarStyle;
     Rect[] passthrough = [];
+
+    /// <summary>
+    /// Lo que tapan el panel fijo y la barra de título. Las páginas normales ya lo llevan de margen; las de
+    /// <see cref="IFullBleedPage"/> lo usan para colocar su contenido (cambia con el ancho de la ventana).
+    /// </summary>
+    public Thickness ContentInset { get; private set; } = new(PaneMargin + PaneOpenWidth, TitleBarHeight, 0, 0);
+
+    /// <summary>Cambió <see cref="ContentInset"/>.</summary>
+    public event EventHandler? ContentInsetChanged;
 
     public MainWindow()
     {
@@ -129,6 +156,7 @@ public sealed partial class MainWindow : Window
     {
         BackButton.IsEnabled = ContentFrame.CanGoBack;
         chromeHidden = (e.Content as IFullBleedPage)?.HidesChrome == true;
+        titleBarStyle = (e.Content as IFullBleedPage)?.InitialTitleBar ?? TitleBarStyle.Normal;
         chromeFaded = false;
         BackButton.Opacity = 1;
 
@@ -251,8 +279,13 @@ public sealed partial class MainWindow : Window
         SetPaneLabelsVisible(paneWidth >= PaneOpenWidth);
 
         // Página: las normales no quedan debajo del panel fijo ni de la barra de título.
-        ContentFrame.Margin = ContentFrame.Content is IFullBleedPage ? new Thickness(0)
-            : new Thickness(docked > 0 ? PaneMargin + docked : 0, TitleBarHeight, 0, 0);
+        var inset = new Thickness(docked > 0 ? PaneMargin + docked : 0, TitleBarHeight, 0, 0);
+        ContentFrame.Margin = ContentFrame.Content is IFullBleedPage ? new Thickness(0) : inset;
+        if (!inset.Equals(ContentInset))
+        {
+            ContentInset = inset;
+            ContentInsetChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         // Barra de título: en el reproductor solo queda el botón de atrás (y los de la ventana).
         var chrome = chromeHidden ? Visibility.Collapsed : Visibility.Visible;
@@ -347,8 +380,11 @@ public sealed partial class MainWindow : Window
     /// </summary>
     void UpdateCaptionColors()
     {
-        var dark = chromeHidden || Root.ActualTheme == ElementTheme.Dark;
-        AppTitleBar.RequestedTheme = chromeHidden ? ElementTheme.Dark : ElementTheme.Default;
+        var overImage = chromeHidden || titleBarStyle == TitleBarStyle.OverImage;
+        var dark = overImage || Root.ActualTheme == ElementTheme.Dark;
+        AppTitleBar.RequestedTheme = overImage ? ElementTheme.Dark : ElementTheme.Default;
+        AppTitleBar.Background = titleBarStyle == TitleBarStyle.Solid && !chromeHidden
+            ? (Brush)Application.Current.Resources["AcrylicInAppFillColorDefaultBrush"] : null;
         var bar = AppWindow.TitleBar;
         var foreground = dark ? Colors.White : Colors.Black;
         bar.ButtonBackgroundColor = bar.ButtonInactiveBackgroundColor = Colors.Transparent;
@@ -358,6 +394,14 @@ public sealed partial class MainWindow : Window
         bar.ButtonHoverForegroundColor = dark ? Colors.White : Colors.Black;
         bar.ButtonPressedBackgroundColor = dark ? Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x08, 0, 0, 0);
         bar.ButtonPressedForegroundColor = foreground;
+    }
+
+    /// <summary>La página a pantalla completa cambia la barra de título (el Inicio, al desplazarse bajo ella).</summary>
+    public void SetTitleBarStyle(TitleBarStyle style)
+    {
+        if (style == titleBarStyle) return;
+        titleBarStyle = style;
+        UpdateCaptionColors();
     }
 
     /// <summary>

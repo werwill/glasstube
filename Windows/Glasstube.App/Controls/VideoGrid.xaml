@@ -7,10 +7,10 @@
     xmlns:controls="using:Glasstube.Controls">
 
     <!-- Cuadrícula adaptable de tarjetas (columnas de al menos 260 DIP) con carga incremental. Lo que va en Header
-         (la portada y las filas del Inicio) se desplaza con la cuadrícula. -->
+         (la portada y las filas del Inicio) se desplaza con la cuadrícula y ocupa todo el ancho; el margen de las
+         tarjetas va en el panel (ItemsMargin). -->
     <GridView
         x:Name="Grid"
-        Padding="28,4,28,24"
         SelectionMode="None"
         IsItemClickEnabled="True"
         ItemClick="OnItemClick"

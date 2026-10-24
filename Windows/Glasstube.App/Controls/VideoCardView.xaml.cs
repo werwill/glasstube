@@ -29,7 +29,13 @@ public sealed partial class VideoCardView : UserControl
         ChannelText.Text = video?.Channel ?? "";
         MetaText.Text = video?.Meta ?? "";
         DurationText.Text = video?.Duration ?? "";
-        DurationBadge.Visibility = video?.HasDuration == true ? Visibility.Visible : Visibility.Collapsed;
+        var live = video?.IsLive == true;
+        DurationBadge.Visibility = video?.HasDuration == true && !live ? Visibility.Visible : Visibility.Collapsed;
+        LiveBadge.Visibility = live ? Visibility.Visible : Visibility.Collapsed;
+        var progress = video?.Progress ?? 0;
+        ProgressTrack.Visibility = progress > 0.01 && !live ? Visibility.Visible : Visibility.Collapsed;
+        ProgressDone.Width = new GridLength(progress, GridUnitType.Star);
+        ProgressLeft.Width = new GridLength(1 - progress, GridUnitType.Star);
         SetHover(false);
     }
 

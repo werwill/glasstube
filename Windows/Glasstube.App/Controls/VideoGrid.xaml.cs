@@ -29,13 +29,15 @@ public sealed partial class VideoGrid : UserControl
         set => Grid.Header = value;
     }
 
-    /// <summary>Margen alrededor de las tarjetas (el Inicio lo cambia para dejar sitio al panel).</summary>
-    public Thickness GridPadding
+    Thickness itemsMargin = new(28, 4, 28, 24);
+
+    /// <summary>Margen alrededor de las tarjetas, sin tocar el Header (el Inicio deja sitio al panel lateral).</summary>
+    public Thickness ItemsMargin
     {
-        get => Grid.Padding;
+        get => itemsMargin;
         set
         {
-            Grid.Padding = value;
+            itemsMargin = value;
             UpdateColumns();
         }
     }
@@ -63,7 +65,8 @@ public sealed partial class VideoGrid : UserControl
             if (Grid.ItemsSource != null) Grid.LayoutUpdated += RetryColumns;
             return;
         }
-        var available = Grid.ActualWidth - Grid.Padding.Left - Grid.Padding.Right - 1;
+        panel.Margin = itemsMargin;
+        var available = Grid.ActualWidth - itemsMargin.Left - itemsMargin.Right - 1;
         if (available <= 0) return;
         const double margin = 8; // 4 + 4 del contenedor
         var columns = Math.Max(1, (int)(available / (MinCardWidth + margin)));
