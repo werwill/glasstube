@@ -130,7 +130,8 @@ Get **`Glasstube-<version>-Windows-x64-Setup.exe`** from [its release](https://g
   the SHA-256 in the release notes.
 
 It already has Home, Subscriptions and the player with quality, subtitles, chapters, SponsorBlock, comments and
-suggestions. There are no settings, channel pages or in-app sign-in yet, and it does not announce new versions. What is
+suggestions. It announces new Windows versions like the Mac app does (without installing them). There are no settings,
+channel pages or in-app sign-in yet. What is
 missing, how to build it and how the installer is made are in [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
 
 ---

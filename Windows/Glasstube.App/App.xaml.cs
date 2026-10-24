@@ -51,6 +51,9 @@ public partial class App : Application
         if (index >= 0 && index + 1 < arguments.Length)
             Window.Play(new Models.VideoCard { Id = arguments[index + 1], Title = arguments[index + 1] });
         if (arguments.Contains("--probar-ffi")) _ = ProbeFFI();
+        // `--sin-aviso-de-versiones`: no consulta GitHub (capturas y pruebas).
+        if (!arguments.Contains("--sin-aviso-de-versiones") && Window.Content is Microsoft.UI.Xaml.Controls.Grid root)
+            _ = Models.UpdateCheck.RunAsync(root);
     }
 
     /// <summary>`--probar-ffi`: llama a la API 0.2 (Suscripciones, biblioteca, detalles, búsqueda) y anota un resumen en el registro.</summary>

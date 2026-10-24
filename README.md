@@ -128,7 +128,8 @@ con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de l
   la suma SHA-256 de las notas de la versión.
 
 Ya tiene Inicio, Suscripciones y el reproductor con calidad, subtítulos, capítulos, SponsorBlock, comentarios y
-sugeridos. Todavía no hay ajustes, páginas de canal ni inicio de sesión desde la app, y no avisa de versiones nuevas. Lo
+sugeridos. Avisa de versiones nuevas de Windows como la de Mac (sin instalarlas). Todavía no hay ajustes, páginas de
+canal ni inicio de sesión desde la app. Lo
 que falta, cómo compilarla y cómo arma el instalador están en [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
 
 ---

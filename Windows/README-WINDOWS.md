@@ -109,6 +109,9 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
   (o intro, créditos…) con botón o S, sin salto automático. Controles, título, botón de atrás y cursor se ocultan a los 3 s.
 - `--probar-ffi` anota en el registro un resumen de Suscripciones, biblioteca, detalles y búsqueda.
 - `--tema claro|oscuro` fuerza el tema (capturas); sin él sigue al de Windows.
+- Aviso de versiones nuevas (`Models/UpdateCheck.cs`), como el de la Mac: al abrirse, como mucho una vez al día, busca
+  en GitHub la Release `windows-v…` más nueva (sin borradores ni prereleases) y, si es más nueva que la del exe, avisa
+  abajo a la derecha con «Descargar» (abre su página) y «Ahora no». `--sin-aviso-de-versiones` no consulta.
 - GlasstubeCore compila en Windows (antes solo se había probado en Linux); la FFI usa `cardSubtitle` y `durationBadge`.
 
 ## Qué falta
