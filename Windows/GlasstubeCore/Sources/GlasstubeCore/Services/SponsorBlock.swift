@@ -77,6 +77,8 @@ public actor SponsorBlockClient {
 
     private var cache: [String: [SponsorSegment]] = [:]
 
+    public init() {}
+
     public func segments(videoId: String) async -> [SponsorSegment] {
         if let cached = cache[videoId] { return cached }
         let hash = SHA256.hash(data: Data(videoId.utf8)).map { String(format: "%02x", $0) }.joined()

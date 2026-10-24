@@ -9,7 +9,7 @@ namespace Glasstube.Native;
 /// GCHandle de su TaskCompletionSource como contexto; el callback llega dentro de <see cref="Pump"/>, en el hilo de la
 /// interfaz, y la cadena JSON solo vale durante el callback (aquí se copia).
 /// </summary>
-public static class GlasstubeFFI
+public static partial class GlasstubeFFI
 {
     const string Dll = "GlasstubeFFI.dll";
 
@@ -46,6 +46,9 @@ public static class GlasstubeFFI
             source.TrySetException(new GlasstubeException(message));
         }
     }
+
+    /// <summary>Para mandar objetos a la DLL (VideoCard): camelCase, como los lee Swift.</summary>
+    static readonly JsonSerializerOptions Outgoing = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     /// <summary>Hace una llamada con callback y devuelve su JSON ya deserializado.</summary>
     static async Task<T> Call<T>(Action<IntPtr> start)

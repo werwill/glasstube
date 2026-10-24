@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -27,16 +28,29 @@ public sealed class VideoCard
     public string Subtitle { get; set; } = "";
     public bool IsLive { get; set; }
     public string? Shelf { get; set; }
+    /// <summary>Miniatura grande (maxresdefault; puede no existir: caer a <see cref="Thumbnail"/>).</summary>
+    public string? ThumbnailLarge { get; set; }
+    /// <summary>Foto del canal, si se sabe.</summary>
+    public string? Avatar { get; set; }
+    public int? DurationSeconds { get; set; }
+    /// <summary>Fecha aproximada de publicación (segundos Unix).</summary>
+    public double? PublishedAt { get; set; }
+    /// <summary>Posición guardada (segundos) y fracción vista (0–1).</summary>
+    public double? Position { get; set; }
+    public double? Progress { get; set; }
 
     BitmapImage? image;
 
     /// <summary>Miniatura decodificada al ancho de la tarjeta (se crea la primera vez que se dibuja).</summary>
+    [JsonIgnore]
     public BitmapImage? ThumbnailImage => image ??= Thumbnail == null ? null
         : new BitmapImage(new Uri(Thumbnail)) { DecodePixelWidth = 480, DecodePixelType = DecodePixelType.Logical };
 
     /// <summary>"Vistas · fecha" bajo el canal.</summary>
+    [JsonIgnore]
     public string Meta => string.Join(" · ", new[] { Views, Published }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
+    [JsonIgnore]
     public bool HasDuration => !string.IsNullOrEmpty(Duration);
 
     /// <summary>Nombre accesible de la tarjeta (lectores de pantalla y UI Automation).</summary>
@@ -44,6 +58,28 @@ public sealed class VideoCard
 }
 
 public sealed record FeedPage(List<VideoCard> Items, bool HasMore, string? Notice, bool SignedIn);
+
+public sealed record SubscribedChannel(string Id, string Name, string? Avatar, bool HasNew);
+
+public sealed record ChannelGroupInfo(string Id, string Title, List<string> Channels);
+
+public sealed record SubscriptionsPage(List<VideoCard> Items, bool HasMore, List<SubscribedChannel> Channels,
+                                       List<ChannelGroupInfo> Groups, string? Notice, bool SignedIn);
+
+public sealed record LibraryInfo(List<VideoCard> History, List<VideoCard> ContinueWatching, List<VideoCard> WatchLater,
+                                 List<string> Seen, List<string> Archived);
+
+public sealed record InboxFlags(bool Seen, bool Archived);
+
+public sealed record SavedPosition(double Position, double Duration);
+
+public sealed record ChapterInfo(string Title, double Start);
+
+public sealed record SponsorSegmentInfo(double Start, double End, string Category, string Title);
+
+public sealed record VideoDetails(string VideoId, string? Title, string? Description, string? Author, string? ChannelId,
+                                  string? Avatar, string? Views, string? Published, List<ChapterInfo> Chapters,
+                                  List<SponsorSegmentInfo> Segments);
 
 public sealed record StreamTrack(string Url, int Itag, string Codec, string Label, int? Height);
 

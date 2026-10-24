@@ -113,6 +113,9 @@ public sealed partial class MainWindow : Window
         _ => null,
     };
 
+    /// <summary>La página visible.</summary>
+    public object? CurrentPage => ContentFrame.Content;
+
     public void GoBack()
     {
         if (ContentFrame.CanGoBack) ContentFrame.GoBack();

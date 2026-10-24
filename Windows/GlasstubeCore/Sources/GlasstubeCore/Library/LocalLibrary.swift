@@ -162,6 +162,20 @@ public final class LocalLibrary {
 
     // MARK: - Disco
 
+    /// Guarda ya, sin esperar (al cerrar la app: la escritura diferida de `scheduleSave` podría no llegar).
+    public func saveNow() {
+        guard persistent else { return }
+        saveTask?.cancel()
+        let store = Store(history: history, watchLater: watchLater, hiddenVideos: Array(hiddenVideos), blockedChannels: blockedChannels)
+        do {
+            let url = Self.fileURL
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(store).write(to: url, options: .atomic)
+        } catch {
+            NSLog("Glasstube: no se pudo guardar la biblioteca: \(error)")
+        }
+    }
+
     private func scheduleSave() {
         guard persistent else { return }
         saveTask?.cancel()

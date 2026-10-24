@@ -121,7 +121,7 @@ public func gt_shutdown() {
     Task { @MainActor in Engine.shared = nil }
 }
 
-let version = "0.1.0"
+let version = "0.2.0"
 
 @_cdecl("gt_version")
 public func gt_version() -> UnsafeMutablePointer<CChar>? {
@@ -174,7 +174,7 @@ public func gt_load_session(_ callback: GTCallback, _ context: UnsafeMutableRawP
 
 // MARK: - Inicio
 
-struct VideoCard: Encodable {
+struct VideoCard: Codable {
     var id: String
     var title: String
     var channel: String?
@@ -186,6 +186,17 @@ struct VideoCard: Encodable {
     var subtitle: String
     var isLive: Bool
     var shelf: String?
+    // Desde la 0.2 (Cards.swift). Todos opcionales: los clientes viejos los ignoran.
+    /// Miniatura grande (hasta 1280 px) para la portada.
+    var thumbnailLarge: String?
+    /// Foto del canal, cuando se sabe (Suscripciones la saca de las pestañas de canal).
+    var avatar: String?
+    var durationSeconds: Int?
+    /// Fecha aproximada de publicación (segundos Unix), sacada del texto relativo ("hace 3 horas").
+    var publishedAt: Double?
+    /// Posición guardada en la biblioteca local (segundos) y fracción vista (0–1).
+    var position: Double?
+    var progress: Double?
 }
 
 struct FeedPage: Encodable {
@@ -205,12 +216,7 @@ extension Engine {
         for group in page.groups where !group.isShorts {
             for item in group.items where item.kind == .video && item.isPlayable && !item.isShort {
                 guard let id = item.videoId, homeSeen.insert(id).inserted else { continue }
-                let thumbnail = item.thumbnails.best(forWidth: 480) ?? item.standardThumbnails.dropFirst().first
-                cards.append(VideoCard(
-                    id: id, title: item.title, channel: item.author, channelId: item.channelId,
-                    thumbnail: thumbnail.map { absolute($0.url) }, duration: item.durationBadge,
-                    views: item.viewCountText, published: item.publishedText, subtitle: item.cardSubtitle,
-                    isLive: item.isLive, shelf: group.title))
+                cards.append(VideoCard(item, shelf: group.title))
             }
         }
         return cards

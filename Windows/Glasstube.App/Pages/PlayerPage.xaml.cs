@@ -65,9 +65,10 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         {
             await App.Ready;
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
+            var saved = GlasstubeFFI.SavedPositionOf(video.Id);
             var resolved = await GlasstubeFFI.ResolveStream(video.Id).WaitAsync(ResolveTimeout);
             if (closed) return;
-            Start(resolved);
+            Start(resolved, ResumePosition(await saved));
         }
         catch (TimeoutException)
         {
@@ -86,8 +87,23 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(30);
     DateTime loadedAt;
 
+    /// <summary>Donde se quedó, si lo empezó y no lo terminó (como "Continuar viendo").</summary>
+    static double ResumePosition(SavedPosition saved) =>
+        saved.Position > 5 && (saved.Duration <= 0 || saved.Position < saved.Duration * 0.95) ? saved.Position : 0;
+
+    /// <summary>Guarda la posición en el historial local (cada 10 s, al salir y al cerrar la app). Los directos no.</summary>
+    public void RecordPosition()
+    {
+        if (player == null || video == null || stream?.Hls != null || !state.HasVideo.AsBool() || state.Position < 1) return;
+        video.Position = state.Position;
+        if (state.Duration > 0) video.Progress = Math.Clamp(state.Position / state.Duration, 0, 1);
+        _ = GlasstubeFFI.RecordPlayback(video, state.Position, state.Duration);
+    }
+
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        RecordPosition();
+        _ = GlasstubeFFI.SaveLibrary();
         closed = true;
         poll?.Stop();
         hideTimer?.Stop();
@@ -102,7 +118,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         }
     }
 
-    void Start(StreamInfo resolved)
+    void Start(StreamInfo resolved, double resumeAt)
     {
         stream = resolved;
         if (!string.IsNullOrEmpty(resolved.Title)) TitleText.Text = resolved.Title;
@@ -121,7 +137,9 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             ShowError("YouTube no dio URLs para este video.");
             return;
         }
-        var result = player.Load(url, resolved.Hls == null ? resolved.Audio?.Url : null, resolved.UserAgent, resolved.Headers);
+        var result = player.Load(url, resolved.Hls == null ? resolved.Audio?.Url : null, resolved.UserAgent, resolved.Headers,
+                                 resolved.Hls == null ? resumeAt : 0);
+        if (resumeAt > 0) GlasstubeFFI.Log("app", $"{resolved.VideoId}: sigue en {Time(resumeAt)}");
         if (result < 0)
         {
             ShowError(player.LastError);
@@ -171,6 +189,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             updatingProgress = false;
         }
         if (ticks++ % 15 == 0) UpdateQuality();
+        if (ticks % 300 == 0) RecordPosition();
     }
 
     /// <summary>"1080p60" con la altura y los cuadros por segundo que da mpv (o la etiqueta del formato elegido).</summary>
