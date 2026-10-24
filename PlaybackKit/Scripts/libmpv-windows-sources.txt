@@ -1,0 +1,9 @@
+# libmpv para Windows x64, LGPL: paquete `mpv-dev-lgpl` de zhongfly/mpv-winbuild (compilado en GitHub Actions con la
+# receta de shinchiro/mpv-winbuild-cmake; libmpv con -Dgpl=false y FFmpeg LGPLv3 enlazado dentro de libmpv-2.dll).
+# Se excluyen los paquetes `mpv-dev-*` sin «lgpl» (GPL) y las variantes x86_64-v3 (exigen AVX2: Haswell o posterior).
+# Formato igual que libmpv-sources.txt: nombre, SHA-256 y URL. Lo usa fetch-libmpv-windows.sh.
+#
+# Versión: mpv git 49418246f3 (21 de agosto de 2026, API cliente 2.5; misma API que la 0.41.0 de MPVKit en macOS).
+# El SHA-256 es el que GitHub muestra para el archivo en la página de la versión; el script lo comprueba al descargar
+# y se niega a seguir si no coincide.
+mpv-dev-lgpl-x86_64 317dfd9ee814be76e5f6e20b45efcc07440389a62b55dd85201829b4880510e0 https://github.com/zhongfly/mpv-winbuild/releases/download/2026-08-21-49418246f3/mpv-dev-lgpl-x86_64-20260821-git-49418246f3.7z

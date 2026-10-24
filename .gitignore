@@ -36,3 +36,6 @@ crudas/
 ._*
 .Spotlight-V100
 .Trashes
+
+# Prueba de libmpv en Windows (PlaybackKit/Prototypes/windows/build.sh).
+PlaybackKit/Prototypes/windows/build/
