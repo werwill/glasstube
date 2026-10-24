@@ -18,6 +18,8 @@ astring (MIT). Full texts are in `App/Licenses/`.*
 | **yt-dlp/ejs**: `yt.solver.core.js` (resuelve los desafíos `n` y de firma del reproductor de YouTube) | `YTKit/Sources/YTKit/Resources/nsigsolver/` | Unlicense (dominio público) | encabezado del archivo |
 | **meriyah** 6.1.4 (analizador de JavaScript que usa el solver) | `…/nsigsolver/meriyah-6.1.4.min.js` | ISC, © 2019 and later, KFlash and others | [meriyah-ISC.txt](App/Licenses/meriyah-ISC.txt) |
 | **astring** 1.9.0 (generador de JavaScript que usa el solver) | `…/nsigsolver/astring-1.9.0.min.js` | MIT, © 2015 David Bonnet | [astring-MIT.txt](App/Licenses/astring-MIT.txt) |
+| **QuickJS** (quickjs-ng 0.17.0): motor de JavaScript del solver fuera de Apple; solo se compila en Windows (y Linux) | `YTKit/Sources/CQuickJS/` | MIT, © 2017-2026 Fabrice Bellard, Charlie Gordon, Ben Noordhuis y otros | [LICENSE](YTKit/Sources/CQuickJS/LICENSE) |
+| **WebView2** `WebView2.h` (paquete NuGet Microsoft.Web.WebView2 1.0.4258.31): interfaces COM del WebView del PoToken en Windows | `YTKit/Sources/CWebView2/` | BSD-3-Clause, © Microsoft Corporation | [LICENSE-WebView2.txt](YTKit/Sources/CWebView2/LICENSE-WebView2.txt) |
 
 ## Biblioteca que se descarga al compilar (no está en el repositorio)
 
@@ -38,6 +40,13 @@ de cada descarga y cómo reemplazar la biblioteca están en [App/Licenses/THIRD-
 [App/Licenses/libmpv-sources.txt](App/Licenses/libmpv-sources.txt) y [PlaybackKit/NOTAS.md](PlaybackKit/NOTAS.md).
 Textos: [LGPL-2.1](App/Licenses/LGPL-2.1.txt), [LGPL-3.0](App/Licenses/LGPL-3.0.txt) y [GPL-3.0](App/Licenses/GPL-3.0.txt)
 (la LGPLv3 se apoya en la GPLv3).
+
+## Fuera de macOS
+
+En Windows (y Linux) SwiftPM descarga **swift-crypto** (github.com/apple/swift-crypto, Apache-2.0, con BoringSSL bajo
+licencias ISC/OpenSSL) para el SHA-256 de DeArrow; en macOS no se compila. El PoToken en Windows necesita
+`WebView2Loader.dll` (del mismo paquete NuGet, BSD-3-Clause) junto al ejecutable y el entorno de ejecución de WebView2,
+que ya trae Windows 10/11.
 
 ## Servicios que consulta la app (no se incluye su código ni sus datos)
 

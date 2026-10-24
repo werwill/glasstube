@@ -1,9 +1,12 @@
 import Foundation
+#if canImport(Security)
 import Security
+#endif
 
 // Dónde se guardan las sesiones. Todo lo de la cuenta (refresh tokens, cuentas de marca y la elegida) va en un solo
 // elemento del Llavero, nunca en UserDefaults ni en archivos (SmartTube lo guardaba en SharedPreferences:
-// `YouTubeAccountManager.persistAccounts`). Los access tokens solo viven en memoria.
+// `YouTubeAccountManager.persistAccounts`). Los access tokens solo viven en memoria. En Windows el Llavero es el
+// Administrador de credenciales (`WindowsCredentialStore`).
 
 /// Una sesión de Google: lo que devuelve un inicio de sesión por código. Varias cuentas (la personal y las de marca)
 /// comparten la misma sesión.
@@ -40,6 +43,21 @@ protocol CredentialStore: Sendable {
     func delete() throws
 }
 
+enum CredentialStores {
+    /// El almacén persistente de esta plataforma.
+    static func platformDefault() -> CredentialStore {
+        #if canImport(Security)
+        KeychainStore()
+        #elseif os(Windows)
+        WindowsCredentialStore()
+        #else
+        // Linux no es plataforma de la app: solo compila y prueba YTKit, así que basta con memoria.
+        MemoryCredentialStore()
+        #endif
+    }
+}
+
+#if canImport(Security)
 public struct KeychainError: Error, CustomStringConvertible, Sendable {
     public let status: OSStatus
     public var description: String {
@@ -98,6 +116,8 @@ struct KeychainStore: CredentialStore {
         guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError(status: status) }
     }
 }
+
+#endif
 
 /// Bóveda en memoria (pruebas y `ytkit` con `--sin-llavero`).
 final class MemoryCredentialStore: CredentialStore, @unchecked Sendable {

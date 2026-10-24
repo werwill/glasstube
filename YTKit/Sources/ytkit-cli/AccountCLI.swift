@@ -46,7 +46,11 @@ extension CLI {
             print("Escribe este código en \(code.verificationURL.absoluteString) con la cuenta que quieras usar:\n")
             print("    \(code.userCode)\n")
             print("Esperando la autorización (el código vence a las \(code.expiresAt.formatted(date: .omitted, time: .shortened)))…")
+            #if canImport(Darwin)
             fflush(stdout)
+            #else
+            fflush(nil) // `stdout` de Glibc/ucrt no es seguro en concurrencia para Swift 6
+            #endif
             let snapshot = try await session.completeSignIn(code)
             print("Listo. \(snapshot.accounts.count) cuenta(s) en esta sesión; elegida: \(mask(snapshot.selected?.name, reveal))")
         case "accounts":

@@ -1,0 +1,53 @@
+# YTKit en las tres plataformas: macOS (JavaScriptCore, WKWebView, Llavero, CryptoKit), Windows (QuickJS, WebView2,
+# Administrador de credenciales, swift-crypto) y Linux (las mismas rutas sin Apple, con pruebas). Las pruebas de YTKit
+# no usan la red.
+name: YTKit
+
+on:
+  push:
+    paths: ["YTKit/**", ".github/workflows/ytkit.yml"]
+  pull_request:
+    paths: ["YTKit/**", ".github/workflows/ytkit.yml"]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: YTKit
+    steps:
+      # Package.swift le pasa a las pruebas el plugin de macros de Swift Testing de las Command Line Tools, que no carga
+      # con el compilador del Xcode del runner: se compila con las Command Line Tools, como en una Mac sin Xcode.
+      - run: sudo xcode-select -s /Library/Developer/CommandLineTools
+        working-directory: .
+      - uses: actions/checkout@v4
+      - run: swift build
+      - run: swift test
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: YTKit
+    steps:
+      - uses: compnerd/gha-setup-swift@v0.5.1
+        with:
+          # La misma que se usa para compilar la app de Windows. El clang de 6.2 no sirve con el STL del Visual Studio
+          # nuevo del runner («expected Clang 20 or newer»).
+          swift-version: swift-6.4.1-release
+          swift-build: 6.4.1-RELEASE
+      - uses: actions/checkout@v4
+      - run: swift build
+      - run: swift test
+
+  linux:
+    runs-on: ubuntu-latest
+    container: swift:6.2-noble
+    defaults:
+      run:
+        working-directory: YTKit
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build
+      - run: swift test

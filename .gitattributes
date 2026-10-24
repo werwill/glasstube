@@ -1,0 +1,3 @@
+# Respuestas guardadas de YouTube para las pruebas de YTKit: tal cual, sin convertir los fines de línea al clonar en
+# Windows (core.autocrlf), que rompe las que empiezan con el prefijo antiXSSI de YouTube.
+YTKit/Tests/YTKitTests/Fixtures/** -text

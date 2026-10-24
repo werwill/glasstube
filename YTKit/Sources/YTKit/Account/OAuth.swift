@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 // Inicio de sesión de la app de TV de YouTube: OAuth 2.0 para dispositivos de entrada limitada (RFC 8628), como
 // `auth/V2/AuthService` + `AuthApiHelper` de SmartTube. La app pide un código, la persona lo escribe en

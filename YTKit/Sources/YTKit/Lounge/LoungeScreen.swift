@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Quién es esta pantalla para Lounge. El `screenId` es lo que el teléfono recuerda al vincular («permanent»); el
 /// `deviceId` identifica la conexión. «Desvincular todos» los cambia por unos nuevos (`resetData` de SmartTube).
@@ -90,6 +93,7 @@ public final class URLSessionLoungeTransport: LoungeTransport, @unchecked Sendab
         return (data, http)
     }
 
+    #if canImport(Darwin)
     public func open(_ request: URLRequest) async throws -> AsyncThrowingStream<Data, Error> {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
@@ -126,7 +130,92 @@ public final class URLSessionLoungeTransport: LoungeTransport, @unchecked Sendab
             }
         }
     }
+    #else
+    /// Sin `URLSession.bytes(for:)` fuera de Apple: una sesión con delegado por canal, que entrega cada línea al llegar.
+    public func open(_ request: URLRequest) async throws -> AsyncThrowingStream<Data, Error> {
+        let (stream, continuation) = AsyncThrowingStream<Data, Error>.makeStream()
+        let reader = LoungeStreamReader(stream: continuation)
+        let streaming = URLSession(configuration: session.configuration, delegate: reader, delegateQueue: nil)
+        let task = streaming.dataTask(with: request)
+        continuation.onTermination = { _ in
+            task.cancel()
+            streaming.invalidateAndCancel()
+        }
+        try await withCheckedThrowingContinuation { (response: CheckedContinuation<Void, Error>) in
+            reader.setResponseContinuation(response)
+            task.resume()
+        }
+        return stream
+    }
+    #endif
 }
+
+#if !canImport(Darwin)
+/// Delegado de `URLSessionLoungeTransport.open`: con 200 reanuda la apertura y pasa el cuerpo por líneas; con otro
+/// estado junta hasta 2000 B del cuerpo y lanza `LoungeHTTPError`.
+private final class LoungeStreamReader: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private let stream: AsyncThrowingStream<Data, Error>.Continuation
+    private var response: CheckedContinuation<Void, Error>?
+    private var status = 0
+    private var buffer = Data()
+
+    init(stream: AsyncThrowingStream<Data, Error>.Continuation) { self.stream = stream }
+
+    func setResponseContinuation(_ continuation: CheckedContinuation<Void, Error>) {
+        lock.withLock { response = continuation }
+    }
+
+    private func resumeResponse(_ result: Result<Void, Error>) {
+        lock.withLock { () -> CheckedContinuation<Void, Error>? in
+            defer { response = nil }
+            return response
+        }?.resume(with: result)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        lock.withLock { self.status = status }
+        if status == 200 { resumeResponse(.success(())) }
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        var lines: [Data] = []
+        let ok: Bool = lock.withLock {
+            buffer.append(data)
+            guard status == 200 else { return false }
+            // Cada trozo del canal termina en salto de línea: se entrega al llegar a uno.
+            while let newline = buffer.firstIndex(of: 0x0A) {
+                lines.append(buffer.subdata(in: buffer.startIndex..<buffer.index(after: newline)))
+                buffer.removeSubrange(buffer.startIndex...newline)
+            }
+            return true
+        }
+        lines.forEach { stream.yield($0) }
+        if !ok, lock.withLock({ buffer.count > 2000 }) { dataTask.cancel() }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        let (status, rest) = lock.withLock { () -> (Int, Data) in
+            defer { buffer = Data() }
+            return (self.status, buffer)
+        }
+        if status == 200 {
+            if !rest.isEmpty { stream.yield(rest) }
+            stream.finish(throwing: error)
+        } else if status != 0 {
+            resumeResponse(.failure(LoungeHTTPError(status: status, body: String(decoding: rest.prefix(2000), as: UTF8.self))))
+            stream.finish()
+        } else {
+            resumeResponse(.failure(error ?? URLError(.badServerResponse)))
+            stream.finish(throwing: error)
+        }
+        session.finishTasksAndInvalidate()
+    }
+}
+#endif
 
 /// La Mac como «pantalla» de Lounge (`LoungeService` de SmartTube): código para vincular, canal largo con reconexión,
 /// comandos del teléfono como eventos y reportes de vuelta.

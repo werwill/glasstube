@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Glasstube para Windows: interfaz WinUI 3 (sin empaquetar, x64). YTKit y GlasstubeCore vienen de GlasstubeFFI.dll
+       (Swift) y el video de MPVBridge.dll (C, libmpv); build.ps1 compila las dos y las copia junto al exe. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Glasstube</RootNamespace>
+    <AssemblyName>Glasstube</AssemblyName>
+    <!-- La de desarrollo; build-installer.ps1 pone la de cada versión (-Version). El aviso de versiones la compara con
+         las Releases windows-v…. -->
+    <Version>0.1.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Glasstube.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <Platform>x64</Platform>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <!-- Con `dotnet build` (sin Visual Studio) las tareas de PRI salen del paquete NuGet, no de VS\AppxPackage. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>12</LangVersion>
+    <SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250909003" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
+  </ItemGroup>
+
+  <!-- El icono (lo genera Windows/Installer/make-icon.py): en el exe y junto a él para AppWindow.SetIcon. -->
+  <ItemGroup>
+    <Content Include="Assets\Glasstube.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- DLL nativas que deja build.ps1 en Windows/out/native (runtime de Swift, GlasstubeFFI, MPVBridge, libmpv) y los
+       recursos de YTKit (clients.json, solver, PoToken). -->
+  <ItemGroup Condition="Exists('..\out\native')">
+    <None Include="..\out\native\**\*" LinkBase="." CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+</Project>

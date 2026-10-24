@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Glasstube.Pages.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Glasstube.Controls"
+    NavigationCacheMode="Enabled">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <!-- Botón de vidrio sobre la imagen ("Ver más tarde"). -->
+            <Style x:Key="GlassButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="Background" Value="#33FFFFFF" />
+                <Setter Property="BorderBrush" Value="#4DFFFFFF" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Padding" Value="16,8" />
+            </Style>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid>
+        <!-- Todo se desplaza junto: la portada y las filas van en el encabezado de la cuadrícula de "Para ti". -->
+        <controls:VideoGrid x:Name="Feed" ItemClick="OnItemClick">
+            <controls:VideoGrid.Header>
+                <StackPanel>
+                    <!-- Portada: el video más nuevo de Suscripciones, detrás del panel y de la barra de título. -->
+                    <Grid x:Name="Hero" Height="560" Visibility="Collapsed">
+                        <!-- Imagen y degradado oscuro desde la izquierda, con máscara que los vuelve transparentes abajo
+                             (composición, en HomePage.Hero.cs): se funden con el acrílico de la ventana sea cual sea. -->
+                        <Grid x:Name="HeroBackdrop" IsHitTestVisible="False" />
+                        <!-- Para que la barra de título se lea sobre cualquier imagen. -->
+                        <Rectangle VerticalAlignment="Top" Height="120" IsHitTestVisible="False">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#90000000" Offset="0" />
+                                    <GradientStop Color="#00000000" Offset="1" />
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+
+                        <StackPanel x:Name="HeroContent" VerticalAlignment="Bottom" HorizontalAlignment="Left" MaxWidth="680"
+                                    Margin="296,0,48,150" Spacing="14" RequestedTheme="Dark">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <PersonPicture x:Name="HeroAvatar" Width="20" Height="20" />
+                                <TextBlock x:Name="HeroEyebrow" Foreground="#E6FFFFFF" FontSize="12" FontWeight="SemiBold"
+                                           CharacterSpacing="60" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <TextBlock x:Name="HeroTitle" Foreground="White" FontSize="40" FontWeight="SemiBold" LineHeight="46"
+                                       TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="HeroMeta" Foreground="#CCFFFFFF" Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
+                                <Button x:Name="HeroPlay" Style="{StaticResource AccentButtonStyle}" Padding="18,8" Click="OnHeroPlay">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xF5B0;" FontSize="13" />
+                                        <TextBlock Text="Reproducir" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="HeroLater" Style="{StaticResource GlassButtonStyle}" Click="OnHeroWatchLater">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon x:Name="HeroLaterIcon" Glyph="&#xE710;" FontSize="13" />
+                                        <TextBlock x:Name="HeroLaterText" Text="Ver más tarde" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel x:Name="Rows" Spacing="28" Padding="0,8,0,8">
+                        <controls:VideoRow x:Name="ContinueRow" Title="Continuar viendo" Visibility="Collapsed" VideoInvoked="OnRowVideo" />
+                        <controls:VideoRow x:Name="NewRow" Title="Nuevos de tus canales" Visibility="Collapsed" VideoInvoked="OnRowVideo" />
+                        <controls:VideoRow x:Name="LiveRow" Title="En vivo ahora" Visibility="Collapsed" VideoInvoked="OnRowVideo" />
+                        <Grid x:Name="ForYouHeader" Margin="296,0,32,0">
+                            <TextBlock Text="Para ti" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                            <Button x:Name="RefreshButton" HorizontalAlignment="Right" Click="OnRefresh" ToolTipService.ToolTip="Actualizar"
+                                    AutomationProperties.Name="Actualizar">
+                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                            </Button>
+                        </Grid>
+                        <InfoBar x:Name="Notice" IsOpen="False" IsClosable="True" Margin="296,0,32,0" Visibility="Collapsed"
+                                 Closed="OnNoticeClosed" />
+                    </StackPanel>
+                </StackPanel>
+            </controls:VideoGrid.Header>
+        </controls:VideoGrid>
+
+        <StackPanel x:Name="LoadingPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+            <ProgressRing IsActive="True" Width="40" Height="40" />
+            <TextBlock x:Name="LoadingText" Text="Cargando el Inicio…" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+    </Grid>
+</Page>
