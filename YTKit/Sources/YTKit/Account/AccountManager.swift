@@ -38,7 +38,7 @@ public actor AccountManager: SignInService {
     public init(catalog: ClientCatalog? = nil, locale: CatalogLocale = .current, ephemeral: Bool = false,
                 simulatedReadDelay: TimeInterval = 0) throws {
         let api = CatalogAPI(catalog: try catalog ?? ClientCatalog.load(), locale: locale)
-        let store: CredentialStore = ephemeral ? MemoryCredentialStore(readDelay: simulatedReadDelay) : KeychainStore()
+        let store: CredentialStore = ephemeral ? MemoryCredentialStore(readDelay: simulatedReadDelay) : CredentialStores.platformDefault()
         self.init(store: store, oauth: OAuthClient()) { authorization in
             try await api.post("account/accounts_list", surface: .tv, [
                 "accountReadMask": ["returnOwner": true, "returnBrandAccounts": true, "returnPersonaAccounts": false],

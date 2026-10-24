@@ -1,13 +1,12 @@
-import AppKit
 import Foundation
-import WebKit
 
 public struct PoTokenError: Error, CustomStringConvertible {
     public let description: String
     init(_ message: String) { description = message }
 }
 
-/// Port de `PoTokenWebView4.kt` (BotGuard en un WebView sin red) a WKWebView.
+/// Port de `PoTokenWebView4.kt` (BotGuard en un WebView sin red) a WKWebView en macOS y a WebView2 en Windows; la
+/// página vive detrás de `BotGuardPage` (`WKWebViewBotGuardPage`, `WebView2BotGuardPage`).
 ///
 /// - El WKWebView vive en una ventana sin bordes fuera de pantalla (no suelto) para que WebKit no lo trate
 ///   como vista huérfana, y la generación corre dentro de `ProcessInfo.beginActivity` para que App Nap no
@@ -16,8 +15,10 @@ public struct PoTokenError: Error, CustomStringConvertible {
 ///   se bloquean con una regla de contenido, como `blockNetworkLoads = true` en Android. El intérprete de
 ///   BotGuard lo descarga Swift y se ejecuta con `new Function(...)` dentro de la página.
 /// - En lugar de `@JavascriptInterface`, se usa `callAsyncJavaScript`, que espera las promesas de la página.
+/// - En Windows, WebView2 corre en su propio hilo con una ventana fuera de pantalla y bloquea la red de la página
+///   desde `WebResourceRequested`; `callAsyncJavaScript` se emula con `ExecuteScript` y `postMessage`.
 @MainActor
-public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigationDelegate {
+public final class PoTokenWebViewProvider: PoTokenSource {
     // Constantes de PoTokenWebView4.kt
     /// Clave pública del servicio antibots de Google (BotGuard, `jnn-pa.googleapis.com`) que usa la web de YouTube; la
     /// usan también SmartTube, LibreTube y BgUtils. No es una credencial de este proyecto ni se puede rotar: es de
@@ -37,9 +38,7 @@ public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigation
 
     public private(set) var diagnostics = Diagnostics()
     private let catalog: ClientCatalog
-    private var window: NSWindow?
-    private var webView: WKWebView?
-    private var navigationContinuation: CheckedContinuation<Void, Error>?
+    private var page: BotGuardPage?
     private var activity: NSObjectProtocol?
     private var minterReady = false
     private var expiresAt = Date.distantPast
@@ -95,9 +94,7 @@ public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigation
         let start = Date()
         close()
         diagnostics = Diagnostics()
-        activity = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiated, .latencyCritical, .idleSystemSleepDisabled],
-            reason: "Glasstube: BotGuard / PoToken TV")
+        beginActivity(reason: "Glasstube: BotGuard / PoToken TV")
 
         let config = try await HTTP.shared.string(
             URL(string: "https://www.youtube.com/tv_config?action_get_config=true&client=lb4&theme=cl")!,
@@ -132,14 +129,21 @@ public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigation
     }
 
     public func close() {
-        webView?.navigationDelegate = nil
-        webView?.removeFromSuperview()
-        window?.close()
-        webView = nil
-        window = nil
+        page?.close()
+        page = nil
+        #if canImport(Darwin)
         if let activity { ProcessInfo.processInfo.endActivity(activity) }
+        #endif
         activity = nil
         minterReady = false
+    }
+
+    /// App Nap congelaría los temporizadores de BotGuard; en Windows no hay equivalente que pedir.
+    private func beginActivity(reason: String) {
+        #if canImport(Darwin)
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated, .latencyCritical, .idleSystemSleepDisabled], reason: reason)
+        #endif
     }
 
     // MARK: - Inicialización (loadHtmlAndObtainBotguard → downloadAndRunBotguard → onRunBotguardResult)
@@ -147,9 +151,7 @@ public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigation
     private func initialize() async throws {
         close()
         diagnostics = Diagnostics()
-        activity = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiated, .latencyCritical, .idleSystemSleepDisabled],
-            reason: "Glasstube: BotGuard / PoToken")
+        beginActivity(reason: "Glasstube: BotGuard / PoToken")
 
         // visitorData de /youtubei/v1/visitor_id (VisitorService), con el cliente WEB
         guard let web = catalog.profile("WEB") else { throw PoTokenError("falta el perfil WEB") }
@@ -164,7 +166,7 @@ public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigation
     /// BotGuard → GenerateIT → minter, común al PoToken web y al de TV (solo cambian desafío y request key).
     private func startMinter(challenge: [String: Any], ytcfg: Any?, requestKey: String) async throws {
         try await loadPage()
-        step("po_token2.html cargado en WKWebView")
+        step("po_token2.html cargado en \(page?.name ?? "WebView")")
 
         let bgStart = Date()
         let script = """
@@ -319,76 +321,32 @@ public final class PoTokenWebViewProvider: NSObject, PoTokenSource, WKNavigation
         return try await HTTP.shared.string(URL(string: url)!, method: body == nil ? "GET" : "POST", headers: headers, body: body)
     }
 
-    // MARK: - WKWebView
+    // MARK: - Página
 
     private func loadPage() async throws {
-        let configuration = WKWebViewConfiguration()
-        configuration.websiteDataStore = .nonPersistent()
-        // blockNetworkLoads: bloquea toda subcarga de la página (el documento se inyecta con loadHTMLString)
-        let rules = """
-            [{"trigger":{"url-filter":".*","resource-type":["image","style-sheet","script","font","raw","svg-document","media","popup","ping","fetch","websocket","other"]},"action":{"type":"block"}}]
-            """
-        do {
-            if let ruleList = try await WKContentRuleListStore.default().compileContentRuleList(
-                forIdentifier: "glasstube-block-all", encodedContentRuleList: rules) {
-                configuration.userContentController.add(ruleList)
-                step("red de la página bloqueada (regla de contenido)")
-            }
-        } catch {
-            step("no se pudo compilar la regla de bloqueo: \(error)")
+        let page = try BotGuardPages.make()
+        page.onTerminate = { [weak self] in
+            self?.minterReady = false
+            self?.step("el proceso WebContent terminó")
         }
-
-        let frame = NSRect(x: 0, y: 0, width: 640, height: 360)
-        let webView = WKWebView(frame: frame, configuration: configuration)
-        webView.customUserAgent = Self.userAgent
-        webView.navigationDelegate = self
-        // Ventana sin bordes fuera de pantalla: visible para WebKit, invisible para el usuario.
-        let window = NSWindow(contentRect: NSRect(x: -20_000, y: -20_000, width: 640, height: 360),
-                              styleMask: [.borderless], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.contentView = webView
-        window.orderFrontRegardless()
-        self.window = window
-        self.webView = webView
-
+        self.page = page
         let url = Bundle.module.url(forResource: "po_token2", withExtension: "html", subdirectory: "potoken")!
         let html = try String(contentsOf: url, encoding: .utf8)
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            navigationContinuation = continuation
-            webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
-        }
-    }
-
-    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        navigationContinuation?.resume()
-        navigationContinuation = nil
-    }
-
-    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        navigationContinuation?.resume(throwing: error)
-        navigationContinuation = nil
-    }
-
-    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        navigationContinuation?.resume(throwing: error)
-        navigationContinuation = nil
-    }
-
-    public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        minterReady = false
-        step("el proceso WebContent terminó")
+        try await page.load(html: html, baseURL: URL(string: "https://www.youtube.com")!, userAgent: Self.userAgent,
+                            log: { [weak self] in self?.step($0) })
     }
 
     /// `callAsyncJavaScript` espera la promesa del cuerpo; con límite de tiempo como el `latch.await` de Android.
     private func callJS(_ body: String, arguments: [String: Any], timeout: TimeInterval = 20) async throws -> Any? {
-        guard let webView else { throw PoTokenError("WKWebView no inicializado") }
+        guard let page else { throw PoTokenError("WebView no inicializado") }
+        let name = page.name
         return try await withThrowingTaskGroup(of: Any?.self) { group in
             group.addTask { @MainActor in
-                try await webView.callAsyncJavaScript(body, arguments: arguments, in: nil, contentWorld: .page)
+                try await page.callAsync(body, arguments: arguments)
             }
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                throw PoTokenError("tiempo agotado (\(Int(timeout)) s) en WKWebView")
+                throw PoTokenError("tiempo agotado (\(Int(timeout)) s) en \(name)")
             }
             let result = try await group.next()!
             group.cancelAll()

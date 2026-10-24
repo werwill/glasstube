@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Datos raspados de https://www.youtube.com/tv (`AppInfo` de SmartTube).
 public struct AppInfo: Sendable {

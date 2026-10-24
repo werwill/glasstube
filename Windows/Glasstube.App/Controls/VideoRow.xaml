@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Glasstube.Controls.VideoRow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:Glasstube.Models"
+    xmlns:controls="using:Glasstube.Controls"
+    PointerEntered="OnPointerEntered"
+    PointerExited="OnPointerExited">
+
+    <!-- Fila horizontal del Inicio: título, número de videos y tarjetas que se desplazan con los botones de los lados.
+         Sin desplazamiento propio con la rueda: la rueda mueve la página entera. -->
+    <StackPanel Spacing="10">
+        <StackPanel x:Name="Header" Orientation="Horizontal" Spacing="10" Margin="0,0,0,-8">
+            <TextBlock x:Name="TitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <TextBlock x:Name="CountText" VerticalAlignment="Bottom" Margin="0,0,0,3"
+                       Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+        <Grid>
+            <ScrollViewer x:Name="Scroller" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" ViewChanged="OnViewChanged">
+                <ItemsRepeater x:Name="Items">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Horizontal" Spacing="16" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="models:VideoCard">
+                            <controls:VideoCardView Video="{x:Bind}" Width="300" IsTabStop="True" UseSystemFocusVisuals="True" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+            <Button x:Name="PreviousButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-18,64,0,0"
+                    Width="36" Height="36" CornerRadius="18" Padding="0" Opacity="0" Click="OnPrevious"
+                    AutomationProperties.Name="Anteriores" Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
+                <Button.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></Button.OpacityTransition>
+                <FontIcon Glyph="&#xE76B;" FontSize="12" />
+            </Button>
+            <Button x:Name="NextButton" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,64,-18,0"
+                    Width="36" Height="36" CornerRadius="18" Padding="0" Opacity="0" Click="OnNext"
+                    AutomationProperties.Name="Siguientes" Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
+                <Button.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></Button.OpacityTransition>
+                <FontIcon Glyph="&#xE76C;" FontSize="12" />
+            </Button>
+        </Grid>
+    </StackPanel>
+</UserControl>

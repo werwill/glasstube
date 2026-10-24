@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Glasstube.Controls.VideoGrid"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:Glasstube.Models"
+    xmlns:controls="using:Glasstube.Controls">
+
+    <!-- Cuadrícula adaptable de tarjetas (columnas de al menos 260 DIP) con carga incremental. Lo que va en Header
+         (la portada y las filas del Inicio) se desplaza con la cuadrícula y ocupa todo el ancho; el margen de las
+         tarjetas va en el panel (ItemsMargin). -->
+    <GridView
+        x:Name="Grid"
+        SelectionMode="None"
+        IsItemClickEnabled="True"
+        ItemClick="OnItemClick"
+        SizeChanged="OnGridSizeChanged"
+        IncrementalLoadingThreshold="2"
+        IncrementalLoadingTrigger="Edge">
+        <!-- La tarjeta hace su propio efecto al pasar el ratón: sin el fondo gris del elemento. -->
+        <GridView.Resources>
+            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemPointerOverBorderBrush" Color="Transparent" />
+            <StaticResource x:Key="GridViewItemForegroundPointerOver" ResourceKey="TextFillColorPrimaryBrush" />
+        </GridView.Resources>
+        <GridView.ItemContainerStyle>
+            <Style TargetType="GridViewItem" BasedOn="{StaticResource DefaultGridViewItemStyle}">
+                <Setter Property="Margin" Value="4,4,4,12" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Top" />
+            </Style>
+        </GridView.ItemContainerStyle>
+        <GridView.ItemsPanel>
+            <ItemsPanelTemplate>
+                <ItemsWrapGrid Orientation="Horizontal" ItemWidth="320" />
+            </ItemsPanelTemplate>
+        </GridView.ItemsPanel>
+        <GridView.ItemTemplate>
+            <DataTemplate x:DataType="models:VideoCard">
+                <controls:VideoCardView Video="{x:Bind}" />
+            </DataTemplate>
+        </GridView.ItemTemplate>
+    </GridView>
+</UserControl>

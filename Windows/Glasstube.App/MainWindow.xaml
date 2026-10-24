@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Glasstube.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Glasstube">
+
+    <!-- La página ocupa toda la ventana (también detrás de la barra de título y del panel); el panel y la barra flotan
+         encima. Las páginas normales llevan un margen para no quedar tapadas (ver ApplyLayout). -->
+    <Grid x:Name="Root" Background="Transparent" KeyboardAcceleratorPlacementMode="Hidden" SizeChanged="OnRootSizeChanged" ActualThemeChanged="OnThemeChanged">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="K" Invoked="OnSearchKey" />
+            <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackKey" />
+        </Grid.KeyboardAccelerators>
+
+        <Frame x:Name="ContentFrame" Navigated="OnNavigated" />
+
+        <!-- Fondo que cierra el panel cuando se abre encima del contenido (ventana estrecha). -->
+        <Grid x:Name="DismissLayer" Background="#01000000" Visibility="Collapsed" Tapped="OnDismissTapped" />
+
+        <!-- Panel lateral flotante -->
+        <Border
+            x:Name="Pane"
+            HorizontalAlignment="Left"
+            Margin="8,48,0,8"
+            Width="240"
+            CornerRadius="12"
+            BorderThickness="1"
+            BorderBrush="{ThemeResource SurfaceStrokeColorFlyoutBrush}"
+            Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
+            <Border.Shadow><ThemeShadow /></Border.Shadow>
+            <Grid Padding="0,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ListView x:Name="NavList" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged">
+                    <ListViewItem Tag="home" x:Name="HomeItem" ToolTipService.ToolTip="Inicio">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <FontIcon Glyph="&#xE80F;" FontSize="16" />
+                            <TextBlock Text="Inicio" />
+                        </StackPanel>
+                    </ListViewItem>
+                    <ListViewItem Tag="subscriptions" ToolTipService.ToolTip="Suscripciones">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <FontIcon Glyph="&#xE8F2;" FontSize="16" />
+                                <TextBlock Text="Suscripciones" />
+                            </StackPanel>
+                            <!-- Videos nuevos de los canales (llega con Suscripciones). -->
+                            <InfoBadge x:Name="SubscriptionsBadge" HorizontalAlignment="Right" Visibility="Collapsed" />
+                        </Grid>
+                    </ListViewItem>
+                    <ListViewItem Tag="library" ToolTipService.ToolTip="Biblioteca">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <FontIcon Glyph="&#xE8F1;" FontSize="16" />
+                            <TextBlock Text="Biblioteca" />
+                        </StackPanel>
+                    </ListViewItem>
+                    <ListViewItem Tag="history" ToolTipService.ToolTip="Historial">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <FontIcon Glyph="&#xE81C;" FontSize="16" />
+                            <TextBlock Text="Historial" />
+                        </StackPanel>
+                    </ListViewItem>
+                </ListView>
+
+                <!-- Canales (aparece cuando haya datos). -->
+                <Grid x:Name="ChannelsSection" Grid.Row="1" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Rectangle Height="1" Margin="12,4" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                    <TextBlock x:Name="ChannelsHeader" Grid.Row="1" Text="Canales" Margin="16,8,16,4"
+                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ListView x:Name="ChannelList" Grid.Row="2" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged" />
+                </Grid>
+
+                <ListView x:Name="FooterList" Grid.Row="2" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged">
+                    <ListViewItem Tag="settings" ToolTipService.ToolTip="Configuración">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <FontIcon Glyph="&#xE713;" FontSize="16" />
+                            <TextBlock Text="Configuración" />
+                        </StackPanel>
+                    </ListViewItem>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <!-- Barra de título: una fila de 48 px sobre el contenido. Lo que no es botón ni búsqueda arrastra la ventana. -->
+        <Grid x:Name="AppTitleBar" Height="48" VerticalAlignment="Top">
+            <Grid.Resources>
+                <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+                <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
+            </Grid.Resources>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition x:Name="CaptionColumn" Width="138" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel x:Name="LeftChrome" Orientation="Horizontal" Spacing="2" Padding="6,0,0,0" VerticalAlignment="Center">
+                <Button x:Name="BackButton" Style="{StaticResource TitleBarButtonStyle}" Click="OnBackClick"
+                        AutomationProperties.Name="Atrás" ToolTipService.ToolTip="Atrás (Alt+←)">
+                    <FontIcon Glyph="&#xE72B;" FontSize="14" />
+                </Button>
+                <Button x:Name="PaneToggle" Style="{StaticResource TitleBarButtonStyle}" Click="OnPaneToggleClick"
+                        AutomationProperties.Name="Menú" ToolTipService.ToolTip="Menú">
+                    <FontIcon Glyph="&#xE700;" FontSize="14" />
+                </Button>
+                <StackPanel x:Name="AppName" Orientation="Horizontal" Spacing="10" Margin="8,0,0,0" VerticalAlignment="Center">
+                    <Border Width="18" Height="18" CornerRadius="4" Background="{ThemeResource AccentFillColorDefaultBrush}">
+                        <FontIcon Glyph="&#xF5B0;" FontSize="9" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                    </Border>
+                    <TextBlock Text="Glasstube" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel x:Name="RightChrome" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Padding="0,0,8,0">
+                <Button x:Name="AccountButton" Style="{StaticResource TitleBarButtonStyle}" Padding="4" Visibility="Collapsed"
+                        AutomationProperties.Name="Cuenta" ToolTipService.ToolTip="Cuenta">
+                    <PersonPicture x:Name="AccountPicture" Width="28" Height="28" />
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <StackPanel Orientation="Horizontal" Spacing="12" MinWidth="220">
+                                <PersonPicture x:Name="AccountFlyoutPicture" Width="48" Height="48" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="AccountName" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock x:Name="AccountByline" Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+
+            <!-- Búsqueda centrada en la ventana (no en el hueco que queda): su ancho lo fija ApplyLayout. -->
+            <Grid x:Name="SearchHost" Grid.ColumnSpan="4" HorizontalAlignment="Center" VerticalAlignment="Center" Width="480">
+                <AutoSuggestBox
+                    x:Name="SearchBox"
+                    PlaceholderText="Buscar videos, canales y listas"
+                    QueryIcon="Find"
+                    AutomationProperties.Name="Buscar"
+                    QuerySubmitted="OnSearchSubmitted"
+                    GotFocus="OnSearchGotFocus"
+                    LostFocus="OnSearchLostFocus"
+                    TextChanged="OnSearchTextChanged" />
+                <Border x:Name="SearchHint" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,40,0"
+                        Padding="6,1" CornerRadius="4" BorderThickness="1" IsHitTestVisible="False"
+                        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+                    <TextBlock Text="Ctrl+K" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

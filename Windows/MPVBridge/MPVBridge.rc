@@ -1,0 +1,3 @@
+// Recursos de MPVBridge.dll. BLANK es un cursor transparente: el reproductor lo usa para esconder el rat?n
+// (InputDesktopNamedResourceCursor.CreateFromModule("MPVBridge.dll", "BLANK")), porque WinUI no tiene un cursor "ninguno".
+BLANK CURSOR "blank.cur"

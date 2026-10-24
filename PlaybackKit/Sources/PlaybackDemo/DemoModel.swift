@@ -7,7 +7,8 @@ import YouTubeSource
 ///
 ///     PlaybackDemo <videoId> [--renderer metal|opengl] [--max-height N] [--start S]
 ///                  [--seek-at A:B,…] [--switch-at T:ALTURA|T:+|T:-,…] [--fault-at T:FALLO,…] [--stop-at S]
-///                  [--url-ttl S] [--potoken-ttl S] [--on-top] [--report ARCHIVO] [--live] [--verbose]
+///                  [--url-ttl S] [--potoken-ttl S] [--on-top] [--report ARCHIVO] [--live] [--live-engine avplayer|mpv]
+///                  [--verbose]
 ///                  [--cover S | --hide S | --minimize S]
 struct DemoOptions {
     var videoId = "aqz-KE-bpKQ" // Big Buck Bunny (público)
@@ -23,6 +24,8 @@ struct DemoOptions {
     var onTop = false
     var report: URL?
     var live = false
+    /// Motor de los directos: AVPlayer (lo de hoy) o MPVEngine con el HLS por URL (lo que tendría Windows).
+    var liveEngine = PlayerEngineKind.avPlayer
     var verbose = false
     /// Cada petición SABR en la bitácora (también con --verbose, que además trae los mensajes info de mpv).
     var logSabr = false
@@ -71,6 +74,7 @@ struct DemoOptions {
             case "--on-top": onTop = true
             case "--report": report = value().map { URL(fileURLWithPath: $0) }
             case "--live": live = true
+            case "--live-engine": live = true; liveEngine = value() == "mpv" ? .mpv : .avPlayer
             case "--hwdec": hwdec = value()
             case "--max-wall": maxWall = value().flatMap(Double.init)
             case "--keys-at": keys = pairs(value())
@@ -166,17 +170,25 @@ final class DemoModel {
             if options.live {
                 let live = try await YouTubeLive.hlsManifest(videoId: options.videoId)
                 title = live.title ?? options.videoId
-                let engine = AVEngine()
-                self.engine = engine
-                listen(engine)
-                record("AVEngine: HLS \(live.hlsURL.host ?? "?") (directo: \(live.isLive ? "sí" : "no"))")
-                try await engine.load(PlaybackItem(id: options.videoId, title: title, source: .url(live.hlsURL), isLive: live.isLive))
+                let item = PlaybackItem(id: options.videoId, title: title, source: .url(live.hlsURL), isLive: live.isLive)
+                let directo = "directo: \(live.isLive ? "sí" : "no")"
+                if options.liveEngine == .mpv {
+                    // El manifiesto maestro tal cual: mpv elige la variante de más bitrate (hls-bitrate) y las demás
+                    // quedan como pistas de video para el cambio de calidad.
+                    let engine = try MPVEngine(configuration: mpvConfiguration())
+                    self.engine = engine
+                    listen(engine)
+                    record("MPVEngine (\(options.renderer.rawValue)): HLS \(live.hlsURL.host ?? "?") (\(directo))")
+                    try await engine.load(item)
+                } else {
+                    let engine = AVEngine()
+                    self.engine = engine
+                    listen(engine)
+                    record("AVEngine: HLS \(live.hlsURL.host ?? "?") (\(directo))")
+                    try await engine.load(item)
+                }
             } else {
-                var configuration = MPVEngine.Configuration()
-                configuration.renderer = options.renderer
-                if let hwdec = options.hwdec { configuration.hwdec = hwdec }
-                if options.verbose { configuration.mpvLogLevel = "info" }
-                let engine = try MPVEngine(configuration: configuration)
+                let engine = try MPVEngine(configuration: mpvConfiguration())
                 self.engine = engine
                 listen(engine)
                 var sabr = SabrSourceOptions()
@@ -197,6 +209,14 @@ final class DemoModel {
             return
         }
         Task { await monitor() }
+    }
+
+    private func mpvConfiguration() -> MPVEngine.Configuration {
+        var configuration = MPVEngine.Configuration()
+        configuration.renderer = options.renderer
+        if let hwdec = options.hwdec { configuration.hwdec = hwdec }
+        if options.verbose { configuration.mpvLogLevel = "info" }
+        return configuration
     }
 
     private func listen(_ engine: any PlayerEngine) {
@@ -480,7 +500,7 @@ final class DemoModel {
         record("fin: \(reason)")
         let status = engine?.status
         var lines = ["", "PlaybackDemo — \(title) (\(options.videoId))"]
-        lines.append("Motor: \(engine.map { $0.kind.rawValue } ?? "-")\(options.live ? "" : ", salida \(options.renderer.rawValue)")")
+        lines.append("Motor: \(engine.map { $0.kind.rawValue } ?? "-")\(engine is AVEngine ? "" : ", salida \(options.renderer.rawValue)")")
         lines.append("Video: \(status?.videoDescription ?? "-") · decodificadores vistos: \(decoders.sorted().joined(separator: ", ")) · muestras reproduciendo con hardware \(hardwareSamples), sin hardware \(softwareSamples)")
         lines.append("Cuadros descartados (último archivo): VO \(status?.droppedFrames ?? 0), decodificador \(status?.decoderDroppedFrames ?? 0)")
         if let source { lines.append("SABR: " + source.lifeSummary) }

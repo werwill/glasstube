@@ -36,3 +36,11 @@ crudas/
 ._*
 .Spotlight-V100
 .Trashes
+
+# Prueba de libmpv en Windows (PlaybackKit/Prototypes/windows/build.sh).
+PlaybackKit/Prototypes/windows/build/
+
+# App de Windows (Windows/build.ps1).
+Windows/out/
+Windows/Glasstube.App/bin/
+Windows/Glasstube.App/obj/

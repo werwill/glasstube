@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// POST con lectura en flujo para SABR: `URLSessionDataDelegate` entrega el cuerpo por trozos (`didReceive data`)
 /// y se pasan a un `AsyncThrowingStream`, para que `UMPDecoder.feed` vea las partes `MEDIA` conforme llegan en
