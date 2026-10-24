@@ -29,7 +29,7 @@
 
 #include <mpv/client.h>
 #include <mpv/render.h>
-#if MPV_CLIENT_API_VERSION >= MPV_MAKE_VERSION(2, 6)
+#if MPV_CLIENT_API_VERSION >= MPV_MAKE_VERSION(2, 6) && __has_include(<mpv/render_d3d11.h>)
 #include <mpv/render_d3d11.h>
 #define HAVE_RENDER_D3D11 1
 #endif
