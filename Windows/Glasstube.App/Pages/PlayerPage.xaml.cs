@@ -1,6 +1,7 @@
 using Glasstube.Models;
 using Glasstube.Native;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -10,13 +11,15 @@ namespace Glasstube.Pages;
 
 /// <summary>
 /// Reproductor: resuelve las URLs con GlasstubeFFI y las abre en mpv, que pinta en el SwapChainPanel (MPVBridge). Un
-/// temporizador lee el estado de mpv y mueve los controles.
+/// temporizador lee el estado de mpv y mueve los controles. Ocupa toda la ventana; la barra de título se queda solo con
+/// el botón de atrás.
 /// </summary>
-public sealed partial class PlayerPage : Page
+public sealed partial class PlayerPage : Page, IFullBleedPage
 {
     static double lastVolume = 100;
 
     VideoCard? video;
+    StreamInfo? stream;
     MpvPlayer? player;
     DispatcherQueueTimer? poll;
     DispatcherQueueTimer? hideTimer;
@@ -24,7 +27,12 @@ public sealed partial class PlayerPage : Page
     bool updatingProgress;
     bool dragging;
     bool closed;
+    bool controlsVisible = true;
+    bool overCapsule;
+    int ticks;
     double volumeBeforeMute = 100;
+
+    public bool HidesChrome => true;
 
     public PlayerPage()
     {
@@ -46,16 +54,20 @@ public sealed partial class PlayerPage : Page
         hideTimer = DispatcherQueue.CreateTimer();
         hideTimer.Interval = TimeSpan.FromSeconds(3);
         hideTimer.IsRepeating = false;
-        hideTimer.Tick += (_, _) => { if (!state.Paused.AsBool() && player != null && !dragging) Controls.Opacity = 0; };
+        hideTimer.Tick += (_, _) =>
+        {
+            if (!state.Paused.AsBool() && player != null && !dragging && !overCapsule) SetControlsVisible(false);
+        };
+        if (App.Window is { } window) window.MiniChanged += OnMiniChanged;
 
         GlasstubeFFI.Log("app", $"abrir {video.Id} «{video.Title}»");
         try
         {
             await App.Ready;
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
-            var stream = await GlasstubeFFI.ResolveStream(video.Id).WaitAsync(ResolveTimeout);
+            var resolved = await GlasstubeFFI.ResolveStream(video.Id).WaitAsync(ResolveTimeout);
             if (closed) return;
-            Start(stream);
+            Start(resolved);
         }
         catch (TimeoutException)
         {
@@ -81,13 +93,20 @@ public sealed partial class PlayerPage : Page
         hideTimer?.Stop();
         player?.Dispose();
         player = null;
-        App.Window?.SetFullScreen(false);
+        SetCursorHidden(false);
+        if (App.Window is { } window)
+        {
+            window.MiniChanged -= OnMiniChanged;
+            window.SetMini(false);
+            window.SetFullScreen(false);
+        }
     }
 
-    void Start(StreamInfo stream)
+    void Start(StreamInfo resolved)
     {
-        if (!string.IsNullOrEmpty(stream.Title)) TitleText.Text = stream.Title;
-        if (!string.IsNullOrEmpty(stream.Author)) ChannelText.Text = stream.Author;
+        stream = resolved;
+        if (!string.IsNullOrEmpty(resolved.Title)) TitleText.Text = resolved.Title;
+        if (!string.IsNullOrEmpty(resolved.Author)) ChannelText.Text = resolved.Author;
         var (width, height, scale) = PanelPixels();
         player = MpvPlayer.Create(Panel, width, height, scale);
         if (player == null)
@@ -96,19 +115,19 @@ public sealed partial class PlayerPage : Page
             return;
         }
         player.SetVolume(Volume.Value);
-        var url = stream.Hls ?? stream.Video?.Url;
+        var url = resolved.Hls ?? resolved.Video?.Url;
         if (url == null)
         {
             ShowError("YouTube no dio URLs para este video.");
             return;
         }
-        var result = player.Load(url, stream.Hls == null ? stream.Audio?.Url : null, stream.UserAgent, stream.Headers);
+        var result = player.Load(url, resolved.Hls == null ? resolved.Audio?.Url : null, resolved.UserAgent, resolved.Headers);
         if (result < 0)
         {
             ShowError(player.LastError);
             return;
         }
-        GlasstubeFFI.Log("app", $"{stream.VideoId}: cliente {stream.Client}, video {stream.Video?.Label} {stream.Video?.Codec}, audio {stream.Audio?.Label}{(stream.Hls != null ? ", HLS" : "")}");
+        GlasstubeFFI.Log("app", $"{resolved.VideoId}: cliente {resolved.Client}, video {resolved.Video?.Label} {resolved.Video?.Codec}, audio {resolved.Audio?.Label}{(resolved.Hls != null ? ", HLS" : "")}");
         SpinnerText.Text = "Cargando…";
         loadedAt = DateTime.UtcNow;
         poll = DispatcherQueue.CreateTimer();
@@ -140,9 +159,10 @@ public sealed partial class PlayerPage : Page
         var waiting = !state.HasVideo.AsBool() || state.Buffering.AsBool();
         Spinner.Visibility = waiting && !state.Paused.AsBool() ? Visibility.Visible : Visibility.Collapsed;
 
-        PlayIcon.Glyph = state.Paused.AsBool() || state.Ended.AsBool() ? "" : "";
-        if (state.Paused.AsBool()) Controls.Opacity = 1;
-        TimeText.Text = $"{Time(state.Position)} / {Time(state.Duration)}";
+        var paused = state.Paused.AsBool() || state.Ended.AsBool();
+        PlayIcon.Glyph = MiniPlayIcon.Glyph = paused ? "" : "";
+        if (state.Paused.AsBool() && !controlsVisible) SetControlsVisible(true);
+        TimeText.Text = MiniTimeText.Text = $"{Time(state.Position)} / {Time(state.Duration)}";
         if (!dragging && state.Duration > 0)
         {
             updatingProgress = true;
@@ -150,6 +170,18 @@ public sealed partial class PlayerPage : Page
             Progress.Value = Math.Min(state.Position, state.Duration);
             updatingProgress = false;
         }
+        if (ticks++ % 15 == 0) UpdateQuality();
+    }
+
+    /// <summary>"1080p60" con la altura y los cuadros por segundo que da mpv (o la etiqueta del formato elegido).</summary>
+    void UpdateQuality()
+    {
+        if (player == null) return;
+        var (height, fps) = player.VideoFormat();
+        var label = height > 0 ? fps > 32 ? $"{height}p{Math.Round(fps)}" : $"{height}p" : null;
+        label ??= stream?.Hls == null ? stream?.Video?.Label : null;
+        QualityText.Text = label ?? "";
+        QualityBadge.Visibility = string.IsNullOrEmpty(label) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     static string Time(double seconds)
@@ -167,7 +199,7 @@ public sealed partial class PlayerPage : Page
         ErrorBar.Message = (string.IsNullOrWhiteSpace(message) ? "Error desconocido." : message)
                            + $"\n\nRegistro: {logs}\\glasstube.log";
         ErrorBar.IsOpen = true;
-        Controls.Opacity = 1;
+        SetControlsVisible(true);
     }
 
     // MARK: Tamaño del panel (píxeles físicos para d3d11-composition-size)
@@ -186,6 +218,52 @@ public sealed partial class PlayerPage : Page
 
     void OnPanelSizeChanged(object sender, SizeChangedEventArgs e) => Resize();
     void OnPanelScaleChanged(SwapChainPanel sender, object args) => Resize();
+
+    // MARK: Mostrar y ocultar controles
+
+    bool IsMini => App.Window?.IsMini == true;
+
+    /// <summary>Controles, título, botón de atrás y cursor aparecen y se ocultan juntos.</summary>
+    void SetControlsVisible(bool visible)
+    {
+        controlsVisible = visible;
+        Controls.Opacity = visible && !IsMini ? 1 : 0;
+        Controls.IsHitTestVisible = visible && !IsMini;
+        MiniControls.Opacity = visible && IsMini ? 1 : 0;
+        App.Window?.SetChromeFaded(!visible);
+        SetCursorHidden(!visible);
+    }
+
+    void ShowControls()
+    {
+        if (!controlsVisible) SetControlsVisible(true);
+        hideTimer?.Stop();
+        hideTimer?.Start();
+    }
+
+    /// <summary>
+    /// Cursor transparente (recurso BLANK de MPVBridge.dll): WinUI no tiene un cursor "ninguno" y lleva el cursor desde
+    /// su capa de entrada, así que SetCursor/ShowCursor de Win32 no sirven.
+    /// </summary>
+    static InputCursor? blankCursor;
+
+    void SetCursorHidden(bool hidden)
+    {
+        if (hidden)
+        {
+            try { blankCursor ??= InputDesktopNamedResourceCursor.CreateFromModule("MPVBridge.dll", "BLANK"); }
+            catch (Exception error) { GlasstubeFFI.Log("app", $"cursor transparente: {error.Message}"); }
+        }
+        ProtectedCursor = hidden ? blankCursor : null;
+    }
+
+    void OnMiniChanged(object? sender, bool mini)
+    {
+        Controls.Visibility = mini ? Visibility.Collapsed : Visibility.Visible;
+        MiniControls.Visibility = mini ? Visibility.Visible : Visibility.Collapsed;
+        SetControlsVisible(!mini);
+        if (!mini) ShowControls();
+    }
 
     // MARK: Controles
 
@@ -214,8 +292,16 @@ public sealed partial class PlayerPage : Page
     void ToggleFullScreen()
     {
         if (App.Window is not { } window) return;
+        if (window.IsMini) window.SetMini(false);
         window.SetFullScreen(!window.IsFullScreen);
         FullScreenIcon.Glyph = window.IsFullScreen ? "" : "";
+    }
+
+    void ToggleMini()
+    {
+        if (App.Window is not { } window) return;
+        window.SetMini(!window.IsMini);
+        FullScreenIcon.Glyph = "";
     }
 
     void ToggleMute()
@@ -229,13 +315,6 @@ public sealed partial class PlayerPage : Page
         {
             Volume.Value = volumeBeforeMute > 0 ? volumeBeforeMute : 100;
         }
-    }
-
-    void ShowControls()
-    {
-        Controls.Opacity = 1;
-        hideTimer?.Stop();
-        hideTimer?.Start();
     }
 
     void EndDrag()
@@ -262,22 +341,41 @@ public sealed partial class PlayerPage : Page
     }
 
     void OnPlayPause(object sender, RoutedEventArgs e) => TogglePause();
+    void OnBack10(object sender, RoutedEventArgs e) => SeekBy(-10);
+    void OnForward10(object sender, RoutedEventArgs e) => SeekBy(10);
     void OnMute(object sender, RoutedEventArgs e) => ToggleMute();
     void OnFullScreen(object sender, RoutedEventArgs e) => ToggleFullScreen();
-    void OnBack(object sender, RoutedEventArgs e) => App.Window?.GoBack();
+    void OnMini(object sender, RoutedEventArgs e) => ToggleMini();
     void OnPointerActivity(object sender, PointerRoutedEventArgs e) => ShowControls();
-    void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => ToggleFullScreen();
+    void OnCapsulePointerEntered(object sender, PointerRoutedEventArgs e) => overCapsule = true;
+    void OnCapsulePointerExited(object sender, PointerRoutedEventArgs e) => overCapsule = false;
+
+    void OnPointerLeft(object sender, PointerRoutedEventArgs e)
+    {
+        // El mini reproductor solo enseña controles con el ratón encima.
+        if (IsMini) SetControlsVisible(false);
+    }
+
+    void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        if (IsMini) ToggleMini();
+        else ToggleFullScreen();
+    }
 
     void OnTogglePauseKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; TogglePause(); }
     void OnFullScreenKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; ToggleFullScreen(); }
+    void OnMiniKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; ToggleMini(); }
     void OnSeekBackKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; SeekBy(-5); }
     void OnSeekForwardKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; SeekBy(5); }
+    void OnSeekBack10Key(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; SeekBy(-10); }
+    void OnSeekForward10Key(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; SeekBy(10); }
     void OnMuteKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; ToggleMute(); }
 
     void OnEscapeKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         args.Handled = true;
-        if (App.Window?.IsFullScreen == true) ToggleFullScreen();
+        if (IsMini) ToggleMini();
+        else if (App.Window?.IsFullScreen == true) ToggleFullScreen();
         else App.Window?.GoBack();
     }
 }

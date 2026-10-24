@@ -340,31 +340,89 @@ public sealed partial class MainWindow : Window
 
     /// <summary>
     /// Botones de la ventana sin fondo propio y con el color del tema. Encima de video (o de una imagen oscura) van en
-    /// blanco; con los controles del reproductor ocultos, transparentes.
+    /// blanco.
     /// </summary>
     void UpdateCaptionColors()
     {
         var dark = chromeHidden || Root.ActualTheme == ElementTheme.Dark;
         AppTitleBar.RequestedTheme = chromeHidden ? ElementTheme.Dark : ElementTheme.Default;
         var bar = AppWindow.TitleBar;
-        var foreground = chromeFaded ? Colors.Transparent : dark ? Colors.White : Colors.Black;
+        var foreground = dark ? Colors.White : Colors.Black;
         bar.ButtonBackgroundColor = bar.ButtonInactiveBackgroundColor = Colors.Transparent;
         bar.ButtonForegroundColor = foreground;
-        bar.ButtonInactiveForegroundColor = chromeFaded ? Colors.Transparent
-            : dark ? Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x80, 0, 0, 0);
+        bar.ButtonInactiveForegroundColor = dark ? Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x80, 0, 0, 0);
         bar.ButtonHoverBackgroundColor = dark ? Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x10, 0, 0, 0);
         bar.ButtonHoverForegroundColor = dark ? Colors.White : Colors.Black;
         bar.ButtonPressedBackgroundColor = dark ? Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x08, 0, 0, 0);
-        bar.ButtonPressedForegroundColor = foreground == Colors.Transparent ? (dark ? Colors.White : Colors.Black) : foreground;
+        bar.ButtonPressedForegroundColor = foreground;
     }
 
-    /// <summary>El reproductor esconde el botón de atrás y los de la ventana junto con sus controles.</summary>
+    /// <summary>
+    /// El reproductor esconde el botón de atrás junto con sus controles. Los botones de la ventana se quedan: Windows no
+    /// acepta un color de primer plano transparente para ellos.
+    /// </summary>
     public void SetChromeFaded(bool faded)
     {
         if (faded == chromeFaded || !chromeHidden) return;
         chromeFaded = faded;
         BackButton.Opacity = faded ? 0 : 1;
-        UpdateCaptionColors();
+    }
+
+    // MARK: Mini reproductor
+
+    /// <summary>Tamaño inicial del mini reproductor (DIP, 16:9).</summary>
+    const double MiniWidth = 400;
+
+    /// <summary>Presentador, posición, tamaño y si estaba maximizada antes del mini reproductor.</summary>
+    (AppWindowPresenterKind Kind, RectInt32 Bounds, bool Maximized)? beforeMini;
+    bool fittingMini;
+
+    public bool IsMini => AppWindow.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
+
+    /// <summary>Cambia entre la ventana y el mini reproductor (siempre encima). El argumento dice si queda en mini.</summary>
+    public event EventHandler<bool>? MiniChanged;
+
+    public void SetMini(bool on)
+    {
+        if (on == IsMini) return;
+        if (on)
+        {
+            var maximized = AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized };
+            if (IsFullScreen) AppWindow.SetPresenter(AppWindowPresenterKind.Default);
+            beforeMini = (AppWindow.Presenter.Kind,
+                          new RectInt32(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height),
+                          maximized);
+            AppWindow.SetPresenter(AppWindowPresenterKind.CompactOverlay);
+            var width = (int)Math.Round(MiniWidth * Scale);
+            AppWindow.Resize(new SizeInt32(width, width * 9 / 16));
+            AppWindow.Changed += KeepMiniAspect;
+        }
+        else
+        {
+            AppWindow.Changed -= KeepMiniAspect;
+            AppWindow.SetPresenter(beforeMini?.Kind ?? AppWindowPresenterKind.Default);
+            if (beforeMini is { } before)
+            {
+                if (before.Maximized && AppWindow.Presenter is OverlappedPresenter overlapped) overlapped.Maximize();
+                else AppWindow.MoveAndResize(before.Bounds);
+            }
+            beforeMini = null;
+        }
+        // En mini no queda ni el botón de atrás: solo los controles del reproductor al pasar el ratón.
+        BackButton.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        MiniChanged?.Invoke(this, on);
+    }
+
+    /// <summary>El mini reproductor se redimensiona a mano, pero siempre en 16:9.</summary>
+    void KeepMiniAspect(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (!args.DidSizeChange || fittingMini || !IsMini) return;
+        var size = sender.Size;
+        var height = size.Width * 9 / 16;
+        if (Math.Abs(height - size.Height) <= 2) return;
+        fittingMini = true;
+        sender.Resize(new SizeInt32(size.Width, height));
+        fittingMini = false;
     }
 
     // MARK: Pantalla completa

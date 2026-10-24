@@ -63,13 +63,19 @@ y GlasstubeFFI (31 MB en release).
 
 ## Qué funciona (probado el 23-oct-2026 en esta PC)
 
-- Ventana con Mica, barra de título propia, `NavigationView` (Inicio; Suscripciones y Biblioteca como «Próximamente») y la
-  cuenta elegida al pie del panel.
+- Ventana con acabado Vidrio (DesktopAcrylicBackdrop, o Mica si no hay acrílico), tema y acento de Windows. Barra de
+  título integrada de 48 px: atrás, menú, búsqueda centrada (Ctrl+K; por ahora solo una página «Buscar: …») y la cuenta.
+  Panel lateral propio y flotante (Inicio, Suscripciones, Biblioteca, Historial, Configuración): solo iconos por debajo
+  de 1000 DIP y encima del contenido por debajo de 640. El Frame ocupa toda la ventana; las páginas que implementan
+  `IFullBleedPage` van detrás del panel y de la barra (el reproductor, y la portada del Inicio más adelante).
 - Inicio real de la cuenta: cuadrícula adaptable (columnas de al menos 260 DIP), miniatura, duración, título, canal, vistas y
-  fecha; carga más al llegar al final; botón de actualizar.
-- Reproductor: clic en una tarjeta → resuelve (~2–3 s) y reproduce 1080p60 VP9 con decodificación por hardware (d3d11va).
-  Reproducir/pausa, barra de progreso (clic y arrastre), volumen y silencio, pantalla completa (botón, F o doble clic, Esc
-  para salir), ←/→ ±5 s, volver (botón propio, el de la `NavigationView` o Esc). Los controles se ocultan a los 3 s.
+  fecha; carga más al llegar al final; botón de actualizar. Las tarjetas se levantan al pasar el ratón.
+- Reproductor a ventana completa con la cápsula de controles flotante: clic en una tarjeta → resuelve (~2–3 s) y reproduce
+  1080p60 VP9 con decodificación por hardware (d3d11va). Reproducir/pausa (espacio o K), −10/+10 s (botones, J/L), ←/→ ±5 s,
+  barra de progreso, volumen y silencio (M), calidad que da mpv («1080p60»), pantalla completa (F o doble clic) y mini
+  reproductor siempre encima (I o el botón; Esc o doble clic vuelve a la ventana con su tamaño y posición). Controles,
+  título, botón de atrás y cursor se ocultan a los 3 s.
+- `--tema claro|oscuro` fuerza el tema (capturas); sin él sigue al de Windows.
 - GlasstubeCore compila en Windows (antes solo se había probado en Linux); la FFI usa `cardSubtitle` y `durationBadge`.
 
 ## Qué falta
@@ -80,7 +86,7 @@ y GlasstubeFFI (31 MB en release).
 - Página del video: descripción, comentarios, sugeridos y siguiente automático.
 - Suscripciones, Biblioteca, búsqueda, canales, ajustes, iniciar y cerrar sesión desde la app (hoy se usa la sesión que dejó
   `ytkit signin`).
-- Ocultar el cursor con los controles ocultos; atajos de volumen; recordar tamaño de ventana.
+- Atajos de volumen; recordar tamaño de ventana. Capítulos en la barra y «Saltar patrocinio» (sitio y TODO en PlayerPage).
 - Errores de red con reintento en el Inicio (hoy un aviso y el botón de actualizar).
 - Empaquetado MSIX, icono, instalador y firma. El runtime de Swift se copia entero (se puede recortar).
 - `gt_pump` con temporizador: se podría despertar solo cuando la cola tiene trabajo

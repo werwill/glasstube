@@ -47,6 +47,9 @@ MPVB_API void mpvb_resize(mpvb_player *player, int32_t width, int32_t height, fl
 MPVB_API void mpvb_set_pause(mpvb_player *player, int32_t paused);
 MPVB_API void mpvb_seek(mpvb_player *player, double seconds);
 MPVB_API void mpvb_set_volume(mpvb_player *player, double volume);
+/// Altura del video (0 si aún no se sabe) y cuadros por segundo del contenedor (0 si no se saben), para mostrar la
+/// calidad ("1080p60"). Son propiedades observadas: no bloquea esperando al núcleo de mpv.
+MPVB_API void mpvb_video_format(mpvb_player *player, int32_t *height, double *fps);
 /// Última línea de error de mpv (vale hasta la siguiente llamada).
 MPVB_API const char *mpvb_last_error(mpvb_player *player);
 MPVB_API void mpvb_destroy(mpvb_player *player);

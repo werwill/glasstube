@@ -23,7 +23,7 @@ struct ISwapChainPanelNative { const ISwapChainPanelNativeVtbl *lpVtbl; };
 static const IID IID_ISwapChainPanelNative_WinUI = {0x63aad0b8, 0x7c24, 0x40ff, {0x85, 0xa8, 0x64, 0x0d, 0x94, 0x4c, 0xc3, 0x25}};
 
 // Propiedades observadas (el `reply_userdata` de cada una).
-enum { P_TIME = 1, P_DURATION, P_PAUSE, P_VOLUME, P_IDLE, P_CACHE_PAUSE, P_CACHE_DURATION, P_EOF };
+enum { P_TIME = 1, P_DURATION, P_PAUSE, P_VOLUME, P_IDLE, P_CACHE_PAUSE, P_CACHE_DURATION, P_EOF, P_HEIGHT, P_FPS };
 
 static mpvb_logger logger;
 
@@ -47,6 +47,8 @@ struct mpvb_player {
     float scale;
     mpvb_state state;
     char error[512];
+    int32_t height; // mpvb_video_format
+    double fps;
 };
 
 static void set_option(mpvb_player *p, const char *name, const char *value) {
@@ -115,6 +117,8 @@ MPVB_API mpvb_player *mpvb_create(void *panel, int32_t width, int32_t height, fl
     mpv_observe_property(p->mpv, P_CACHE_PAUSE, "paused-for-cache", MPV_FORMAT_FLAG);
     mpv_observe_property(p->mpv, P_CACHE_DURATION, "demuxer-cache-duration", MPV_FORMAT_DOUBLE);
     mpv_observe_property(p->mpv, P_EOF, "eof-reached", MPV_FORMAT_FLAG);
+    mpv_observe_property(p->mpv, P_HEIGHT, "height", MPV_FORMAT_INT64);
+    mpv_observe_property(p->mpv, P_FPS, "container-fps", MPV_FORMAT_DOUBLE);
     return p;
 }
 
@@ -188,6 +192,8 @@ static void property_changed(mpvb_player *p, mpv_event *e) {
     case P_CACHE_PAUSE: p->state.buffering = flag; break;
     case P_CACHE_DURATION: p->state.buffered = d; break;
     case P_EOF: p->state.ended = flag; break;
+    case P_HEIGHT: p->height = has && prop->format == MPV_FORMAT_INT64 ? (int32_t)*(int64_t *)prop->data : 0; break;
+    case P_FPS: p->fps = d; break;
     }
 }
 
@@ -260,6 +266,11 @@ MPVB_API void mpvb_set_volume(mpvb_player *p, double volume) {
     if (!p) return;
     double v = volume < 0 ? 0 : volume > 100 ? 100 : volume;
     mpv_set_property_async(p->mpv, 0, "volume", MPV_FORMAT_DOUBLE, &v);
+}
+
+MPVB_API void mpvb_video_format(mpvb_player *p, int32_t *height, double *fps) {
+    if (height) *height = p ? p->height : 0;
+    if (fps) *fps = p ? p->fps : 0;
 }
 
 MPVB_API const char *mpvb_last_error(mpvb_player *p) { return p ? p->error : ""; }

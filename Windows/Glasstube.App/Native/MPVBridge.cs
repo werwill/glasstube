@@ -34,6 +34,7 @@ public sealed unsafe class MpvPlayer : IDisposable
     [DllImport(Dll)] static extern void mpvb_seek(IntPtr player, double seconds);
     [DllImport(Dll)] static extern void mpvb_set_volume(IntPtr player, double volume);
     [DllImport(Dll)] static extern IntPtr mpvb_last_error(IntPtr player);
+    [DllImport(Dll)] static extern void mpvb_video_format(IntPtr player, out int height, out double fps);
     [DllImport(Dll)] static extern void mpvb_destroy(IntPtr player);
     [DllImport(Dll)] static extern unsafe void mpvb_set_logger(delegate* unmanaged<byte*, void> callback);
 
@@ -80,6 +81,12 @@ public sealed unsafe class MpvPlayer : IDisposable
     public void SetPause(bool paused) => mpvb_set_pause(handle, paused ? 1 : 0);
     public void Seek(double seconds) => mpvb_seek(handle, seconds);
     public void SetVolume(double volume) => mpvb_set_volume(handle, volume);
+    /// <summary>Altura del video y cuadros por segundo (0 si aún no se saben).</summary>
+    public (int Height, double Fps) VideoFormat()
+    {
+        mpvb_video_format(handle, out var height, out var fps);
+        return (height, fps);
+    }
     public string LastError => Marshal.PtrToStringUTF8(mpvb_last_error(handle)) ?? "";
 
     public void Dispose()

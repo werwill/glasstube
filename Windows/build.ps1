@@ -67,8 +67,11 @@ if (-not (Test-Path "$products\GlasstubeFFI.dll")) { throw "No está $products\G
 Step 'MPVBridge'
 $bridgeOut = Join-Path $out 'mpvbridge'
 New-Item -ItemType Directory -Force $bridgeOut | Out-Null
+# Recursos (el cursor transparente del reproductor) con el llvm-rc que trae el toolchain de Swift.
+Native { llvm-rc /nologo /fo "$bridgeOut\MPVBridge.res" "$windows\MPVBridge\MPVBridge.rc" }
+Check 'llvm-rc MPVBridge'
 Native { clang -O2 -shared -D_CRT_SECURE_NO_WARNINGS -o "$bridgeOut\MPVBridge.dll" "$windows\MPVBridge\MPVBridge.c" `
-    -I "$vendor\include" -L "$vendor\lib" -lmpv -ld3d11 -ldxgi -ldxguid -luuid }
+    "$bridgeOut\MPVBridge.res" -I "$vendor\include" -L "$vendor\lib" -lmpv -ld3d11 -ldxgi -ldxguid -luuid }
 Check 'clang MPVBridge'
 
 # 3. DLL nativas junto al exe
