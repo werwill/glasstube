@@ -17,6 +17,11 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        // `Glasstube.exe --tema claro|oscuro`: fuerza el tema (capturas y pruebas); sin él, sigue al de Windows.
+        var arguments = Environment.GetCommandLineArgs();
+        var theme = Array.IndexOf(arguments, "--tema");
+        if (theme >= 0 && theme + 1 < arguments.Length)
+            RequestedTheme = arguments[theme + 1] == "oscuro" ? ApplicationTheme.Dark : ApplicationTheme.Light;
         UnhandledException += (_, e) => GlasstubeFFI.Log("app", $"excepción sin atrapar: {e.Exception}");
         AppDomain.CurrentDomain.UnhandledException += (_, e) => GlasstubeFFI.Log("app", $"excepción fatal: {e.ExceptionObject}");
         TaskScheduler.UnobservedTaskException += (_, e) => GlasstubeFFI.Log("app", $"tarea sin observar: {e.Exception}");

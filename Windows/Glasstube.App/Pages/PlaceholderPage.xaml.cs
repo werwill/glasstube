@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Glasstube.Pages;
 
-/// <summary>Secciones que aún no están (Suscripciones, Biblioteca). El parámetro de navegación es la etiqueta.</summary>
+/// <summary>Secciones que aún no están (Suscripciones, Biblioteca, Historial, Configuración). El parámetro de navegación es la etiqueta.</summary>
 public sealed partial class PlaceholderPage : Page
 {
     public string Section { get; private set; } = "";
@@ -16,7 +16,9 @@ public sealed partial class PlaceholderPage : Page
         (Icon.Glyph, TitleText.Text, MessageText.Text) = Section switch
         {
             "subscriptions" => ("", "Suscripciones", "Próximamente: los videos de tus canales."),
-            _ => ("", "Biblioteca", "Próximamente: historial, Ver más tarde y tus listas."),
+            "history" => ("", "Historial", "Próximamente: lo que has visto."),
+            "settings" => ("", "Configuración", "Próximamente: calidad, subtítulos, SponsorBlock y cuenta."),
+            _ => ("", "Biblioteca", "Próximamente: Ver más tarde y tus listas."),
         };
     }
 }

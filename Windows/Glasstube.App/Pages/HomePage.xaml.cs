@@ -31,6 +31,7 @@ public sealed partial class HomePage : Page
             await App.Ready;
             var page = await GlasstubeFFI.Home();
             Grid.ItemsSource = new FeedCollection(page.Items, page.HasMore, GlasstubeFFI.HomeMore);
+            UpdateColumns();
             if (page.Items.Count == 0 || page.Notice != null)
                 ShowNotice(InfoBarSeverity.Informational, page.Notice ?? "YouTube no devolvió videos para el Inicio.");
         }
@@ -65,10 +66,24 @@ public sealed partial class HomePage : Page
     }
 
     /// <summary>Columnas que llenan el ancho: tantas de al menos <see cref="MinCardWidth"/> como quepan.</summary>
-    void OnGridSizeChanged(object sender, SizeChangedEventArgs e)
+    void OnGridSizeChanged(object sender, SizeChangedEventArgs e) => UpdateColumns();
+
+    void RetryColumns(object? sender, object e)
     {
-        if (Grid.ItemsPanelRoot is not ItemsWrapGrid panel) return;
-        var available = e.NewSize.Width - Grid.Padding.Left - Grid.Padding.Right - 1;
+        Grid.LayoutUpdated -= RetryColumns;
+        if (Grid.ItemsPanelRoot != null) UpdateColumns();
+    }
+
+    void UpdateColumns()
+    {
+        // El panel de la cuadrícula aparece con los primeros elementos: hasta entonces, tras la siguiente pasada de diseño.
+        if (Grid.ItemsPanelRoot is not ItemsWrapGrid panel)
+        {
+            if (Grid.ItemsSource != null) Grid.LayoutUpdated += RetryColumns;
+            return;
+        }
+        var available = Grid.ActualWidth - Grid.Padding.Left - Grid.Padding.Right - 1;
+        if (available <= 0) return;
         const double margin = 8; // 4 + 4 del contenedor
         var columns = Math.Max(1, (int)(available / (MinCardWidth + margin)));
         panel.ItemWidth = Math.Floor(available / columns);
