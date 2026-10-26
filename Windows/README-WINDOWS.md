@@ -109,6 +109,9 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
   (o intro, créditos…) con botón o S, sin salto automático. Controles, título, botón de atrás y cursor se ocultan a los 3 s.
 - `--probar-ffi` anota en el registro un resumen de Suscripciones, biblioteca, detalles y búsqueda.
 - `--tema claro|oscuro` fuerza el tema (capturas); sin él sigue al de Windows.
+- `--capturas` (`Models/CaptureMode.cs`): sin la cuenta ni sus canales, quien comenta como @personaN, controles fijos y sin
+  guardar historial; con `--desde S`, `--panel comentarios` y `--buscar "texto"`. `Installer/capturas.ps1` rehace con eso
+  las capturas públicas de `docs/capturas/windows` (solo Big Buck Bunny, CC BY).
 - Aviso de versiones nuevas (`Models/UpdateCheck.cs`), como el de la Mac: al abrirse, como mucho una vez al día, busca
   en GitHub la Release `windows-v…` más nueva (sin borradores ni prereleases) y, si es más nueva que la del exe, avisa
   abajo a la derecha con «Descargar» (abre su página) y «Ahora no». `--sin-aviso-de-versiones` no consulta.
