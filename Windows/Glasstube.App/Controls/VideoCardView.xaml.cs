@@ -27,6 +27,9 @@ public sealed partial class VideoCardView : UserControl
         ThumbnailImage.Source = video?.ThumbnailImage;
         TitleText.Text = video?.Title ?? "";
         ChannelText.Text = video?.Channel ?? "";
+        ChannelLink.IsHitTestVisible = !string.IsNullOrEmpty(video?.ChannelId);
+        ChannelLink.Visibility = string.IsNullOrEmpty(video?.Channel) ? Visibility.Collapsed : Visibility.Visible;
+        ToolTipService.SetToolTip(ChannelLink, ChannelLink.IsHitTestVisible ? $"Ver el canal {video?.Channel}" : null);
         MetaText.Text = video?.Meta ?? "";
         DurationText.Text = video?.Duration ?? "";
         var live = video?.IsLive == true;
@@ -44,6 +47,11 @@ public sealed partial class VideoCardView : UserControl
         // Con Z > 0 la ThemeShadow de la miniatura aparece sola.
         Thumbnail.Translation = on ? new Vector3(0, -4, 24) : Vector3.Zero;
         PlayGlyph.Opacity = on ? 1 : 0;
+    }
+
+    void OnChannelClick(object sender, RoutedEventArgs e)
+    {
+        if (Video is { ChannelId: { } id } video) App.Window?.OpenChannel(id, video.Channel);
     }
 
     void OnPointerEntered(object sender, PointerRoutedEventArgs e) => SetHover(true);

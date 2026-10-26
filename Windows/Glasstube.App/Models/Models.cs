@@ -38,6 +38,11 @@ public sealed class VideoCard
     /// <summary>Posición guardada (segundos) y fracción vista (0–1).</summary>
     public double? Position { get; set; }
     public double? Progress { get; set; }
+    /// <summary>Si es una lista (o mix), su id: se abre en lugar de reproducirse.</summary>
+    public string? PlaylistId { get; set; }
+
+    [JsonIgnore]
+    public bool IsPlaylist => !string.IsNullOrEmpty(PlaylistId);
 
     BitmapImage? image;
 

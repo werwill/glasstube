@@ -4,7 +4,7 @@
 // GlasstubeFFI.dll: YTKit + GlasstubeCore (Swift) para la interfaz de Windows. Implementación en
 // Sources/GlasstubeFFI/ (GlasstubeFFI.swift: motor, sesión, Inicio y streams; Cards.swift: biblioteca local y Bandeja;
 // Subscriptions.swift, Details.swift y Search.swift; desde la 0.3, Quality.swift, Captions.swift, WatchNext.swift y
-// Comments.swift; Account.swift: cuenta en el reproductor).
+// Comments.swift; Account.swift: cuenta en el reproductor; Channel.swift: canales, listas y páginas siguientes).
 //
 // Reglas:
 // - Lo asíncrono responde por `gt_callback`: status 0 = bien y `json` es el resultado; distinto de 0 = error y `json` es
@@ -96,7 +96,8 @@ void gt_inbox_set(const char *video_id, int32_t seen, int32_t archived, gt_callb
 /// {"videoId", "title", "description", "author", "channelId", "avatar", "views", "published",
 /// "chapters": [{"title", "start"}], "segments": [{"start", "end", "category", "title"}]} (segundos; SponsorBlock).
 void gt_video_details(const char *video_id, gt_callback callback, void *context);
-/// Resultados de búsqueda (solo videos): {"items", "hasMore", "notice", "signedIn"}.
+/// Resultados de búsqueda (solo videos): {"items", "hasMore", "notice", "signedIn", "channels"}, con "channels" (0.4) =
+/// [{"id", "title", "handle", "avatar", "subscribers"}] de la primera página.
 void gt_search(const char *query, gt_callback callback, void *context);
 void gt_search_more(gt_callback callback, void *context);
 
@@ -128,6 +129,20 @@ void gt_set_like(const char *video_id, int32_t status, int32_t previous, gt_call
 void gt_subscribe(const char *channel_id, int32_t subscribe, const char *params, gt_callback callback, void *context);
 /// {"signedIn", "isSubscribed", "params"} de un canal (`isSubscribed` null sin sesión).
 void gt_subscription_state(const char *channel_id, gt_callback callback, void *context);
+
+// MARK: Canales y listas (Channel.swift, 0.4)
+//
+// Las listas van como VideoCard con "playlistId" (y su id en "id"; "duration" lleva el número de videos). Las páginas
+// paginadas traen "feed": se pasa a gt_feed_more para la siguiente, que trae otro "feed" (null al final).
+
+/// Un canal ("UC…" o "@handle") con una pestaña (`tab`: "videos", "shorts", "live", "playlists"; NULL = videos):
+/// {"channelId", "title", "handle", "description", "subscribers", "videoCount", "avatar", "banner", "tabs": [string],
+/// "tab", "items": [VideoCard…], "hasMore", "feed"}.
+void gt_channel(const char *channel_id, const char *tab, gt_callback callback, void *context);
+/// Los videos de una lista ("PL…", "WL", "LL"…): {"playlistId", "title", "items", "hasMore", "feed"}.
+void gt_playlist(const char *playlist_id, gt_callback callback, void *context);
+/// Más elementos de una página paginada: {"items", "hasMore", "feed"}.
+void gt_feed_more(const char *feed, gt_callback callback, void *context);
 
 #ifdef __cplusplus
 }

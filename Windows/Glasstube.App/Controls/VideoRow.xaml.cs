@@ -51,6 +51,7 @@ public sealed partial class VideoRow : UserControl
     {
         for (var node = source as DependencyObject; node != null; node = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(node))
         {
+            if (node is Microsoft.UI.Xaml.Controls.Primitives.ButtonBase) return; // el enlace del canal va aparte
             if (node is VideoCardView { Video: { } video })
             {
                 VideoInvoked?.Invoke(this, video);

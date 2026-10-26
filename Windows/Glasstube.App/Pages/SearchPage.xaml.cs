@@ -21,6 +21,7 @@ public sealed partial class SearchPage : Page
         {
             await App.Ready;
             var page = await GlasstubeFFI.Search(query);
+            ShowChannels(page.Channels ?? []);
             Results.ItemsSource = new FeedCollection(page.Items, page.HasMore, GlasstubeFFI.SearchMore);
             if (page.Items.Count == 0) ShowNotice(InfoBarSeverity.Informational, page.Notice ?? "Sin videos para esta búsqueda.");
         }
@@ -34,6 +35,37 @@ public sealed partial class SearchPage : Page
         }
     }
 
+    void ShowChannels(List<ChannelCard> channels)
+    {
+        ChannelsRow.Children.Clear();
+        foreach (var channel in channels.Take(12))
+        {
+            var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            text.Children.Add(new TextBlock { Text = channel.Title, Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"],
+                                              TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 220 });
+            var meta = string.Join(" · ", new[] { channel.Handle, channel.Subscribers }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            if (meta.Length > 0)
+                text.Children.Add(new TextBlock { Text = meta, Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                                                  Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                                                  TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 220 });
+            var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            content.Children.Add(new PersonPicture
+            {
+                Width = 44, Height = 44, DisplayName = channel.Title,
+                ProfilePicture = channel.Avatar == null ? null : new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(channel.Avatar)) { DecodePixelWidth = 88 },
+            });
+            content.Children.Add(text);
+            var button = new Button { Content = content, Padding = new Thickness(10, 8, 16, 8), CornerRadius = new CornerRadius(30) };
+            ToolTipService.SetToolTip(button, $"Ver el canal {channel.Title}");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, channel.Title);
+            var id = channel.Id;
+            var name = channel.Title;
+            button.Click += (_, _) => App.Window?.OpenChannel(id, name);
+            ChannelsRow.Children.Add(button);
+        }
+        ChannelsScroller.Visibility = ChannelsRow.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     void ShowNotice(InfoBarSeverity severity, string message)
     {
         Notice.Severity = severity;
@@ -43,6 +75,6 @@ public sealed partial class SearchPage : Page
 
     void OnItemClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is VideoCard video) App.Window?.Play(video);
+        if (e.ClickedItem is VideoCard video) App.Window?.Open(video);
     }
 }

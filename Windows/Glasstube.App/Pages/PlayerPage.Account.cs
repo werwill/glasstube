@@ -50,6 +50,11 @@ public sealed partial class PlayerPage
         var signedIn = account.SignedIn;
         var dim = signedIn ? 1 : 0.6;
 
+        ChannelButton.Visibility = account.ChannelId != null ? Visibility.Visible : Visibility.Collapsed;
+        ChannelButtonText.Text = ChannelAvatar.DisplayName = account.Channel ?? channelName;
+        if (account.ChannelAvatar != null && ChannelAvatar.ProfilePicture == null)
+            ChannelAvatar.ProfilePicture = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(account.ChannelAvatar)) { DecodePixelWidth = 52 };
+        ToolTipService.SetToolTip(ChannelButton, account.Subscribers is { } subscribers ? $"Ver el canal · {subscribers}" : "Ver el canal");
         SubscribeButton.Visibility = account.ChannelId != null ? Visibility.Visible : Visibility.Collapsed;
         SubscribeText.Text = subscribed ? "Suscrito" : "Suscribirse";
         SubscribeIcon.Glyph = subscribed ? "" : "";
@@ -113,6 +118,13 @@ public sealed partial class PlayerPage
         {
             accountBusy = false;
         }
+    }
+
+    /// <summary>La página del canal del video (botón de la fila de la cuenta o el canal de la descripción).</summary>
+    void OnChannelClick(object sender, RoutedEventArgs e)
+    {
+        var id = account?.ChannelId ?? detailsChannelId;
+        if (id != null) App.Window?.OpenChannel(id, account?.Channel ?? channelName);
     }
 
     async void OnLikeClick(object sender, RoutedEventArgs e) => await SetLike(1);

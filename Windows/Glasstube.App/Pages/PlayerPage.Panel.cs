@@ -22,6 +22,7 @@ public sealed partial class PlayerPage
     const int UpNextSeconds = 5;
 
     static bool panelOpen;
+    string? detailsChannelId;
     WatchNextInfo? watchNext;
     bool commentsLoaded;
     bool loadingComments;
@@ -99,6 +100,8 @@ public sealed partial class PlayerPage
         PanelTitle.Text = details.Title ?? video?.Title ?? "";
         PanelMeta.Text = string.Join(" · ", new[] { details.Views, details.Published }.Where(s => !string.IsNullOrWhiteSpace(s)));
         PanelChannel.Text = details.Author ?? channelName;
+        detailsChannelId = details.ChannelId;
+        PanelChannelButton.IsEnabled = details.ChannelId != null;
         PanelAvatar.DisplayName = PanelChannel.Text;
         if (details.Avatar != null) PanelAvatar.ProfilePicture = new BitmapImage(new Uri(details.Avatar)) { DecodePixelWidth = 32 };
         PanelDescription.Text = string.IsNullOrWhiteSpace(details.Description) ? "Sin descripción." : details.Description.Trim();

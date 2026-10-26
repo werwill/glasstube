@@ -96,6 +96,14 @@
                  Dislike, bajo el título (la barra de título, encima, arrastra la ventana). -->
             <StackPanel x:Name="AccountRow" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left"
                         VerticalAlignment="Top" Margin="56,60,0,0" Visibility="Collapsed">
+                <Button x:Name="ChannelButton" Style="{StaticResource GlassPillStyle}" Padding="4,0,14,0" Click="OnChannelClick"
+                        AutomationProperties.Name="Ver el canal" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PersonPicture x:Name="ChannelAvatar" Width="26" Height="26" />
+                        <TextBlock x:Name="ChannelButtonText" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"
+                                   MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
                 <Button x:Name="SubscribeButton" Style="{StaticResource GlassPillStyle}" Click="OnSubscribeClick"
                         AutomationProperties.Name="Suscribirse">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -314,11 +322,14 @@
                         <TextBlock x:Name="PanelTitle" Foreground="White" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"
                                    IsTextSelectionEnabled="True" />
                         <TextBlock x:Name="PanelMeta" Foreground="#B3FFFFFF" FontSize="12" TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <PersonPicture x:Name="PanelAvatar" Width="32" Height="32" />
-                            <TextBlock x:Name="PanelChannel" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
+                        <Button x:Name="PanelChannelButton" Padding="6" Margin="-6,0,0,0" BorderThickness="0" Background="Transparent"
+                                Click="OnChannelClick" AutomationProperties.Name="Ver el canal">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PersonPicture x:Name="PanelAvatar" Width="32" Height="32" />
+                                <TextBlock x:Name="PanelChannel" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Button>
                         <TextBlock x:Name="PanelDescription" Foreground="#E6FFFFFF" FontSize="13" TextWrapping="Wrap"
                                    IsTextSelectionEnabled="True" Text="Cargando…" />
                         <TextBlock x:Name="ChaptersHeader" Text="Capítulos" Foreground="White" FontWeight="SemiBold"

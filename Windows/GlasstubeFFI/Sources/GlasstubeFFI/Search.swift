@@ -10,6 +10,18 @@ final class SearchState {
     var continuation: Continuation?
     var seen: Set<String> = []
 
+    /// Canales de los resultados (la cabecera de la búsqueda; solo de la primera página).
+    func channels(_ page: BrowsePage) -> [ChannelCard] {
+        var seen: Set<String> = []
+        return page.groups.flatMap(\.items).compactMap { item in
+            guard item.kind == .channel, let id = item.channelId, seen.insert(id).inserted else { return nil }
+            return ChannelCard(id: id, title: item.title, handle: item.handle,
+                               avatar: (item.authorThumbnails.isEmpty ? item.thumbnails : item.authorThumbnails)
+                                   .best(forWidth: 88).map { absolute($0.url) },
+                               subscribers: item.subscriberCountText)
+        }
+    }
+
     func cards(_ page: BrowsePage) -> [VideoCard] {
         var cards: [VideoCard] = []
         for group in page.groups where !group.isShorts {
@@ -22,7 +34,25 @@ final class SearchState {
     }
 }
 
-/// Resultados de búsqueda: {"items": [VideoCard…], "hasMore", "notice", "signedIn"}.
+/// Un canal en los resultados de búsqueda.
+struct ChannelCard: Encodable {
+    var id: String
+    var title: String
+    var handle: String?
+    var avatar: String?
+    var subscribers: String?
+}
+
+struct SearchPayload: Encodable {
+    var items: [VideoCard]
+    var hasMore: Bool
+    var notice: String?
+    var signedIn: Bool
+    var channels: [ChannelCard]
+}
+
+/// Resultados de búsqueda: {"items": [VideoCard…], "hasMore", "notice", "signedIn", "channels": [{"id", "title",
+/// "handle", "avatar", "subscribers"}]}.
 @_cdecl("gt_search")
 public func gt_search(_ query: UnsafePointer<CChar>?, _ callback: GTCallback, _ context: UnsafeMutableRawPointer?) {
     let reply = Reply(callback: callback, context: context)
@@ -36,8 +66,8 @@ public func gt_search(_ query: UnsafePointer<CChar>?, _ callback: GTCallback, _ 
             state.continuation = page.continuation
             let items = state.cards(page)
             log("Búsqueda «\(query)»: \(items.count) videos")
-            reply.ok(FeedPage(items: items, hasMore: page.continuation != nil, notice: page.notice,
-                              signedIn: engine.session.knownSignedIn ?? false))
+            reply.ok(SearchPayload(items: items, hasMore: page.continuation != nil, notice: page.notice,
+                                   signedIn: engine.session.knownSignedIn ?? false, channels: state.channels(page)))
         } catch {
             log("Búsqueda falló: \(error)")
             reply.fail(error)

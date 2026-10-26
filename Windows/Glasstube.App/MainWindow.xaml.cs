@@ -200,7 +200,9 @@ public sealed partial class MainWindow : Window
         if (tag == CurrentTag) return;
         if (tag == "home")
             ContentFrame.Navigate(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
-        else if (tag == "subscriptions" || tag.StartsWith("channel:") || tag.StartsWith("group:"))
+        else if (tag.StartsWith("channel:"))
+            OpenChannel(tag["channel:".Length..], ToolTipService.GetToolTip(item) as string); // el nombre va en la ayuda
+        else if (tag == "subscriptions" || tag.StartsWith("group:"))
             ContentFrame.Navigate(typeof(SubscriptionsPage), tag, new EntranceNavigationTransitionInfo());
         else
             ContentFrame.Navigate(typeof(PlaceholderPage), tag, new EntranceNavigationTransitionInfo());
@@ -211,6 +213,7 @@ public sealed partial class MainWindow : Window
     {
         HomePage => "home",
         SubscriptionsPage subscriptions => subscriptions.Section,
+        ChannelPage channel => channel.Section,
         PlaceholderPage placeholder => placeholder.Section,
         _ => null,
     };
@@ -226,6 +229,23 @@ public sealed partial class MainWindow : Window
     /// <summary>Abre el reproductor de un video.</summary>
     public void Play(Models.VideoCard video) =>
         ContentFrame.Navigate(typeof(PlayerPage), video, new DrillInNavigationTransitionInfo());
+
+    /// <summary>Abre una tarjeta: las listas en su página, los videos en el reproductor.</summary>
+    public void Open(Models.VideoCard card)
+    {
+        if (card.IsPlaylist) OpenPlaylist(card.PlaylistId!, card.Title);
+        else Play(card);
+    }
+
+    /// <summary>La página de un canal ("UC…" o "@handle").</summary>
+    public void OpenChannel(string channelId, string? name)
+    {
+        if (ContentFrame.Content is ChannelPage page && page.Section == $"channel:{channelId}") return;
+        ContentFrame.Navigate(typeof(ChannelPage), new Models.ChannelRef(channelId, name), new DrillInNavigationTransitionInfo());
+    }
+
+    public void OpenPlaylist(string playlistId, string? title) =>
+        ContentFrame.Navigate(typeof(PlaylistPage), new Models.PlaylistRef(playlistId, title), new DrillInNavigationTransitionInfo());
 
     /// <summary>Busca <paramref name="text"/> como si se escribiera en la barra (`--buscar`).</summary>
     public void Search(string text)
@@ -258,7 +278,8 @@ public sealed partial class MainWindow : Window
         // Al volver de un reproductor, la selección del panel sigue a la página. Navigated llega antes de que la página
         // (guardada en caché) lea su parámetro: la sección sale del parámetro mismo.
         var tag = e.Content is SubscriptionsPage ? e.Parameter as string ?? "subscriptions"
-            : e.Content is PlaceholderPage ? e.Parameter as string : CurrentTag;
+            : e.Content is PlaceholderPage ? e.Parameter as string
+            : e.Content is ChannelPage ? (e.Parameter is Models.ChannelRef channel ? $"channel:{channel.Id}" : null) : CurrentTag;
         selectingFromNavigation = true;
         foreach (var list in new[] { NavList, FooterList, ChannelList })
         {
