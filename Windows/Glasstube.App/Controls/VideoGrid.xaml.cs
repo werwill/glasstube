@@ -10,7 +10,19 @@ public sealed partial class VideoGrid : UserControl
     /// <summary>Ancho mínimo de una tarjeta (DIP); las columnas se reparten el ancho que sobra.</summary>
     const double MinCardWidth = 260;
 
-    public VideoGrid() => InitializeComponent();
+    public VideoGrid()
+    {
+        InitializeComponent();
+        // Clic derecho, mantener pulsado, Mayús+F10 o la tecla de menú.
+        Grid.ContextRequested += (_, e) =>
+        {
+            if (VideoContextEventArgs.Find(e.OriginalSource) is { } args)
+            {
+                e.Handled = true;
+                ItemContextRequested?.Invoke(this, args);
+            }
+        };
+    }
 
     public object? ItemsSource
     {
@@ -43,6 +55,9 @@ public sealed partial class VideoGrid : UserControl
     }
 
     public event ItemClickEventHandler? ItemClick;
+
+    /// <summary>Menú contextual pedido sobre una tarjeta (ratón, táctil o teclado).</summary>
+    public event EventHandler<VideoContextEventArgs>? ItemContextRequested;
 
     /// <summary>El ScrollViewer de la cuadrícula (para saber cuánto se ha desplazado).</summary>
     public ScrollViewer? ScrollHost => FindScrollViewer(Grid);
@@ -80,6 +95,24 @@ public sealed partial class VideoGrid : UserControl
             var child = VisualTreeHelper.GetChild(root, i);
             if (child is ScrollViewer viewer) return viewer;
             if (FindScrollViewer(child) is { } found) return found;
+        }
+        return null;
+    }
+}
+
+/// <summary>La tarjeta sobre la que se pidió el menú y su vista (para colocarlo).</summary>
+public sealed class VideoContextEventArgs(Models.VideoCard video, FrameworkElement target) : EventArgs
+{
+    public Models.VideoCard Video { get; } = video;
+    public FrameworkElement Target { get; } = target;
+
+    public static VideoContextEventArgs? Find(object source)
+    {
+        for (var node = source as DependencyObject; node != null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is VideoCardView { Video: { } video } view) return new VideoContextEventArgs(video, view);
+            // Con el teclado (Mayús+F10, tecla de menú) el evento sale del contenedor del elemento, no de la tarjeta.
+            if (node is ContentControl { Content: Models.VideoCard card } container) return new VideoContextEventArgs(card, container);
         }
         return null;
     }

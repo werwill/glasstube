@@ -4,7 +4,8 @@
 // GlasstubeFFI.dll: YTKit + GlasstubeCore (Swift) para la interfaz de Windows. Implementación en
 // Sources/GlasstubeFFI/ (GlasstubeFFI.swift: motor, sesión, Inicio y streams; Cards.swift: biblioteca local y Bandeja;
 // Subscriptions.swift, Details.swift y Search.swift; desde la 0.3, Quality.swift, Captions.swift, WatchNext.swift y
-// Comments.swift; Account.swift: cuenta en el reproductor; Channel.swift: canales, listas y páginas siguientes).
+// Comments.swift; Account.swift: cuenta en el reproductor; Channel.swift: canales, listas y páginas siguientes;
+// LibraryPages.swift: Historial y Biblioteca).
 //
 // Reglas:
 // - Lo asíncrono responde por `gt_callback`: status 0 = bien y `json` es el resultado; distinto de 0 = error y `json` es
@@ -143,6 +144,16 @@ void gt_channel(const char *channel_id, const char *tab, gt_callback callback, v
 void gt_playlist(const char *playlist_id, gt_callback callback, void *context);
 /// Más elementos de una página paginada: {"items", "hasMore", "feed"}.
 void gt_feed_more(const char *feed, gt_callback callback, void *context);
+
+// MARK: Historial y Biblioteca (LibraryPages.swift, 0.4)
+
+/// Quita un video del historial local. Responde {}.
+void gt_history_remove(const char *video_id, gt_callback callback, void *context);
+/// Borra todo el historial local (y lo escribe en disco ya). Responde {}.
+void gt_history_clear(gt_callback callback, void *context);
+/// La Biblioteca de la cuenta: {"signedIn", "playlists": [VideoCard con "playlistId"…], "watchLater": [VideoCard…],
+/// "watchLaterFeed", "notice"}. Sin sesión, listas vacías y "signedIn" false.
+void gt_account_library(gt_callback callback, void *context);
 
 #ifdef __cplusplus
 }

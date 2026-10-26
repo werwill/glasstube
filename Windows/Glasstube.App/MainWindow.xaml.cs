@@ -202,6 +202,10 @@ public sealed partial class MainWindow : Window
             ContentFrame.Navigate(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
         else if (tag.StartsWith("channel:"))
             OpenChannel(tag["channel:".Length..], ToolTipService.GetToolTip(item) as string); // el nombre va en la ayuda
+        else if (tag == "library")
+            ContentFrame.Navigate(typeof(LibraryPage), null, new EntranceNavigationTransitionInfo());
+        else if (tag == "history")
+            ContentFrame.Navigate(typeof(HistoryPage), null, new EntranceNavigationTransitionInfo());
         else if (tag == "subscriptions" || tag.StartsWith("group:"))
             ContentFrame.Navigate(typeof(SubscriptionsPage), tag, new EntranceNavigationTransitionInfo());
         else
@@ -214,6 +218,8 @@ public sealed partial class MainWindow : Window
         HomePage => "home",
         SubscriptionsPage subscriptions => subscriptions.Section,
         ChannelPage channel => channel.Section,
+        LibraryPage library => library.Section,
+        HistoryPage history => history.Section,
         PlaceholderPage placeholder => placeholder.Section,
         _ => null,
     };

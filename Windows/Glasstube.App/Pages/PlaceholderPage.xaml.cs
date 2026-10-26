@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Glasstube.Pages;
 
-/// <summary>Secciones que aún no están (Suscripciones, Biblioteca, Historial, Configuración). El parámetro de navegación es la etiqueta.</summary>
+/// <summary>Secciones que aún no están (Configuración). El parámetro de navegación es la etiqueta.</summary>
 public sealed partial class PlaceholderPage : Page
 {
     public string Section { get; private set; } = "";

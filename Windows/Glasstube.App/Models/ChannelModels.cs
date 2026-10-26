@@ -21,3 +21,7 @@ public sealed record SearchFeed(List<VideoCard> Items, bool HasMore, string? Not
 public sealed record ChannelRef(string Id, string? Name);
 
 public sealed record PlaylistRef(string Id, string? Title);
+
+/// <summary>La Biblioteca de la cuenta: sus listas y su Ver más tarde (primera página y su feed).</summary>
+public sealed record AccountLibrary(bool SignedIn, List<VideoCard> Playlists, List<VideoCard> WatchLater, string? WatchLaterFeed,
+                                    string? Notice);
