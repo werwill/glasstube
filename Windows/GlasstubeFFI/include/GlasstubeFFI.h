@@ -4,7 +4,7 @@
 // GlasstubeFFI.dll: YTKit + GlasstubeCore (Swift) para la interfaz de Windows. Implementación en
 // Sources/GlasstubeFFI/ (GlasstubeFFI.swift: motor, sesión, Inicio y streams; Cards.swift: biblioteca local y Bandeja;
 // Subscriptions.swift, Details.swift y Search.swift; desde la 0.3, Quality.swift, Captions.swift, WatchNext.swift y
-// Comments.swift).
+// Comments.swift; Account.swift: cuenta en el reproductor).
 //
 // Reglas:
 // - Lo asíncrono responde por `gt_callback`: status 0 = bien y `json` es el resultado; distinto de 0 = error y `json` es
@@ -113,6 +113,21 @@ void gt_watch_next(const char *video_id, gt_callback callback, void *context);
 /// `replies` 0: `token` es "commentsToken", el de un orden o una "continuation"; 1: el "repliesToken" de un comentario
 /// (sus respuestas, sin él).
 void gt_comments(const char *token, int32_t replies, gt_callback callback, void *context);
+
+// MARK: Cuenta en el reproductor (Account.swift)
+
+/// Estado de la cuenta en un video: {"videoId", "signedIn", "likeStatus" ("like" | "dislike" | "indifferent" | null),
+/// "isSubscribed" (null sin sesión), "subscribeParams", "channelId", "channel", "channelAvatar", "subscribers",
+/// "likeCountText", "likes", "dislikes"}. `likes` y `dislikes` son de Return YouTube Dislike (null si no respondió).
+void gt_video_account(const char *video_id, gt_callback callback, void *context);
+/// Me gusta: `status` 1 = me gusta, -1 = no me gusta, 0 = ninguno; `previous` es el estado anterior (para quitarlo).
+/// Necesita sesión. Responde {"likeStatus"}.
+void gt_set_like(const char *video_id, int32_t status, int32_t previous, gt_callback callback, void *context);
+/// Suscribirse (`subscribe` 1) o anularla (0). `params`: el "subscribeParams" que se tenga, o NULL. Responde
+/// {"isSubscribed"}.
+void gt_subscribe(const char *channel_id, int32_t subscribe, const char *params, gt_callback callback, void *context);
+/// {"signedIn", "isSubscribed", "params"} de un canal (`isSubscribed` null sin sesión).
+void gt_subscription_state(const char *channel_id, gt_callback callback, void *context);
 
 #ifdef __cplusplus
 }

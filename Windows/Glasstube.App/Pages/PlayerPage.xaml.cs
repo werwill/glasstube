@@ -86,6 +86,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             _ = LoadExtras(video.Id);
             _ = LoadCaptions(video.Id);
             _ = LoadWatchNext(video.Id);
+            _ = LoadAccount(video.Id);
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
             var saved = GlasstubeFFI.SavedPositionOf(video.Id);
             var resolved = await GlasstubeFFI.ResolveStream(video.Id, Settings.Quality, null).WaitAsync(ResolveTimeout);

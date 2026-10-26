@@ -43,7 +43,7 @@ public func gt_video_details(_ videoId: UnsafePointer<CChar>?, _ callback: GTCal
             let sponsorBlock = Library.shared.sponsorBlock
             async let segments = sponsorBlock.segments(videoId: videoId)
             var metadata: MediaItemMetadata?
-            do { metadata = try await engine.service.metadata(videoId: videoId) } catch {
+            do { metadata = try await MetadataCache.metadata(videoId: videoId, service: engine.service) } catch {
                 log("detalles de \(videoId): \(error)")
             }
             let found = await segments
