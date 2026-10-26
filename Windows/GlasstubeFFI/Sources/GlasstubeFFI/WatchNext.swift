@@ -33,7 +33,7 @@ public func gt_watch_next(_ videoId: UnsafePointer<CChar>?, _ callback: GTCallba
     Task { @MainActor in
         do {
             let engine = try Engine.require()
-            let metadata = try await engine.service.metadata(videoId: videoId)
+            let metadata = try await MetadataCache.metadata(videoId: videoId, service: engine.service)
             var seen: Set<String> = [videoId]
             var suggestions: [VideoCard] = []
             for group in metadata.suggestions where !group.isShorts {

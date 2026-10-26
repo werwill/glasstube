@@ -121,7 +121,7 @@ public func gt_shutdown() {
     Task { @MainActor in Engine.shared = nil }
 }
 
-let version = "0.3.0"
+let version = "0.4.0"
 
 @_cdecl("gt_version")
 public func gt_version() -> UnsafeMutablePointer<CChar>? {
@@ -197,6 +197,8 @@ struct VideoCard: Codable {
     /// Posición guardada en la biblioteca local (segundos) y fracción vista (0–1).
     var position: Double?
     var progress: Double?
+    // Desde la 0.4 (Channel.swift): las listas van como tarjetas con su id aquí (y en `id`).
+    var playlistId: String?
 }
 
 struct FeedPage: Encodable {

@@ -17,7 +17,15 @@
 
         <InfoBar x:Name="Notice" Grid.Row="1" VerticalAlignment="Top" Margin="32,0,32,0" IsOpen="False" IsClosable="True" />
 
-        <controls:VideoGrid x:Name="Results" Grid.Row="1" ItemClick="OnItemClick" />
+        <controls:VideoGrid x:Name="Results" Grid.Row="1" ItemClick="OnItemClick">
+            <!-- Canales de los resultados: abren su página. -->
+            <controls:VideoGrid.Header>
+                <ScrollViewer x:Name="ChannelsScroller" Visibility="Collapsed" Margin="28,4,28,12" HorizontalScrollMode="Enabled"
+                              HorizontalScrollBarVisibility="Auto" VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="ChannelsRow" Orientation="Horizontal" Spacing="12" Padding="0,0,0,8" />
+                </ScrollViewer>
+            </controls:VideoGrid.Header>
+        </controls:VideoGrid>
 
         <StackPanel x:Name="LoadingPanel" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
             <ProgressRing IsActive="True" Width="40" Height="40" />

@@ -21,6 +21,20 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <!-- Píldoras de cristal de la fila de la cuenta (como la cápsula, más pequeñas). -->
+        <Style x:Key="GlassPillStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
+            <Setter Property="Background">
+                <Setter.Value>
+                    <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Page.Resources>
 
     <Page.KeyboardAccelerators>
@@ -77,6 +91,49 @@
                 </StackPanel>
             </Grid>
 
+
+            <!-- Cuenta (PlayerPage.Account.cs): suscribirse y me gusta / no me gusta con los votos de Return YouTube
+                 Dislike, bajo el título (la barra de título, encima, arrastra la ventana). -->
+            <StackPanel x:Name="AccountRow" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left"
+                        VerticalAlignment="Top" Margin="56,60,0,0" Visibility="Collapsed">
+                <Button x:Name="ChannelButton" Style="{StaticResource GlassPillStyle}" Padding="4,0,14,0" Click="OnChannelClick"
+                        AutomationProperties.Name="Ver el canal" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PersonPicture x:Name="ChannelAvatar" Width="26" Height="26" />
+                        <TextBlock x:Name="ChannelButtonText" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"
+                                   MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="SubscribeButton" Style="{StaticResource GlassPillStyle}" Click="OnSubscribeClick"
+                        AutomationProperties.Name="Suscribirse">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="SubscribeIcon" Glyph="&#xE710;" FontSize="12" />
+                        <TextBlock x:Name="SubscribeText" Text="Suscribirse" FontWeight="SemiBold" FontSize="13" />
+                    </StackPanel>
+                </Button>
+                <Border CornerRadius="17" BorderThickness="1" BorderBrush="#26FFFFFF" Height="34">
+                    <Border.Background>
+                        <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+                    </Border.Background>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="LikeButton" Style="{StaticResource CapsuleButtonStyle}" Width="NaN" Height="32"
+                                Padding="12,0,10,0" CornerRadius="16,0,0,16" Click="OnLikeClick" AutomationProperties.Name="Me gusta">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon x:Name="LikeIcon" Glyph="&#xE8E1;" FontSize="14" />
+                                <TextBlock x:Name="LikeText" FontSize="13" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Button>
+                        <Rectangle Width="1" Height="18" Fill="#40FFFFFF" VerticalAlignment="Center" />
+                        <Button x:Name="DislikeButton" Style="{StaticResource CapsuleButtonStyle}" Width="NaN" Height="32"
+                                Padding="10,0,12,0" CornerRadius="0,16,16,0" Click="OnDislikeClick" AutomationProperties.Name="No me gusta">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon x:Name="DislikeIcon" Glyph="&#xE8E0;" FontSize="14" />
+                                <TextBlock x:Name="DislikeText" FontSize="13" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
             <!-- Cápsula de controles -->
             <Border x:Name="Capsule" VerticalAlignment="Bottom" Margin="24,0,24,24" Padding="12,4,12,6" CornerRadius="16"
@@ -265,11 +322,14 @@
                         <TextBlock x:Name="PanelTitle" Foreground="White" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"
                                    IsTextSelectionEnabled="True" />
                         <TextBlock x:Name="PanelMeta" Foreground="#B3FFFFFF" FontSize="12" TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <PersonPicture x:Name="PanelAvatar" Width="32" Height="32" />
-                            <TextBlock x:Name="PanelChannel" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
+                        <Button x:Name="PanelChannelButton" Padding="6" Margin="-6,0,0,0" BorderThickness="0" Background="Transparent"
+                                Click="OnChannelClick" AutomationProperties.Name="Ver el canal">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PersonPicture x:Name="PanelAvatar" Width="32" Height="32" />
+                                <TextBlock x:Name="PanelChannel" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Button>
                         <TextBlock x:Name="PanelDescription" Foreground="#E6FFFFFF" FontSize="13" TextWrapping="Wrap"
                                    IsTextSelectionEnabled="True" Text="Cargando…" />
                         <TextBlock x:Name="ChaptersHeader" Text="Capítulos" Foreground="White" FontWeight="SemiBold"

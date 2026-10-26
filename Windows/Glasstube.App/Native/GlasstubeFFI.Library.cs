@@ -66,7 +66,7 @@ public static partial class GlasstubeFFI
         fixed (byte* id = Utf8(videoId)) gt_video_details(id, &OnReply, context);
     });
 
-    public static unsafe Task<FeedPage> Search(string query) => Call<FeedPage>(context =>
+    public static unsafe Task<SearchFeed> Search(string query) => Call<SearchFeed>(context =>
     {
         fixed (byte* q = Utf8(query)) gt_search(q, &OnReply, context);
     });

@@ -15,6 +15,15 @@ public sealed partial class VideoRow : UserControl
         InitializeComponent();
         // Clic o Intro en una tarjeta. ItemsRepeater no tiene ItemClick: se escucha en la fila.
         Items.AddHandler(TappedEvent, new TappedEventHandler((_, e) => Invoke(e.OriginalSource)), true);
+        // Clic derecho, mantener pulsado, Mayús+F10 o la tecla de menú.
+        Items.ContextRequested += (_, e) =>
+        {
+            if (VideoContextEventArgs.Find(e.OriginalSource) is { } args)
+            {
+                e.Handled = true;
+                ItemContextRequested?.Invoke(this, args);
+            }
+        };
         Items.AddHandler(KeyDownEvent, new KeyEventHandler((_, e) =>
         {
             if (e.Key is Windows.System.VirtualKey.Enter or Windows.System.VirtualKey.Space) Invoke(e.OriginalSource);
@@ -47,10 +56,14 @@ public sealed partial class VideoRow : UserControl
     /// <summary>Se eligió una tarjeta.</summary>
     public event EventHandler<VideoCard>? VideoInvoked;
 
+    /// <summary>Menú contextual pedido sobre una tarjeta (ratón, táctil o teclado).</summary>
+    public event EventHandler<VideoContextEventArgs>? ItemContextRequested;
+
     void Invoke(object source)
     {
         for (var node = source as DependencyObject; node != null; node = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(node))
         {
+            if (node is Microsoft.UI.Xaml.Controls.Primitives.ButtonBase) return; // el enlace del canal va aparte
             if (node is VideoCardView { Video: { } video })
             {
                 VideoInvoked?.Invoke(this, video);
