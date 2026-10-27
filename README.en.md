@@ -138,8 +138,8 @@ Get **`Glasstube-<version>-Windows-x64-Setup.exe`** from [its release](https://g
 
 It already has Home, Subscriptions, History, Library (Watch later and your playlists), channel pages and the player
 with quality, subtitles, chapters, SponsorBlock, comments, suggestions and the subscribe, like and dislike buttons (with
-Return YouTube Dislike). It announces new Windows versions like the Mac app does (without installing them). There are
-no settings or in-app sign-in yet. What is missing, how to build it and how the installer is made are in [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
+Return YouTube Dislike). It announces new Windows versions like the Mac app does (without installing them). You sign
+in from the account button, with a code like on a TV. There are no settings yet. What is missing, how to build it and how the installer is made are in [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
 
 ---
 

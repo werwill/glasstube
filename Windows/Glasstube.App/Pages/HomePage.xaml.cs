@@ -186,7 +186,10 @@ public sealed partial class HomePage : Page, IFullBleedPage
 
     void OnNoticeClosed(InfoBar sender, InfoBarClosedEventArgs args) => Notice.Visibility = Visibility.Collapsed;
 
-    void OnRefresh(object sender, RoutedEventArgs e)
+    void OnRefresh(object sender, RoutedEventArgs e) => Reload();
+
+    /// <summary>Todo de nuevo (también al cambiar de cuenta).</summary>
+    public void Reload()
     {
         Feed.ItemsSource = null;
         _ = Load(refresh: true);

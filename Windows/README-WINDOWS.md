@@ -56,8 +56,12 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
   la interfaz, que es el hilo principal del proceso. La primera llamada a la DLL se hace desde ese hilo.
 - **API C.** Funciones `gt_*` con callback `(context, status, json)`; en C# el contexto es un `GCHandle` de un
   `TaskCompletionSource`, así que cada llamada es un `Task<T>`. Ver `include/GlasstubeFFI.h`.
-- **Sesión.** `AccountManager` lee la bóveda del Administrador de credenciales (la misma que usa `ytkit`), así que la app
-  arranca con la cuenta ya iniciada. Con sesión, el Inicio es el de la cuenta (por TV).
+- **Sesión.** `AccountManager` guarda la bóveda en el Administrador de credenciales (la misma que usa `ytkit`). Se inicia
+  desde el botón de cuenta de la barra de título (o desde Suscripciones sin sesión) con el código de la app de TV: la app
+  muestra el código, la persona lo escribe en youtube.com/activate y la app espera la aprobación (`gt_sign_in_begin` y
+  `gt_sign_in_wait`, `Controls/SignInDialog.cs`). El mismo menú cambia entre las cuentas guardadas (otras sesiones y
+  cuentas de marca), agrega otra y cierra sesión; al cambiar, la app vuelve al Inicio y recarga Suscripciones. Con
+  sesión, el Inicio es el de la cuenta (por TV).
 - **Streams.** `gt_resolve_stream` usa la rotación de clientes de YTKit (`formatInfo`: firma, `n`, validación de las URLs y,
   si hace falta, PoToken con WebView2), hasta 1080p, VP9 > H.264 > AV1. Devuelve la URL de video y la de audio, y mpv las
   abre con `audio-files`, el `User-Agent` del cliente y `Origin`/`Referer`. Los directos en curso (TV_DOWNGRADED no los
@@ -123,8 +127,7 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
   `SabrMediaSource` de PlaybackKit a la FFI (mpv leyendo por `stream_cb`), como en la app de Mac.
 - Calidad elegible, subtítulos y reportar el historial a YouTube (`watchtime`).
 - Página del video: descripción, comentarios, sugeridos y siguiente automático.
-- Biblioteca e Historial como páginas, página de canal, ajustes, iniciar y cerrar sesión desde la app (hoy se usa la sesión
-  que dejó `ytkit signin`). Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
+- Ajustes. Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
 - Atajos de volumen; recordar tamaño de ventana.
 - Errores de red con reintento en el Inicio (hoy un aviso y el botón de actualizar).
 - Firma del instalador y del exe (sin ella SmartScreen avisa) y actualizaciones automáticas. El runtime de Swift se copia entero (se puede recortar).

@@ -123,18 +123,50 @@
 
             <StackPanel x:Name="RightChrome" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Padding="0,0,8,0">
                 <Button x:Name="AccountButton" Style="{StaticResource TitleBarButtonStyle}" Padding="4" Visibility="Collapsed"
-                        AutomationProperties.Name="Cuenta" ToolTipService.ToolTip="Cuenta">
+                        AutomationProperties.Name="Cuenta" ToolTipService.ToolTip="Iniciar sesión">
                     <PersonPicture x:Name="AccountPicture" Width="28" Height="28" />
                     <Button.Flyout>
-                        <Flyout Placement="BottomEdgeAlignedRight">
-                            <StackPanel Orientation="Horizontal" Spacing="12" MinWidth="220">
-                                <PersonPicture x:Name="AccountFlyoutPicture" Width="48" Height="48" />
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock x:Name="AccountName" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                    <TextBlock x:Name="AccountByline" Style="{StaticResource CaptionTextBlockStyle}"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <!-- Con sesión: la cuenta elegida, las demás guardadas, agregar otra y cerrar sesión. Sin sesión: iniciarla. -->
+                        <Flyout x:Name="AccountFlyout" Placement="BottomEdgeAlignedRight">
+                            <Grid MinWidth="260" MaxWidth="320">
+                                <StackPanel x:Name="SignedInPanel" Spacing="12" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <PersonPicture x:Name="AccountFlyoutPicture" Width="48" Height="48" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="AccountName" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <TextBlock x:Name="AccountByline" Style="{StaticResource CaptionTextBlockStyle}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel x:Name="OtherAccountsPanel" Spacing="2" Visibility="Collapsed">
+                                        <TextBlock Text="Cambiar de cuenta" Style="{StaticResource CaptionTextBlockStyle}" Margin="0,0,0,4"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <StackPanel x:Name="OtherAccounts" Spacing="2" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnAddAccountClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <FontIcon Glyph="&#xE8FA;" FontSize="14" />
+                                                <TextBlock Text="Agregar otra cuenta" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnSignOutClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <FontIcon Glyph="&#xF3B1;" FontSize="14" />
+                                                <TextBlock Text="Cerrar sesión" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
+                                <StackPanel x:Name="SignedOutPanel" Spacing="10">
+                                    <TextBlock Text="No has iniciado sesión" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Text="Con tu cuenta de YouTube ves tu Inicio y tus suscripciones, Ver más tarde y tus listas, y puedes dar me gusta y suscribirte." />
+                                    <Button Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Content="Iniciar sesión"
+                                            Click="OnSignInClick" />
+                                </StackPanel>
+                            </Grid>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
