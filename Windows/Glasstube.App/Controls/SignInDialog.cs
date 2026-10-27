@@ -115,7 +115,7 @@ public static class SignInDialog
             }
         }
 
-        dialog.PrimaryButtonClick += (_, args) =>
+        dialog.PrimaryButtonClick += (sender, args) =>
         {
             args.Cancel = true; // el diálogo sigue abierto con el código nuevo
             _ = Run();
