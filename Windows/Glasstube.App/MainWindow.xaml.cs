@@ -1,3 +1,4 @@
+using Glasstube.Controls;
 using Glasstube.Models;
 using Glasstube.Native;
 using Glasstube.Pages;
@@ -6,6 +7,7 @@ using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -167,21 +169,128 @@ public sealed partial class MainWindow : Window
         try
         {
             await App.Ready;
-            var session = await GlasstubeFFI.LoadSession();
-            if (session.Selected is not { } account) return;
-            AccountName.Text = account.Name;
-            // La FFI no da el correo aparte: el byline de la cuenta es el correo (o el @ de una cuenta de marca).
-            AccountByline.Text = account.Byline ?? (session.AccountCount > 1 ? $"{session.AccountCount} cuentas" : "");
-            AccountPicture.DisplayName = AccountFlyoutPicture.DisplayName = account.Name;
-            if (account.Avatar != null)
-                AccountPicture.ProfilePicture = AccountFlyoutPicture.ProfilePicture = new BitmapImage(new Uri(account.Avatar));
-            ToolTipService.SetToolTip(AccountButton, account.Name);
-            AccountButton.Visibility = Visibility.Visible;
+            ShowAccount(await GlasstubeFFI.Accounts());
         }
         catch (Exception error)
         {
             GlasstubeFFI.Log("app", $"sesión: {error.Message}");
         }
+        AccountButton.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>El botón de cuenta y su menú: la elegida y las demás guardadas, o el botón de iniciar sesión.</summary>
+    void ShowAccount(AccountList accounts)
+    {
+        var account = accounts.Selected;
+        SignedInPanel.Visibility = account != null ? Visibility.Visible : Visibility.Collapsed;
+        SignedOutPanel.Visibility = account == null ? Visibility.Visible : Visibility.Collapsed;
+        OtherAccounts.Children.Clear();
+        if (account == null)
+        {
+            AccountPicture.DisplayName = "";
+            AccountPicture.ProfilePicture = null;
+            ToolTipService.SetToolTip(AccountButton, "Iniciar sesión");
+            return;
+        }
+        AccountName.Text = account.Name;
+        // La FFI no da el correo aparte: el byline de la cuenta es el correo (o el @ de una cuenta de marca).
+        AccountByline.Text = account.Byline ?? "";
+        AccountPicture.DisplayName = AccountFlyoutPicture.DisplayName = account.Name;
+        AccountPicture.ProfilePicture = AccountFlyoutPicture.ProfilePicture =
+            account.Avatar != null ? new BitmapImage(new Uri(account.Avatar)) : null;
+        ToolTipService.SetToolTip(AccountButton, account.Name);
+
+        foreach (var other in accounts.Accounts.Where(a => !a.IsSelected))
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            row.Children.Add(new PersonPicture
+            {
+                Width = 28, Height = 28, DisplayName = other.Name,
+                ProfilePicture = other.Avatar != null ? new BitmapImage(new Uri(other.Avatar)) { DecodePixelWidth = 56 } : null,
+            });
+            var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            text.Children.Add(new TextBlock { Text = other.Name, TextTrimming = TextTrimming.CharacterEllipsis });
+            if (other.Byline != null)
+                text.Children.Add(new TextBlock
+                {
+                    Text = other.Byline, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis,
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                });
+            row.Children.Add(text);
+            var button = new Button
+            {
+                Content = row, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush(Colors.Transparent), BorderThickness = new Thickness(0), Padding = new Thickness(8, 6, 8, 6),
+            };
+            AutomationProperties.SetName(button, $"Cambiar a {other.Name}");
+            var id = other.Id;
+            button.Click += async (_, _) =>
+            {
+                AccountFlyout.Hide();
+                try { AccountChanged(await GlasstubeFFI.SelectAccount(id)); }
+                catch (Exception error) { GlasstubeFFI.Log("app", $"cambiar de cuenta: {error.Message}"); }
+            };
+            OtherAccounts.Children.Add(button);
+        }
+        OtherAccountsPanel.Visibility = OtherAccounts.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    async void OnSignInClick(object sender, RoutedEventArgs e) => await SignIn();
+
+    async void OnAddAccountClick(object sender, RoutedEventArgs e) => await SignIn();
+
+    /// <summary>El diálogo del código de youtube.com/activate; si se inicia sesión, la app se recarga con esa cuenta.</summary>
+    public async Task SignIn()
+    {
+        AccountFlyout.Hide();
+        try
+        {
+            if (await SignInDialog.ShowAsync(Content.XamlRoot) is { } accounts) AccountChanged(accounts);
+        }
+        catch (Exception error)
+        {
+            GlasstubeFFI.Log("app", $"inicio de sesión: {error.Message}");
+        }
+    }
+
+    async void OnSignOutClick(object sender, RoutedEventArgs e)
+    {
+        AccountFlyout.Hide();
+        var name = AccountName.Text;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot, Title = "¿Cerrar sesión?",
+            Content = $"Glasstube dejará de usar la cuenta {name} (y las cuentas de marca de la misma sesión de Google) en esta PC. "
+                + "Tu historial y Ver más tarde de esta PC se quedan.",
+            PrimaryButtonText = "Cerrar sesión", CloseButtonText = "Cancelar", DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        try
+        {
+            var current = await GlasstubeFFI.Accounts();
+            if (current.Selected is { } account) AccountChanged(await GlasstubeFFI.SignOut(account.Id));
+        }
+        catch (Exception error)
+        {
+            GlasstubeFFI.Log("app", $"cerrar sesión: {error.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Otra cuenta (o ninguna): el Inicio, las Suscripciones y los canales del panel eran de la anterior. Se sueltan
+    /// las páginas guardadas y se vuelve al Inicio, que carga todo de nuevo.
+    /// </summary>
+    void AccountChanged(AccountList accounts)
+    {
+        ShowAccount(accounts);
+        SubscriptionsStore.Shared.Reset();
+        var cacheSize = ContentFrame.CacheSize;
+        ContentFrame.CacheSize = 0;
+        ContentFrame.CacheSize = cacheSize;
+        if (ContentFrame.Content is HomePage home) home.Reload();
+        else ContentFrame.Navigate(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
+        ContentFrame.BackStack.Clear();
+        BackButton.IsEnabled = false;
     }
 
     // MARK: Navegación

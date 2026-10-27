@@ -5,7 +5,7 @@
 // Sources/GlasstubeFFI/ (GlasstubeFFI.swift: motor, sesión, Inicio y streams; Cards.swift: biblioteca local y Bandeja;
 // Subscriptions.swift, Details.swift y Search.swift; desde la 0.3, Quality.swift, Captions.swift, WatchNext.swift y
 // Comments.swift; Account.swift: cuenta en el reproductor; Channel.swift: canales, listas y páginas siguientes;
-// LibraryPages.swift: Historial y Biblioteca).
+// LibraryPages.swift: Historial y Biblioteca; SignIn.swift: iniciar y cerrar sesión).
 //
 // Reglas:
 // - Lo asíncrono responde por `gt_callback`: status 0 = bien y `json` es el resultado; distinto de 0 = error y `json` es
@@ -154,6 +154,22 @@ void gt_history_clear(gt_callback callback, void *context);
 /// La Biblioteca de la cuenta: {"signedIn", "playlists": [VideoCard con "playlistId"…], "watchLater": [VideoCard…],
 /// "watchLaterFeed", "notice"}. Sin sesión, listas vacías y "signedIn" false.
 void gt_account_library(gt_callback callback, void *context);
+
+// MARK: Iniciar y cerrar sesión (SignIn.swift, 0.5)
+
+/// Las cuentas guardadas: {"signedIn", "accounts": [{"id", "name", "byline", "avatar", "isBrand", "isSelected"}]}.
+void gt_accounts(gt_callback callback, void *context);
+/// Pide un código para youtube.com/activate: {"userCode", "verificationUrl", "expiresIn"} (segundos).
+void gt_sign_in_begin(gt_callback callback, void *context);
+/// Espera a que la persona apruebe el último código y guarda la sesión. Responde como gt_accounts; falla si el código
+/// vence, si lo rechazan o tras gt_sign_in_cancel ("cancelado").
+void gt_sign_in_wait(gt_callback callback, void *context);
+/// Deja de esperar el código.
+void gt_sign_in_cancel(void);
+/// Elige una cuenta guardada. Responde como gt_accounts.
+void gt_select_account(const char *account_id, gt_callback callback, void *context);
+/// Cierra la sesión de Google de esa cuenta (con sus cuentas de marca); NULL = todas. Responde como gt_accounts.
+void gt_sign_out(const char *account_id, gt_callback callback, void *context);
 
 #ifdef __cplusplus
 }

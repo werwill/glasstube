@@ -38,6 +38,12 @@ final class SubscriptionsState {
     /// Foto de cada canal (de las pestañas), para las tarjetas.
     var avatars: [String: String] = [:]
 
+    /// Otra cuenta: la continuación y los vistos eran de la anterior.
+    func reset() {
+        continuation = nil
+        seen = []
+    }
+
     /// Videos de una página, sin Shorts ni repetidos, del más reciente al más viejo.
     func cards(_ page: BrowsePage) -> [VideoCard] {
         var cards: [VideoCard] = []

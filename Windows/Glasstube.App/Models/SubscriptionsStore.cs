@@ -22,6 +22,8 @@ public sealed class SubscriptionsStore
     public bool IsLoaded { get; private set; }
     /// <summary>Por qué no hay suscripciones (sin sesión, error de red…), o null.</summary>
     public string? Error { get; private set; }
+    /// <summary>Falló porque no hay sesión: la Bandeja ofrece iniciarla.</summary>
+    public bool NeedsSignIn { get; private set; }
 
     /// <summary>Cambió algo (carga, más videos, visto/archivado/Ver más tarde).</summary>
     public event EventHandler? Changed;
@@ -31,6 +33,19 @@ public sealed class SubscriptionsStore
     {
         if (loading == null || force || (loading.IsCompleted && !IsLoaded)) loading = Load();
         return loading;
+    }
+
+    /// <summary>Otra cuenta (o ninguna): suelta lo de la anterior. Los grupos son locales y se quedan.</summary>
+    public void Reset()
+    {
+        loading = null;
+        Items.Clear();
+        Channels = [];
+        HasMore = false;
+        IsLoaded = false;
+        Error = null;
+        NeedsSignIn = false;
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     async Task Load()
@@ -46,11 +61,14 @@ public sealed class SubscriptionsStore
             Groups = page.Groups;
             HasMore = page.HasMore;
             Error = null;
+            NeedsSignIn = false;
             IsLoaded = true;
         }
         catch (Exception error)
         {
             Error = error.Message;
+            try { NeedsSignIn = !(await GlasstubeFFI.Accounts()).SignedIn; }
+            catch { NeedsSignIn = false; }
             GlasstubeFFI.Log("app", $"Suscripciones: {error.Message}");
         }
         try
