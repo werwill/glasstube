@@ -136,7 +136,7 @@ con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de l
 
 Ya tiene Inicio, Suscripciones, Historial, Biblioteca (Ver más tarde y tus listas), páginas de canal y el reproductor
 con calidad, subtítulos, capítulos, SponsorBlock, comentarios, sugeridos y los botones de suscribirte, me gusta y no me
-gusta (con Return YouTube Dislike). Avisa de versiones nuevas de Windows como la de Mac (sin instalarlas). Inicias sesión
+gusta (con Return YouTube Dislike). Se actualiza sola: avisa de cada versión nueva y la instala con un clic. Inicias sesión
 desde el botón de cuenta, con un código como en la tele. Todavía no hay ajustes. Lo que falta, cómo compilarla y cómo arma el instalador están en [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
 
 ---
