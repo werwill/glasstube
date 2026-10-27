@@ -59,8 +59,29 @@ Name: "{autodesktop}\Glasstube"; Filename: "{app}\Glasstube.exe"; Tasks: desktop
 
 [Run]
 Filename: "{app}\Glasstube.exe"; Description: "{cm:LaunchProgram,Glasstube}"; Flags: nowait postinstall skipifsilent
+; Actualización desde la app (/VERYSILENT /RELANZAR=1, ver UpdateCheck.cs): al terminar, Glasstube se vuelve a abrir.
+Filename: "{app}\Glasstube.exe"; Flags: nowait runasoriginaluser; Check: Relaunch
 
 [Code]
+// La app lanzó esta actualización y se está cerrando: se le da hasta 30 s antes de que CloseApplications la cierre.
+function Relaunch: Boolean;
+begin
+  Result := ExpandConstant('{param:RELANZAR|0}') = '1';
+end;
+
+function InitializeSetup: Boolean;
+var
+  Waited: Integer;
+begin
+  Waited := 0;
+  while Relaunch and CheckForMutexes('GlasstubeApp') and (Waited < 60) do
+  begin
+    Sleep(500);
+    Waited := Waited + 1;
+  end;
+  Result := True;
+end;
+
 // YTKit usa WebView2 para el PoToken. Windows 11 lo trae; en Windows 10 puede faltar.
 function WebView2Installed: Boolean;
 var

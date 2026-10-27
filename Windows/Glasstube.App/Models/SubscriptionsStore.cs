@@ -11,6 +11,8 @@ public sealed class SubscriptionsStore
     public static SubscriptionsStore Shared { get; } = new();
 
     Task? loading;
+    /// <summary>Sube con cada <see cref="Reset"/>: una carga de la cuenta anterior que llega tarde se descarta.</summary>
+    int generation;
 
     public List<VideoCard> Items { get; } = [];
     public List<SubscribedChannel> Channels { get; private set; } = [];
@@ -38,6 +40,7 @@ public sealed class SubscriptionsStore
     /// <summary>Otra cuenta (o ninguna): suelta lo de la anterior. Los grupos son locales y se quedan.</summary>
     public void Reset()
     {
+        generation++;
         loading = null;
         Items.Clear();
         Channels = [];
@@ -51,10 +54,12 @@ public sealed class SubscriptionsStore
     async Task Load()
     {
         await App.Ready;
+        var started = generation;
         var library = GlasstubeFFI.Library();
         try
         {
             var page = await GlasstubeFFI.Subscriptions();
+            if (started != generation) return;
             Items.Clear();
             Items.AddRange(page.Items);
             Channels = page.Channels;
@@ -66,6 +71,7 @@ public sealed class SubscriptionsStore
         }
         catch (Exception error)
         {
+            if (started != generation) return;
             Error = error.Message;
             try { NeedsSignIn = !(await GlasstubeFFI.Accounts()).SignedIn; }
             catch { NeedsSignIn = false; }
@@ -94,7 +100,9 @@ public sealed class SubscriptionsStore
         loadingMore = true;
         try
         {
+            var started = generation;
             var page = await GlasstubeFFI.SubscriptionsMore();
+            if (started != generation) return 0;
             var known = Items.Select(i => i.Id).ToHashSet();
             var fresh = page.Items.Where(i => known.Add(i.Id)).ToList();
             Items.AddRange(fresh);

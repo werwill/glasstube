@@ -116,9 +116,15 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
 - `--capturas` (`Models/CaptureMode.cs`): sin la cuenta ni sus canales, quien comenta como @personaN, controles fijos y sin
   guardar historial; con `--desde S`, `--panel comentarios` y `--buscar "texto"`. `Installer/capturas.ps1` rehace con eso
   las capturas públicas de `docs/capturas/windows` (solo Big Buck Bunny, CC BY).
-- Aviso de versiones nuevas (`Models/UpdateCheck.cs`), como el de la Mac: al abrirse, como mucho una vez al día, busca
-  en GitHub la Release `windows-v…` más nueva (sin borradores ni prereleases) y, si es más nueva que la del exe, avisa
-  abajo a la derecha con «Descargar» (abre su página) y «Ahora no». `--sin-aviso-de-versiones` no consulta.
+- Actualizaciones (`Models/UpdateCheck.cs`): al abrirse, como mucho una vez al día, busca en GitHub la Release
+  `windows-v…` más nueva (sin borradores ni prereleases) y, si es más nueva que la del exe, avisa abajo a la derecha con
+  «Actualizar y reiniciar» y «Ahora no». Actualizar baja el `…-Windows-x64-Setup.exe` de la Release a
+  %TEMP%\Glasstube-actualizacion, lo comprueba con el SHA-256 que publica GitHub (o con su `.sha256`), lo corre con
+  `/VERYSILENT /RELANZAR=1` (y `/CURRENTUSER` o `/ALLUSERS`, según dónde esté instalada) y cierra la app. El instalador
+  espera a que se cierre (mutex `GlasstubeApp`), se instala encima y la vuelve a abrir. Si algo falla, el aviso ofrece
+  «Abrir la página». Solo funciona desde la 0.3.0: quien tenga una anterior la instala a mano una vez.
+  `--sin-aviso-de-versiones` no consulta; `--buscar-versiones` consulta sin esperar el día; `--actualizar-desde
+  <Setup.exe>` instala un instalador local como si fuera una actualización (pruebas).
 - GlasstubeCore compila en Windows (antes solo se había probado en Linux); la FFI usa `cardSubtitle` y `durationBadge`.
 
 ## Qué falta
@@ -130,6 +136,6 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
 - Ajustes. Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
 - Atajos de volumen; recordar tamaño de ventana.
 - Errores de red con reintento en el Inicio (hoy un aviso y el botón de actualizar).
-- Firma del instalador y del exe (sin ella SmartScreen avisa) y actualizaciones automáticas. El runtime de Swift se copia entero (se puede recortar).
+- Firma del instalador y del exe (sin ella SmartScreen avisa en la primera instalación) y actualizaciones delta. El runtime de Swift se copia entero (se puede recortar).
 - `gt_pump` con temporizador: se podría despertar solo cuando la cola tiene trabajo
   (`_dispatch_get_main_queue_handle_4CF`).

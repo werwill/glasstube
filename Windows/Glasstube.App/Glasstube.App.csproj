@@ -9,7 +9,7 @@
     <AssemblyName>Glasstube</AssemblyName>
     <!-- La de desarrollo; build-installer.ps1 pone la de cada versión (-Version). El aviso de versiones la compara con
          las Releases windows-v…. -->
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Glasstube.ico</ApplicationIcon>
     <Platforms>x64</Platforms>

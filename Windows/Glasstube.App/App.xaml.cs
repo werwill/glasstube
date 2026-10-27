@@ -13,6 +13,8 @@ public partial class App : Application
     public static Task<Models.InitInfo> Ready { get; private set; } = new TaskCompletionSource<Models.InitInfo>().Task;
 
     DispatcherQueueTimer? pump;
+    /// <summary>Mientras exista, el instalador de una actualización espera a que la app se cierre (Glasstube.iss).</summary>
+    Mutex? running;
 
     public App()
     {
@@ -32,6 +34,7 @@ public partial class App : Application
         // El actor principal de Swift es la cola principal de libdispatch: la vacía este hilo (el principal del
         // proceso), así que los callbacks de GlasstubeFFI llegan aquí. La primera llamada a la DLL también es desde
         // aquí, para que libdispatch tome este hilo como el principal.
+        running = new Mutex(false, "GlasstubeApp");
         pump = DispatcherQueue.GetForCurrentThread().CreateTimer();
         pump.Interval = TimeSpan.FromMilliseconds(15);
         pump.Tick += (_, _) => GlasstubeFFI.Pump();
@@ -57,7 +60,10 @@ public partial class App : Application
         // `--sin-aviso-de-versiones`: no consulta GitHub (capturas y pruebas).
         if (!arguments.Contains("--sin-aviso-de-versiones") && !Models.CaptureMode.Enabled
             && Window.Content is Microsoft.UI.Xaml.Controls.Grid root)
-            _ = Models.UpdateCheck.RunAsync(root);
+            _ = Models.UpdateCheck.RunAsync(root, force: arguments.Contains("--buscar-versiones")); // sin esperar un día
+        // `--actualizar-desde <Setup.exe>`: instala ese instalador local como una actualización (pruebas).
+        var local = Array.IndexOf(arguments, "--actualizar-desde");
+        if (local >= 0 && local + 1 < arguments.Length) Models.UpdateCheck.InstallLocal(arguments[local + 1]);
     }
 
     /// <summary>`--probar-ffi`: llama a la API 0.2 (Suscripciones, biblioteca, detalles, búsqueda) y anota un resumen en el registro.</summary>
