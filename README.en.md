@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/badge/Download_for_macOS-0F8A86?style=for-the-badge" alt="Download for macOS"></a>
-  <a href="https://github.com/werwill/glasstube/releases/tag/windows-v0.2.0"><img src="https://img.shields.io/badge/Download_for_Windows-0F8A86?style=for-the-badge" alt="Download for Windows"></a>
+  <a href="https://github.com/werwill/glasstube/releases/tag/windows-v0.3.0"><img src="https://img.shields.io/badge/Download_for_Windows-0F8A86?style=for-the-badge" alt="Download for Windows"></a>
   <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/github/v/release/werwill/glasstube?style=for-the-badge&label=version&color=073F4A" alt="Latest version"></a>
 </p>
 
@@ -124,7 +124,7 @@ you build yourself checks the same repository; `GITHUB_REPO= App/Scripts/package
 <sub>In the screenshots: *Big Buck Bunny* © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 Commenters appear as @persona1, @persona2…</sub>
 
-Get **`Glasstube-<version>-Windows-x64-Setup.exe`** from [its release](https://github.com/werwill/glasstube/releases/tag/windows-v0.2.0). Windows releases are separate, tagged
+Get **`Glasstube-<version>-Windows-x64-Setup.exe`** from [its release](https://github.com/werwill/glasstube/releases/tag/windows-v0.3.0). Windows releases are separate, tagged
 `windows-v…`, and are not marked as the latest, so the Mac app's update notice does not mistake them for its own.
 
 - **Requirements:** Windows 10 1809 or later, or 11, 64-bit (x64). It needs Microsoft Edge WebView2, which Windows 11
