@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/badge/Descargar_para_macOS-0F8A86?style=for-the-badge" alt="Descargar para macOS"></a>
-  <a href="https://github.com/werwill/glasstube/releases/tag/windows-v0.3.0"><img src="https://img.shields.io/badge/Descargar_para_Windows-0F8A86?style=for-the-badge" alt="Descargar para Windows"></a>
+  <a href="https://github.com/werwill/glasstube/releases/tag/windows-v0.4.0"><img src="https://img.shields.io/badge/Descargar_para_Windows-0F8A86?style=for-the-badge" alt="Descargar para Windows"></a>
   <a href="https://github.com/werwill/glasstube/releases/latest"><img src="https://img.shields.io/github/v/release/werwill/glasstube?style=for-the-badge&label=versi%C3%B3n&color=073F4A" alt="Última versión"></a>
 </p>
 
@@ -122,7 +122,7 @@ General › Actualizaciones**, donde también está «Buscar ahora». Una copia 
 <sub>En las capturas: *Big Buck Bunny* © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 Quienes comentan aparecen como @persona1, @persona2…</sub>
 
-Baja **`Glasstube-<versión>-Windows-x64-Setup.exe`** de su [versión en Releases](https://github.com/werwill/glasstube/releases/tag/windows-v0.3.0). Las de Windows van aparte,
+Baja **`Glasstube-<versión>-Windows-x64-Setup.exe`** de su [versión en Releases](https://github.com/werwill/glasstube/releases/tag/windows-v0.4.0). Las de Windows van aparte,
 con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de la app de Mac no las toma por suyas.
 
 - **Requisitos:** Windows 10 1809 o posterior, u 11, de 64 bits (x64). Necesita Microsoft Edge WebView2, que Windows 11
@@ -136,7 +136,7 @@ con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de l
 
 Ya tiene Inicio, Suscripciones, Historial, Biblioteca (Ver más tarde y tus listas), páginas de canal y el reproductor
 con calidad, subtítulos, capítulos, SponsorBlock, comentarios, sugeridos y los botones de suscribirte, me gusta y no me
-gusta (con Return YouTube Dislike). Desde la 0.4.0 trae Configuración, vista previa al pasar el ratón por las miniaturas
+gusta (con Return YouTube Dislike). Desde la 0.4.0 tiene acabado de vidrio, Configuración, vista previa al pasar el ratón por las miniaturas
 y por la barra del reproductor, DeArrow, filtros de búsqueda, Ctrl+V para abrir un enlace copiado y los videos con
 restricción de edad (con tu sesión). Se actualiza sola: avisa de cada versión nueva y la instala con un clic. Inicias sesión
 desde el botón de cuenta, con un código como en la tele. Lo que falta, cómo compilarla y cómo arma el instalador están en [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
