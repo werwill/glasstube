@@ -11,6 +11,7 @@
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Modifiers="Control" Key="K" Invoked="OnSearchKey" />
             <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackKey" />
+            <KeyboardAccelerator Modifiers="Control" Key="V" Invoked="OnPasteKey" />
         </Grid.KeyboardAccelerators>
 
         <Frame x:Name="ContentFrame" Navigated="OnNavigated" />
@@ -190,5 +191,9 @@
                 </Border>
             </Grid>
         </Grid>
+
+        <!-- Avisos breves (un enlace pegado que no es de YouTube…). -->
+        <InfoBar x:Name="Toast" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24" MaxWidth="520"
+                 IsOpen="False" IsClosable="True" Severity="Informational" />
     </Grid>
 </Window>

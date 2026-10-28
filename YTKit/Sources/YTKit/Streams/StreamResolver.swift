@@ -36,6 +36,8 @@ public struct URLCheck: Sendable {
 public struct ClientAttempt: Sendable {
     public let client: ClientProfile
     public var usedPoToken = false
+    /// El player se pidió con la cuenta (`ResolveOptions.accountHeaders`).
+    public var signedIn = false
     public var httpStatus: Int?
     public var elapsed: TimeInterval = 0
     public var playability: String?
@@ -100,6 +102,10 @@ public struct ResolveOptions: Sendable {
     public var rawN = false
     /// Qué token va en el parámetro `pot` de las URLs: el de contenido (videoId, como SmartTube) o el de sesión.
     public var urlPoTokenIsSession = false
+    /// Cabeceras de la cuenta (`AccountManager.authorizationHeaders`), o vacías sin sesión. Si ningún cliente anónimo da
+    /// el video (restricción de edad, «confirma que no eres un bot»), se piden y se prueba otra vez con ellas en los
+    /// clientes de TV, que son los de la sesión. Nil = solo anónimo.
+    public var accountHeaders: (@Sendable () async -> [String: String])?
     public init() {}
 }
 
@@ -143,6 +149,22 @@ public final class StreamResolver: @unchecked Sendable {
             if attempt.playable { return report }
         }
 
+        // Con la cuenta: la restricción de edad solo se levanta con sesión, y la sesión es de la app de TV.
+        let tvClients = clients.filter { $0.id.hasPrefix("TV") }
+        if let accountHeaders = options.accountHeaders, !tvClients.isEmpty,
+           report.attempts.contains(where: { $0.playability != nil && $0.playability != "OK" }),
+           case let headers = await accountHeaders(), !headers.isEmpty {
+            Log.info("Ningún cliente anónimo dio el video; probando los de TV con la cuenta…")
+            for client in tvClients {
+                var attempt = await self.attempt(videoId: videoId, client: client, poToken: nil, options: options,
+                                                 headers: headers)
+                attempt.signedIn = true
+                report.attempts.append(attempt)
+                Log.info(Self.oneLine(attempt))
+                if attempt.playable { return report }
+            }
+        }
+
         guard options.allowPoToken, let poTokenSource else { return report }
         let webClients = clients.filter { $0.poToken == .web }
         guard !webClients.isEmpty else { return report }
@@ -164,7 +186,7 @@ public final class StreamResolver: @unchecked Sendable {
     }
 
     public static func oneLine(_ a: ClientAttempt) -> String {
-        let pot = a.usedPoToken ? "+pot" : ""
+        let pot = (a.usedPoToken ? "+pot" : "") + (a.signedIn ? "+cuenta" : "")
         if let error = a.error { return "  \(a.client.id)\(pot): error — \(error)" }
         var s = "  \(a.client.id)\(pot): \(a.playability ?? "?")"
         if let reason = a.reason { s += " (\(reason))" }
@@ -181,7 +203,8 @@ public final class StreamResolver: @unchecked Sendable {
 
     // MARK: - Un cliente
 
-    public func attempt(videoId: String, client: ClientProfile, poToken: PoTokenResult?, options: ResolveOptions) async -> ClientAttempt {
+    public func attempt(videoId: String, client: ClientProfile, poToken: PoTokenResult?, options: ResolveOptions,
+                        headers: [String: String] = [:]) async -> ClientAttempt {
         var attempt = ClientAttempt(client: client)
         attempt.usedPoToken = poToken != nil
 
@@ -204,6 +227,7 @@ public final class StreamResolver: @unchecked Sendable {
             request.visitorData = try? await scripts.appInfo().visitorData
         }
         request.poToken = poToken?.playerPoToken
+        request.extraHeaders = headers
         let response: PlayerResponse
         do {
             let reply = try await innertube.player(request)

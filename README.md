@@ -136,8 +136,10 @@ con etiquetas `windows-v…`, y no se marcan como la última: así el aviso de l
 
 Ya tiene Inicio, Suscripciones, Historial, Biblioteca (Ver más tarde y tus listas), páginas de canal y el reproductor
 con calidad, subtítulos, capítulos, SponsorBlock, comentarios, sugeridos y los botones de suscribirte, me gusta y no me
-gusta (con Return YouTube Dislike). Se actualiza sola: avisa de cada versión nueva y la instala con un clic. Inicias sesión
-desde el botón de cuenta, con un código como en la tele. Todavía no hay ajustes. Lo que falta, cómo compilarla y cómo arma el instalador están en [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
+gusta (con Return YouTube Dislike). Desde la 0.4.0 trae Configuración, vista previa al pasar el ratón por las miniaturas
+y por la barra del reproductor, DeArrow, filtros de búsqueda, Ctrl+V para abrir un enlace copiado y los videos con
+restricción de edad (con tu sesión). Se actualiza sola: avisa de cada versión nueva y la instala con un clic. Inicias sesión
+desde el botón de cuenta, con un código como en la tele. Lo que falta, cómo compilarla y cómo arma el instalador están en [Windows/README-WINDOWS.md](Windows/README-WINDOWS.md).
 
 ---
 

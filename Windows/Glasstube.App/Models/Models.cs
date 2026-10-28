@@ -44,6 +44,10 @@ public sealed class VideoCard
     [JsonIgnore]
     public bool IsPlaylist => !string.IsNullOrEmpty(PlaylistId);
 
+    /// <summary>Segundo en el que empezar (el `t=` de un enlace pegado), por encima de la posición guardada.</summary>
+    [JsonIgnore]
+    public double? StartAt { get; set; }
+
     BitmapImage? image;
 
     /// <summary>Miniatura decodificada al ancho de la tarjeta (se crea la primera vez que se dibuja).</summary>

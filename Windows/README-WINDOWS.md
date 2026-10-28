@@ -35,7 +35,7 @@ y GlasstubeFFI (31 MB en release).
 
 ```powershell
 winget install JRSoftware.InnoSetup          # una vez
-.\Installeruild-installer.ps1 -Version 0.1.0   # build.ps1, dotnet build e Inno Setup
+.\Installer\build-installer.ps1 -Version 0.1.0   # build.ps1, dotnet build e Inno Setup
 ```
 
 Deja `dist/Glasstube-<versión>-Windows-x64-Setup.exe` y su `.sha256` (como el `.dmg` de la app de Mac: `dist/` no va al
@@ -66,8 +66,9 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
   si hace falta, PoToken con WebView2), hasta 1080p, VP9 > H.264 > AV1. Devuelve la URL de video y la de audio, y mpv las
   abre con `audio-files`, el `User-Agent` del cliente y `Origin`/`Referer`. Los directos en curso (TV_DOWNGRADED no los
   marca: se notan en que los formatos no traen `contentLength`) usan el manifiesto HLS del cliente VISIONOS, como
-  `YouTubeLive` en PlaybackKit. Los videos con restricción de edad fallan con «Sign in to confirm your age» (falta pedir el
-  player con la cuenta).
+  `YouTubeLive` en PlaybackKit. Si ningún cliente anónimo da el video (restricción de edad, «confirma que no eres un
+  bot»), la rotación prueba los de TV otra vez con la cuenta (`ResolveOptions.accountHeaders`; el token se renueva solo
+  entonces). Sin sesión, el aviso ofrece «Iniciar sesión y reintentar».
 - **Video.** `d3d11-output-mode=composition`: mpv crea su swapchain, el puente la lee de `display-swapchain` y la pone con
   `ISwapChainPanelNative::SetSwapChain`. El tamaño en píxeles físicos va a `d3d11-composition-size` y la escala con
   `SetMatrixTransform`. El manifiesto declara PerMonitorV2 (sin él, todo sale borroso al 125 %).
@@ -126,14 +127,32 @@ cuadrado redondeado con margen, y la variante pequeña de `Glasstube-pequeno.svg
   `--sin-aviso-de-versiones` no consulta; `--buscar-versiones` consulta sin esperar el día; `--actualizar-desde
   <Setup.exe>` instala un instalador local como si fuera una actualización (pruebas).
 - GlasstubeCore compila en Windows (antes solo se había probado en Linux); la FFI usa `cardSubtitle` y `durationBadge`.
+- Desde la 0.4.0 (`Polish.swift` en la FFI):
+  - **Vista previa** al dejar el ratón 0,6 s sobre una tarjeta: la miniatura recorre 10 cuadros del storyboard
+    (`gt_storyboard`, del player de VISIONOS, el mismo de los subtítulos; `Models/PolishModels.cs` los guarda por video).
+  - **Barra del reproductor:** al pasar el ratón o arrastrar, una burbuja con el cuadro, el minuto y el capítulo
+    (`PlayerPage.Scrub.cs`).
+  - **DeArrow** (apagado por omisión): títulos y miniaturas de la comunidad en las tarjetas y el reproductor. Las tarjetas
+    piden el suyo al pintarse y `DeArrowStore` junta los pedidos 150 ms (`gt_dearrow`, por prefijo de hash).
+  - **Filtros de búsqueda** (prioridad, fecha, tipo, duración y características) con el `SearchFilter` de YTKit
+    (`gt_search_filtered`).
+  - **Ctrl+V** fuera de un campo de texto abre el enlace de YouTube copiado (video con su `t=`, lista o canal), y un
+    enlace escrito en la búsqueda se abre en lugar de buscarse (`gt_parse_link`, `YouTubeLink` de YTKit).
+  - **Configuración:** cuenta, tema, vista previa, calidad, subtítulos y reproducción automática, DeArrow, buscar
+    versiones nuevas (y «Buscar ahora»), borrar el historial y abrir el registro. Va en
+    `%LOCALAPPDATA%\Glasstube\ajustes.json` (`Models/AppSettings.cs`); lo del reproductor sigue en `reproductor.json`.
+  - Suscripciones: una respuesta de la cuenta anterior que llega después de cambiar de cuenta se descarta también en la
+    FFI (`SubscriptionsState.generation`).
+  - `--seccion <etiqueta>` abre una sección del panel (`settings`, `library`…), y `--probar-ffi` prueba también
+    filtros, storyboard, DeArrow y enlaces.
 
 ## Qué falta
 
 - **SABR.** El reproductor usa URLs directas (cliente TV_DOWNGRADED hoy). Si YouTube deja de darlas, hay que llevar
   `SabrMediaSource` de PlaybackKit a la FFI (mpv leyendo por `stream_cb`), como en la app de Mac.
-- Calidad elegible, subtítulos y reportar el historial a YouTube (`watchtime`).
-- Página del video: descripción, comentarios, sugeridos y siguiente automático.
-- Ajustes. Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
+- Reportar el historial a YouTube (`watchtime`).
+- Grupos de canales: se muestran si GlasstubeCore tiene alguno, pero no se crean desde aquí.
+- Control remoto desde el teléfono (`RemoteControl` de la app de Mac).
 - Atajos de volumen; recordar tamaño de ventana.
 - Errores de red con reintento en el Inicio (hoy un aviso y el botón de actualizar).
 - Firma del instalador y del exe (sin ella SmartScreen avisa en la primera instalación) y actualizaciones delta. El runtime de Swift se copia entero (se puede recortar).

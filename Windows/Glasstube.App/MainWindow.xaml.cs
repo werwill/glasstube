@@ -92,6 +92,7 @@ public sealed partial class MainWindow : Window
         UpdateCaptionColors();
 
         NavList.SelectedItem = HomeItem;
+        ApplyTheme();
         if (CaptureMode.Enabled) return; // sin la cuenta ni sus canales
         _ = LoadAccount();
         SubscriptionsStore.Shared.Changed += (_, _) => UpdateChannels();
@@ -239,21 +240,30 @@ public sealed partial class MainWindow : Window
 
     async void OnAddAccountClick(object sender, RoutedEventArgs e) => await SignIn();
 
-    /// <summary>El diálogo del código de youtube.com/activate; si se inicia sesión, la app se recarga con esa cuenta.</summary>
-    public async Task SignIn()
+    /// <summary>
+    /// El diálogo del código de youtube.com/activate; si se inicia sesión, la app se recarga con esa cuenta. Devuelve si
+    /// se inició.
+    /// </summary>
+    public async Task<bool> SignIn()
     {
         AccountFlyout.Hide();
         try
         {
-            if (await SignInDialog.ShowAsync(Content.XamlRoot) is { } accounts) AccountChanged(accounts);
+            if (await SignInDialog.ShowAsync(Content.XamlRoot) is not { } accounts) return false;
+            AccountChanged(accounts);
+            return true;
         }
         catch (Exception error)
         {
             GlasstubeFFI.Log("app", $"inicio de sesión: {error.Message}");
+            return false;
         }
     }
 
-    async void OnSignOutClick(object sender, RoutedEventArgs e)
+    async void OnSignOutClick(object sender, RoutedEventArgs e) => await SignOut();
+
+    /// <summary>Pregunta y cierra la sesión de la cuenta elegida (y sus cuentas de marca); la app vuelve al Inicio.</summary>
+    public async Task SignOut()
     {
         AccountFlyout.Hide();
         var name = AccountName.Text;
@@ -317,6 +327,8 @@ public sealed partial class MainWindow : Window
             ContentFrame.Navigate(typeof(HistoryPage), null, new EntranceNavigationTransitionInfo());
         else if (tag == "subscriptions" || tag.StartsWith("group:"))
             ContentFrame.Navigate(typeof(SubscriptionsPage), tag, new EntranceNavigationTransitionInfo());
+        else if (tag == "settings")
+            ContentFrame.Navigate(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
         else
             ContentFrame.Navigate(typeof(PlaceholderPage), tag, new EntranceNavigationTransitionInfo());
     }
@@ -329,9 +341,17 @@ public sealed partial class MainWindow : Window
         ChannelPage channel => channel.Section,
         LibraryPage library => library.Section,
         HistoryPage history => history.Section,
+        SettingsPage settings => settings.Section,
         PlaceholderPage placeholder => placeholder.Section,
         _ => null,
     };
+
+    /// <summary>Elige una sección del panel por su etiqueta ("home", "settings"…), como si se hiciera clic.</summary>
+    public void ShowSection(string tag)
+    {
+        foreach (var list in new[] { NavList, FooterList })
+            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => (string)i.Tag == tag) is { } item) list.SelectedItem = item;
+    }
 
     /// <summary>La página visible.</summary>
     public object? CurrentPage => ContentFrame.Content;
@@ -416,6 +436,79 @@ public sealed partial class MainWindow : Window
         GoBack();
     }
 
+    // MARK: Enlaces pegados
+
+    /// <summary>
+    /// Ctrl+V fuera de un campo de texto: si el portapapeles tiene un enlace de YouTube (video, lista o canal), lo abre
+    /// aquí, como «Abrir el enlace copiado» en la app de Mac.
+    /// </summary>
+    async void OnPasteKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (FocusManager.GetFocusedElement(Root.XamlRoot) is TextBox or RichEditBox or PasswordBox) return;
+        args.Handled = true;
+        string text;
+        try
+        {
+            var content = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+            if (content.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.WebLink))
+                text = (await content.GetWebLinkAsync()).ToString();
+            else if (content.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+                text = await content.GetTextAsync();
+            else return;
+        }
+        catch (Exception error)
+        {
+            GlasstubeFFI.Log("app", $"portapapeles: {error.Message}");
+            return;
+        }
+        await OpenLink(text, "pegar");
+    }
+
+    /// <summary>Abre un enlace de YouTube; si el texto no tiene, lo avisa abajo y devuelve false.</summary>
+    public async Task<bool> OpenLink(string text, string from)
+    {
+        LinkInfo link;
+        try
+        {
+            await App.Ready;
+            link = await GlasstubeFFI.ParseLink(text);
+        }
+        catch
+        {
+            ShowToast("Para abrirlo aquí, copia un enlace de YouTube (youtube.com o youtu.be).");
+            return false;
+        }
+        GlasstubeFFI.Log("app", $"enlace ({from}): {link.Kind} {link.Id}");
+        switch (link.Kind)
+        {
+            case "video":
+                Play(new VideoCard { Id = link.Id, Title = link.Id, StartAt = link.Start });
+                break;
+            case "playlist":
+                OpenPlaylist(link.Id, null);
+                break;
+            case "channel":
+                OpenChannel(link.Id, null);
+                break;
+            default:
+                Search(link.Id);
+                break;
+        }
+        return true;
+    }
+
+    /// <summary>Un aviso breve abajo en el centro (4 s).</summary>
+    void ShowToast(string message)
+    {
+        Toast.Message = message;
+        Toast.IsOpen = true;
+        var timer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromSeconds(4);
+        timer.IsRepeating = false;
+        timer.Tick += (_, _) => Toast.IsOpen = false;
+        timer.Start();
+    }
+
     // MARK: Búsqueda
 
     void OnSearchKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -429,8 +522,24 @@ public sealed partial class MainWindow : Window
     {
         var text = args.QueryText.Trim();
         if (text.Length == 0) return;
-        // La FFI aún no tiene búsqueda: la página solo muestra lo que se buscó.
+        // Un enlace de YouTube pegado en la búsqueda se abre directamente.
+        if (text.Contains("youtu", StringComparison.OrdinalIgnoreCase)) { _ = OpenLinkOrSearch(text); return; }
         ContentFrame.Navigate(typeof(SearchPage), text, new EntranceNavigationTransitionInfo());
+    }
+
+    async Task OpenLinkOrSearch(string text)
+    {
+        try
+        {
+            await App.Ready;
+            await GlasstubeFFI.ParseLink(text);
+        }
+        catch
+        {
+            ContentFrame.Navigate(typeof(SearchPage), text, new EntranceNavigationTransitionInfo());
+            return;
+        }
+        await OpenLink(text, "búsqueda");
     }
 
     // El foco lo tiene el TextBox de dentro (la AutoSuggestBox sigue en Unfocused): se siguen sus eventos.
@@ -608,6 +717,22 @@ public sealed partial class MainWindow : Window
     }
 
     void OnThemeChanged(FrameworkElement sender, object args) => UpdateCaptionColors();
+
+    /// <summary>
+    /// El tema de Configuración ("sistema", "claro", "oscuro"). `--tema` (capturas) manda sobre él: ya fijó el de la
+    /// app al arrancar.
+    /// </summary>
+    public void ApplyTheme()
+    {
+        if (Environment.GetCommandLineArgs().Contains("--tema")) return;
+        Root.RequestedTheme = AppSettings.Shared.Theme switch
+        {
+            "claro" => ElementTheme.Light,
+            "oscuro" => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
+        UpdateCaptionColors();
+    }
 
     /// <summary>
     /// Botones de la ventana sin fondo propio y con el color del tema. Encima de video (o de una imagen oscura) van en

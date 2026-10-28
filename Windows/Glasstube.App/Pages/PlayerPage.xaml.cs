@@ -43,17 +43,18 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         Progress.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, _) => EndDrag()), true);
         Progress.AddHandler(PointerCaptureLostEvent, new PointerEventHandler((_, _) => EndDrag()), true);
         AddSpeedKeys();
+        AddScrubHandlers();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         video = e.Parameter as VideoCard;
         if (video == null) return;
-        TitleText.Text = video.Title;
+        TitleText.Text = DeArrowStore.Shared.Title(video.Id, video.Title);
         ChannelText.Text = channelName = video.Channel ?? "";
         Volume.Value = lastVolume;
         SpeedText.Text = speed.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + "×";
-        PanelTitle.Text = video.Title;
+        PanelTitle.Text = TitleText.Text;
         if (CaptureMode.Panel is { } tab)
         {
             panelOpen = true;
@@ -87,11 +88,12 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
             _ = LoadCaptions(video.Id);
             _ = LoadWatchNext(video.Id);
             _ = LoadAccount(video.Id);
+            _ = LoadStoryboard(video.Id);
             // La rotación de clientes (y el PoToken, si hace falta) suele tardar 2–5 s; más de esto es que algo se colgó.
             var saved = GlasstubeFFI.SavedPositionOf(video.Id);
             var resolved = await GlasstubeFFI.ResolveStream(video.Id, Settings.Quality, null).WaitAsync(ResolveTimeout);
             if (closed) return;
-            Start(resolved, CaptureMode.StartAt ?? ResumePosition(await saved));
+            Start(resolved, CaptureMode.StartAt ?? video.StartAt ?? ResumePosition(await saved));
         }
         catch (TimeoutException)
         {
@@ -287,8 +289,37 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         try { logs = Path.GetFullPath(GlasstubeFFI.LogDirectory()); } catch { logs = @"%LOCALAPPDATA%\Glasstube\logs"; }
         ErrorBar.Message = (string.IsNullOrWhiteSpace(message) ? "Error desconocido." : message)
                            + $"\n\nRegistro: {logs}\\glasstube.log";
+        ErrorBar.ActionButton = null;
+        _ = OfferSignIn(message);
         ErrorBar.IsOpen = true;
         SetControlsVisible(true);
+    }
+
+    /// <summary>
+    /// Restricción de edad o «confirma que no eres un bot» sin sesión: con la cuenta, la FFI vuelve a pedir el video, así
+    /// que el aviso ofrece iniciarla y reintentar.
+    /// </summary>
+    async Task OfferSignIn(string message)
+    {
+        string[] hints = ["confirm your age", "inappropriate for some users", "sign in", "confirmar tu edad", "inicia sesión",
+                          "LOGIN_REQUIRED"];
+        if (video is not { } current || CaptureMode.Enabled
+            || !hints.Any(hint => message.Contains(hint, StringComparison.OrdinalIgnoreCase))) return;
+        try
+        {
+            if ((await GlasstubeFFI.Accounts()).SignedIn || closed) return;
+        }
+        catch
+        {
+            return;
+        }
+        var signIn = new Button { Content = "Iniciar sesión y reintentar" };
+        signIn.Click += async (_, _) =>
+        {
+            if (App.Window is { } window && await window.SignIn()) window.Play(current);
+        };
+        ErrorBar.ActionButton = signIn;
+        ErrorBar.Message = "Este video pide iniciar sesión en YouTube (por ejemplo, por restricción de edad).\n\n" + ErrorBar.Message;
     }
 
     // MARK: Tamaño del panel (píxeles físicos para d3d11-composition-size)
@@ -320,6 +351,7 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     void SetControlsVisible(bool visible)
     {
         controlsVisible = visible;
+        if (!visible) HideScrub();
         Controls.Opacity = visible && !IsMini ? 1 : 0;
         Controls.IsHitTestVisible = visible && !IsMini;
         MiniControls.Opacity = visible && IsMini ? 1 : 0;

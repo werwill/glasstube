@@ -458,5 +458,26 @@
                 <FontIcon Glyph="&#xEE47;" FontSize="16" />
             </Button>
         </Grid>
+
+        <!-- Burbuja al pasar el ratón por la barra de progreso: el cuadro del storyboard, el minuto y el capítulo
+             (PlayerPage.Scrub.cs). Va fuera de la cápsula, que recorta lo que sale de sus esquinas. -->
+        <Canvas x:Name="ScrubLayer" IsHitTestVisible="False">
+            <Border x:Name="ScrubBubble" Visibility="Collapsed" CornerRadius="10" BorderThickness="1" BorderBrush="#40FFFFFF"
+                    Background="#E6141414" Padding="3">
+                <StackPanel Spacing="4">
+                    <Border x:Name="ScrubFrameHost" CornerRadius="7" Width="192" Height="108" Background="#FF000000">
+                        <Canvas x:Name="ScrubFrame">
+                            <Image x:Name="ScrubImage" Stretch="Fill">
+                                <Image.RenderTransform><CompositeTransform x:Name="ScrubTransform" /></Image.RenderTransform>
+                            </Image>
+                        </Canvas>
+                    </Border>
+                    <TextBlock x:Name="ScrubChapter" Foreground="#CCFFFFFF" FontSize="12" HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="186" Visibility="Collapsed" />
+                    <TextBlock x:Name="ScrubTime" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,0,0,3" />
+                </StackPanel>
+            </Border>
+        </Canvas>
     </Grid>
 </Page>
