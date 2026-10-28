@@ -49,20 +49,29 @@ public sealed partial class PlayerPage
         Capsule.Margin = new Thickness(24, 0, right, 24);
         SkipButton.Margin = new Thickness(0, 0, right + 8, SkipButton.Margin.Bottom);
         UpNextCard.Margin = new Thickness(0, 0, right, UpNextCard.Margin.Bottom);
-        UpdateVideoMargin();
+        LayoutVideo();
         PanelIcon.Glyph = visible ? "" : "";
         if (visible && ReferenceEquals(PanelTabs.SelectedItem, CommentsTab)) _ = LoadComments(null);
     }
 
-    /// <summary>Con el panel abierto, mpv encoge el video (y los subtítulos) a la parte que queda a su izquierda.</summary>
-    void UpdateVideoMargin()
+    /// <summary>
+    /// El video ocupa justo su rectángulo (centrado en lo que deja libre el panel, si está abierto): mpv no dibuja franjas
+    /// negras y alrededor se ve la luz ambiental.
+    /// </summary>
+    void LayoutVideo()
     {
-        if (player == null || Panel.ActualWidth <= 0) return;
-        var covered = panelOpen && !IsMini ? SidePanel.Width + SidePanel.Margin.Right + PanelGap : 0;
-        var ratio = Math.Clamp(covered / Panel.ActualWidth, 0, 0.6);
-        player.SetProperty("video-margin-ratio-right", ratio.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
-        // Si no, los subtítulos usan el ancho entero de la ventana (el margen cuenta como franja negra) y quedan bajo el panel.
-        player.SetProperty("sub-use-margins", covered > 0 ? "no" : "yes");
+        if (Root.ActualWidth <= 0 || Root.ActualHeight <= 0) return;
+        // Con el panel, el video flota a su izquierda con un margen (como el panel), sobre la luz ambiental.
+        var side = panelOpen && !IsMini;
+        var left = side ? Capsule.Margin.Left : 0;
+        var covered = side ? SidePanel.Width + SidePanel.Margin.Right + PanelGap : 0;
+        var free = Math.Max(1, Root.ActualWidth - covered - left);
+        var aspect = VideoAspect();
+        var width = Math.Min(free, Root.ActualHeight * aspect);
+        var height = width / aspect;
+        Panel.Width = Math.Round(width);
+        Panel.Height = Math.Round(height);
+        Panel.Margin = new Thickness(Math.Round(left + (free - width) / 2), Math.Round((Root.ActualHeight - height) / 2), 0, 0);
         UpdateSubtitleMargin();
     }
 

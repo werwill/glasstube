@@ -46,28 +46,30 @@ public static class UpdateCheck
 
     /// <summary>
     /// Consulta (si toca, o siempre con <paramref name="force"/>) y, si hay una versión más nueva, pone el aviso encima
-    /// de <paramref name="root"/>.
+    /// de <paramref name="root"/>. Devuelve si la hay (null si no se consultó o falló).
     /// </summary>
-    public static async Task RunAsync(Grid root, bool force = false)
+    public static async Task<bool?> RunAsync(Grid root, bool force = false)
     {
         try
         {
             var state = Load();
-            if (!force && DateTimeOffset.Now - state.LastCheck < TimeSpan.FromDays(1)) return;
+            if (!force && DateTimeOffset.Now - state.LastCheck < TimeSpan.FromDays(1)) return null;
             var latest = await Latest();
             state.LastCheck = DateTimeOffset.Now;
             Save(state);
             if (latest is not { } found || found.Version <= Current)
             {
                 GlasstubeFFI.Log("app", $"versiones: {Current} es la más nueva");
-                return;
+                return false;
             }
             GlasstubeFFI.Log("app", $"versiones: hay {found.Version} (esta es {Current}), instalador {found.Setup?.Name ?? "no encontrado"}");
             Show(root, found);
+            return true;
         }
         catch (Exception error)
         {
             GlasstubeFFI.Log("app", $"versiones: no se pudo consultar ({error.Message})");
+            return null;
         }
     }
 

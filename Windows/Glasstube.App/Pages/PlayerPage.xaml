@@ -31,7 +31,7 @@
             <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Setter Property="Background">
                 <Setter.Value>
-                    <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+                    <SolidColorBrush Color="#8C1C1C20" />
                 </Setter.Value>
             </Setter>
         </Style>
@@ -58,8 +58,15 @@
     <!-- El video ocupa toda la ventana, también detrás de la barra de título (que aquí solo tiene atrás y los botones
          de la ventana). Título arriba a la izquierda con un degradado suave y controles en una cápsula flotante. -->
     <Grid x:Name="Root" Background="Black" PointerMoved="OnPointerActivity" PointerPressed="OnPointerActivity"
-          PointerExited="OnPointerLeft" DoubleTapped="OnDoubleTapped">
-        <SwapChainPanel x:Name="Panel" SizeChanged="OnPanelSizeChanged" CompositionScaleChanged="OnPanelScaleChanged" />
+          PointerExited="OnPointerLeft" DoubleTapped="OnDoubleTapped" SizeChanged="OnRootSizeChanged">
+        <!-- Luz ambiental: la miniatura en unos pocos píxeles, estirada, llena con los colores del video las franjas que
+             el video no ocupa (LayoutVideo) y lo que hay detrás del panel lateral. -->
+        <Grid x:Name="Ambient" IsHitTestVisible="False" Opacity="0">
+            <Grid.OpacityTransition><ScalarTransition Duration="0:0:0.6" /></Grid.OpacityTransition>
+            <Image x:Name="AmbientImage" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Rectangle Fill="#73000000" />
+        </Grid>
+        <SwapChainPanel x:Name="Panel" HorizontalAlignment="Left" VerticalAlignment="Top" SizeChanged="OnPanelSizeChanged" CompositionScaleChanged="OnPanelScaleChanged" />
 
         <!-- Cargando / esperando datos -->
         <StackPanel x:Name="Spinner" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" IsHitTestVisible="False">
@@ -84,7 +91,7 @@
                     </LinearGradientBrush>
                 </Grid.Background>
                 <StackPanel Margin="56,6,160,0" VerticalAlignment="Top">
-                    <TextBlock x:Name="TitleText" Foreground="White" FontSize="16" FontWeight="SemiBold"
+                    <TextBlock x:Name="TitleText" Foreground="White" FontSize="20" FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock x:Name="ChannelText" Foreground="#CCFFFFFF" Style="{StaticResource CaptionTextBlockStyle}"
                                TextTrimming="CharacterEllipsis" />
@@ -95,7 +102,7 @@
             <!-- Cuenta (PlayerPage.Account.cs): suscribirse y me gusta / no me gusta con los votos de Return YouTube
                  Dislike, bajo el título (la barra de título, encima, arrastra la ventana). -->
             <StackPanel x:Name="AccountRow" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left"
-                        VerticalAlignment="Top" Margin="56,60,0,0" Visibility="Collapsed">
+                        VerticalAlignment="Top" Margin="56,68,0,0" Visibility="Collapsed">
                 <Button x:Name="ChannelButton" Style="{StaticResource GlassPillStyle}" Padding="4,0,14,0" Click="OnChannelClick"
                         AutomationProperties.Name="Ver el canal" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -111,9 +118,9 @@
                         <TextBlock x:Name="SubscribeText" Text="Suscribirse" FontWeight="SemiBold" FontSize="13" />
                     </StackPanel>
                 </Button>
-                <Border CornerRadius="17" BorderThickness="1" BorderBrush="#26FFFFFF" Height="34">
+                <Border CornerRadius="17" BorderThickness="1" BorderBrush="#33FFFFFF" Height="34">
                     <Border.Background>
-                        <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+                        <SolidColorBrush Color="#8C1C1C20" />
                     </Border.Background>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="LikeButton" Style="{StaticResource CapsuleButtonStyle}" Width="NaN" Height="32"
@@ -137,11 +144,11 @@
 
             <!-- Cápsula de controles -->
             <Border x:Name="Capsule" VerticalAlignment="Bottom" Margin="24,0,24,24" Padding="12,4,12,6" CornerRadius="16"
-                    BorderThickness="1" BorderBrush="#26FFFFFF" MaxWidth="1400"
+                    BorderThickness="1" BorderBrush="#33FFFFFF" MaxWidth="1400"
                     PointerEntered="OnCapsulePointerEntered" PointerExited="OnCapsulePointerExited"
                     SizeChanged="OnCapsuleSizeChanged">
                 <Border.Background>
-                    <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+                    <SolidColorBrush Color="#8C1C1C20" />
                 </Border.Background>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -272,7 +279,7 @@
                 Margin="0,0,24,132" CornerRadius="18" Padding="16,8" Foreground="White" BorderThickness="1"
                 BorderBrush="#33FFFFFF" Click="OnSkip" ToolTipService.ToolTip="Saltar (S)">
             <Button.Background>
-                <AcrylicBrush TintColor="#000000" TintOpacity="0.5" TintLuminosityOpacity="0.3" FallbackColor="#E6202020" />
+                <SolidColorBrush Color="#8C1C1C20" />
             </Button.Background>
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <FontIcon Glyph="&#xE893;" FontSize="13" />
@@ -282,10 +289,10 @@
 
         <!-- Aviso breve arriba al centro: velocidad, subtítulos, calidad… (ShowOsd). -->
         <Border x:Name="Osd" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,64,0,0" Padding="16,8"
-                CornerRadius="12" BorderThickness="1" BorderBrush="#26FFFFFF" Opacity="0" IsHitTestVisible="False">
+                CornerRadius="12" BorderThickness="1" BorderBrush="#33FFFFFF" Opacity="0" IsHitTestVisible="False">
             <Border.OpacityTransition><ScalarTransition Duration="0:0:0.2" /></Border.OpacityTransition>
             <Border.Background>
-                <AcrylicBrush TintColor="#000000" TintOpacity="0.55" TintLuminosityOpacity="0.35" FallbackColor="#E6202020" />
+                <SolidColorBrush Color="#8C1C1C20" />
             </Border.Background>
             <TextBlock x:Name="OsdText" Foreground="White" FontSize="15" FontWeight="SemiBold" />
         </Border>
@@ -293,10 +300,10 @@
         <!-- Panel lateral (PlayerPage.Panel.cs): Descripción, Comentarios y Sugeridos. Flota a la derecha, de la barra
              de título a la base; la cápsula se estrecha para que no la tape. Botón o tecla P. -->
         <Border x:Name="SidePanel" Visibility="Collapsed" HorizontalAlignment="Right" Width="400" Margin="0,48,24,24"
-                CornerRadius="16" BorderThickness="1" BorderBrush="#26FFFFFF"
+                CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF"
                 PointerEntered="OnSidePanelPointerEntered" PointerExited="OnSidePanelPointerExited">
             <Border.Background>
-                <AcrylicBrush TintColor="#000000" TintOpacity="0.6" TintLuminosityOpacity="0.4" FallbackColor="#F0202020" />
+                <AcrylicBrush TintColor="#101014" TintOpacity="0.35" TintLuminosityOpacity="0.45" FallbackColor="#E61C1C20" />
             </Border.Background>
             <Grid>
                 <Grid.RowDefinitions>
@@ -412,7 +419,7 @@
         <Border x:Name="UpNextCard" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Width="360" Margin="0,0,24,132" Padding="12" CornerRadius="14" BorderThickness="1" BorderBrush="#33FFFFFF">
             <Border.Background>
-                <AcrylicBrush TintColor="#000000" TintOpacity="0.6" TintLuminosityOpacity="0.4" FallbackColor="#F0202020" />
+                <SolidColorBrush Color="#B31C1C20" />
             </Border.Background>
             <StackPanel Spacing="10">
                 <TextBlock x:Name="UpNextCountdown" Text="Siguiente en 5" Foreground="#CCFFFFFF" FontSize="12" />
@@ -458,5 +465,26 @@
                 <FontIcon Glyph="&#xEE47;" FontSize="16" />
             </Button>
         </Grid>
+
+        <!-- Burbuja al pasar el ratón por la barra de progreso: el cuadro del storyboard, el minuto y el capítulo
+             (PlayerPage.Scrub.cs). Va fuera de la cápsula, que recorta lo que sale de sus esquinas. -->
+        <Canvas x:Name="ScrubLayer" IsHitTestVisible="False">
+            <Border x:Name="ScrubBubble" Visibility="Collapsed" CornerRadius="10" BorderThickness="1" BorderBrush="#40FFFFFF"
+                    Background="#E6141414" Padding="3">
+                <StackPanel Spacing="4">
+                    <Border x:Name="ScrubFrameHost" CornerRadius="7" Width="192" Height="108" Background="#FF000000">
+                        <Canvas x:Name="ScrubFrame">
+                            <Image x:Name="ScrubImage" Stretch="Fill">
+                                <Image.RenderTransform><CompositeTransform x:Name="ScrubTransform" /></Image.RenderTransform>
+                            </Image>
+                        </Canvas>
+                    </Border>
+                    <TextBlock x:Name="ScrubChapter" Foreground="#CCFFFFFF" FontSize="12" HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="186" Visibility="Collapsed" />
+                    <TextBlock x:Name="ScrubTime" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,0,0,3" />
+                </StackPanel>
+            </Border>
+        </Canvas>
     </Grid>
 </Page>

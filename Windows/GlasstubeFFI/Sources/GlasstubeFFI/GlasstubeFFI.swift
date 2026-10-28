@@ -121,7 +121,7 @@ public func gt_shutdown() {
     Task { @MainActor in Engine.shared = nil }
 }
 
-let version = "0.5.0"
+let version = "0.6.0"
 
 @_cdecl("gt_version")
 public func gt_version() -> UnsafeMutablePointer<CChar>? {
@@ -338,6 +338,10 @@ func resolveStream(videoId: String, maxHeight: Int32, audioTrackId: String?, rep
         var options = ResolveOptions()
         options.maxHeight = maxHeight > 0 ? Int(maxHeight) : 1080
         options.codecOrder = [.vp9, .avc, .av1]
+        // Si ningún cliente anónimo da el video, la rotación prueba los de TV con la cuenta (restricción de edad). Las
+        // cabeceras se piden solo entonces: renovar el token cuesta una petición.
+        let session = engine.session
+        options.accountHeaders = { (try? await session.authorizationHeaders()) ?? [:] }
         log("resolver \(videoId) (hasta \(options.maxHeight ?? 0)p)…")
         let start = Date()
         let report = await engine.service.formatInfo(videoId: videoId, options: options)

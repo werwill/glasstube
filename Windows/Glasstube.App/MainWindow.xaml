@@ -11,6 +11,7 @@
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Modifiers="Control" Key="K" Invoked="OnSearchKey" />
             <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackKey" />
+            <KeyboardAccelerator Modifiers="Control" Key="V" Invoked="OnPasteKey" />
         </Grid.KeyboardAccelerators>
 
         <Frame x:Name="ContentFrame" Navigated="OnNavigated" />
@@ -24,10 +25,10 @@
             HorizontalAlignment="Left"
             Margin="8,48,0,8"
             Width="240"
-            CornerRadius="12"
+            CornerRadius="16"
             BorderThickness="1"
-            BorderBrush="{ThemeResource SurfaceStrokeColorFlyoutBrush}"
-            Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
+            BorderBrush="{ThemeResource GlassCardStrokeBrush}"
+            Background="{ThemeResource GlassCardBrush}">
             <Border.Shadow><ThemeShadow /></Border.Shadow>
             <Grid Padding="0,4">
                 <Grid.RowDefinitions>
@@ -35,6 +36,8 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+                <Rectangle x:Name="PaneAcrylic" Grid.RowSpan="3" Margin="0,-4" Visibility="Collapsed"
+                           Fill="{ThemeResource AcrylicInAppFillColorDefaultBrush}" />
 
                 <ListView x:Name="NavList" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged">
                     <ListViewItem Tag="home" x:Name="HomeItem" ToolTipService.ToolTip="Inicio">
@@ -190,5 +193,9 @@
                 </Border>
             </Grid>
         </Grid>
+
+        <!-- Avisos breves (un enlace pegado que no es de YouTube…). -->
+        <InfoBar x:Name="Toast" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24" MaxWidth="520"
+                 IsOpen="False" IsClosable="True" Severity="Informational" />
     </Grid>
 </Window>

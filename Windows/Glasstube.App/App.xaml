@@ -9,6 +9,19 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
 
+            <!-- Tarjetas de vidrio (panel lateral, vista previa): un velo claro y un borde fino sobre el fondo de la ventana,
+                 que ya trae el desenfoque. -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="GlassCardBrush" Color="#14FFFFFF" />
+                    <SolidColorBrush x:Key="GlassCardStrokeBrush" Color="#24FFFFFF" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="GlassCardBrush" Color="#8CFFFFFF" />
+                    <SolidColorBrush x:Key="GlassCardStrokeBrush" Color="#47FFFFFF" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
             <!-- Botón sin fondo de la barra de título (atrás, menú, cuenta): solo se ve el fondo al pasar el ratón. -->
             <Style x:Key="TitleBarButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
                 <Setter Property="Background" Value="Transparent" />

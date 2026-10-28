@@ -37,9 +37,12 @@ final class SubscriptionsState {
     var seen: Set<String> = []
     /// Foto de cada canal (de las pestañas), para las tarjetas.
     var avatars: [String: String] = [:]
+    /// Sube con cada `reset`: una respuesta de la cuenta anterior que llega después no toca el estado ni se entrega.
+    var generation = 0
 
     /// Otra cuenta: la continuación y los vistos eran de la anterior.
     func reset() {
+        generation += 1
         continuation = nil
         seen = []
     }
@@ -123,13 +126,15 @@ public func gt_subscriptions(_ callback: GTCallback, _ context: UnsafeMutableRaw
     Task { @MainActor in
         do {
             let engine = try Engine.require()
+            let state = SubscriptionsState.shared
+            let started = state.generation
             _ = try? await engine.session.load()
             let data = try await engine.service.rawRequest("browse", surface: .tv, fields: ["browseId": "FEsubscriptions"],
                                                            authenticated: true)
+            guard started == state.generation else { throw FFIError("cambió la cuenta") }
             let page = try await YouTubeService.parsePage(data, surface: .tv, api: .browse, kind: .subscriptions,
                                                           looseTitle: "Suscripciones")
             let channels = subscribedChannels(data)
-            let state = SubscriptionsState.shared
             state.seen = []
             state.continuation = page.continuation
             for channel in channels { if let avatar = channel.avatar { state.avatars[channel.id] = avatar } }
@@ -158,7 +163,9 @@ public func gt_subscriptions_more(_ callback: GTCallback, _ context: UnsafeMutab
             guard let continuation = state.continuation else {
                 return reply.ok(FeedPage(items: [], hasMore: false, signedIn: true))
             }
+            let started = state.generation
             let page = try await engine.service.continuePage(continuation)
+            guard started == state.generation else { throw FFIError("cambió la cuenta") }
             state.continuation = page.continuation
             reply.ok(FeedPage(items: state.cards(page), hasMore: page.continuation != nil, notice: page.notice, signedIn: true))
         } catch {

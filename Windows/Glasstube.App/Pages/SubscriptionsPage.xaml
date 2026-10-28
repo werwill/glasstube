@@ -55,6 +55,12 @@
 
             <ListView x:Name="List" Grid.Row="2" ItemsSource="{x:Bind Groups.View, Mode=OneWay}" SelectionMode="Single"
                       SelectionChanged="OnSelectionChanged" DoubleTapped="OnListDoubleTapped" Padding="0,0,0,12">
+                <!-- El video elegido, con el acento translúcido sobre el vidrio (como en la maqueta). -->
+                <ListView.Resources>
+                    <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="{ThemeResource SystemAccentColor}" Opacity="0.28" />
+                    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="{ThemeResource SystemAccentColor}" Opacity="0.36" />
+                    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="{ThemeResource SystemAccentColor}" Opacity="0.22" />
+                </ListView.Resources>
                 <ListView.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.HeaderTemplate>
@@ -80,7 +86,7 @@
                             </Grid.ColumnDefinitions>
                             <Ellipse Width="8" Height="8" Fill="{ThemeResource AccentFillColorDefaultBrush}" VerticalAlignment="Center"
                                      Visibility="{x:Bind UnseenVisibility, Mode=OneWay}" />
-                            <Grid Grid.Column="1" Width="112" Height="63" CornerRadius="6"
+                            <Grid Grid.Column="1" Width="112" Height="63" CornerRadius="8"
                                   Background="{ThemeResource ControlFillColorSecondaryBrush}">
                                 <Image Source="{x:Bind Card.ThumbnailImage}" Stretch="UniformToFill" />
                                 <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="4" Padding="4,1" CornerRadius="4"
@@ -114,8 +120,8 @@
         </Grid>
 
         <!-- Vista previa flotante -->
-        <Border Grid.Column="1" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SurfaceStrokeColorFlyoutBrush}"
-                Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
+        <Border Grid.Column="1" CornerRadius="16" BorderThickness="1" BorderBrush="{ThemeResource GlassCardStrokeBrush}"
+                Background="{ThemeResource GlassCardBrush}">
             <Grid>
                 <ScrollViewer x:Name="Preview" Visibility="Collapsed" Padding="24,20">
                     <StackPanel Spacing="14" MaxWidth="760" HorizontalAlignment="Left">
