@@ -265,22 +265,13 @@ public sealed partial class PlayerPage
     void UpdateSubtitleMargin()
     {
         if (player == null || Panel.ActualHeight <= 0) return;
-        var covered = controlsVisible && !IsMini ? Capsule.ActualHeight + Capsule.Margin.Bottom + 12 : 0;
-        var height = Panel.ActualHeight;
-        if (panelOpen && !IsMini)
-        {
-            // Con el panel, los subtítulos van dentro del video (sub-use-margins=no), que queda centrado a la izquierda:
-            // solo cuenta lo que la cápsula tapa de él, y en proporción a su alto.
-            var width = Panel.ActualWidth - (SidePanel.Width + SidePanel.Margin.Right + PanelGap);
-            var videoHeight = Math.Min(height, width / VideoAspect());
-            covered = Math.Max(0, covered - (height - videoHeight) / 2);
-            height = videoHeight;
-        }
-        var margin = Math.Max(22, covered / height * 720);
+        // Lo que la cápsula tapa del video (que puede no llegar abajo), en proporción a su alto.
+        var capsuleTop = Root.ActualHeight - (Capsule.ActualHeight + Capsule.Margin.Bottom + 12);
+        var covered = controlsVisible && !IsMini ? Math.Max(0, Panel.Margin.Top + Panel.ActualHeight - capsuleTop) : 0;
+        var margin = Math.Max(22, covered / Panel.ActualHeight * 720);
         player.SetProperty("sub-margin-y", Math.Round(margin).ToString(CultureInfo.InvariantCulture));
     }
 
-    /// <summary>Ancho/alto del video, de la etiqueta del formato ("1280x720@30"); 16:9 si no se sabe (HLS).</summary>
     double VideoAspect()
     {
         var match = System.Text.RegularExpressions.Regex.Match(stream?.Video?.Label ?? "", @"^(\d+)x(\d+)");

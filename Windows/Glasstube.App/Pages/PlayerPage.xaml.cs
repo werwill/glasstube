@@ -5,6 +5,7 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Glasstube.Pages;
@@ -167,6 +168,14 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         }
     }
 
+    /// <summary>Luz ambiental con los colores de la miniatura del video (unos 16 px de ancho, estirados).</summary>
+    void ShowAmbient()
+    {
+        if (string.IsNullOrEmpty(video?.Thumbnail)) return;
+        AmbientImage.Source = new BitmapImage(new Uri(video.Thumbnail)) { DecodePixelWidth = 16 };
+        Ambient.Opacity = 1;
+    }
+
     void Start(StreamInfo resolved, double resumeAt)
     {
         stream = resolved;
@@ -183,9 +192,9 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
         player.SetVolume(Volume.Value);
         player.SetSpeed(speed);
         player.SetProperty("sub-font-size", "40"); // el 55 de mpv tapa media imagen con subtítulos largos
+        ShowAmbient();
         UpdateStreamMenus();
-        UpdateSubtitleMargin();
-        UpdateVideoMargin();
+        LayoutVideo();
         var url = resolved.Hls ?? resolved.Video?.Url;
         if (url == null)
         {
@@ -339,8 +348,10 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     void OnPanelSizeChanged(object sender, SizeChangedEventArgs e)
     {
         Resize();
-        UpdateVideoMargin();
+        UpdateSubtitleMargin();
     }
+
+    void OnRootSizeChanged(object sender, SizeChangedEventArgs e) => LayoutVideo();
     void OnPanelScaleChanged(SwapChainPanel sender, object args) => Resize();
 
     // MARK: Mostrar y ocultar controles

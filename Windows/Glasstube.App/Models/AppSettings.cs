@@ -11,6 +11,8 @@ public sealed class AppSettings
 {
     /// <summary>"sistema", "claro" u "oscuro".</summary>
     public string Theme { get; set; } = "sistema";
+    /// <summary>Fondo de la ventana: "vidrio" (se ve el escritorio detrás, desenfocado), "mica" u "opaco".</summary>
+    public string Backdrop { get; set; } = "vidrio";
     /// <summary>Al dejar el ratón sobre una tarjeta, la miniatura pasa por los cuadros del video.</summary>
     public bool HoverPreviews { get; set; } = true;
     /// <summary>Títulos y miniaturas de la comunidad (DeArrow). Apagado por omisión, como en SmartTube y la app de Mac.</summary>

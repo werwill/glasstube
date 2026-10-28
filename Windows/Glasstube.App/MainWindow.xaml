@@ -25,10 +25,10 @@
             HorizontalAlignment="Left"
             Margin="8,48,0,8"
             Width="240"
-            CornerRadius="12"
+            CornerRadius="16"
             BorderThickness="1"
-            BorderBrush="{ThemeResource SurfaceStrokeColorFlyoutBrush}"
-            Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
+            BorderBrush="{ThemeResource GlassCardStrokeBrush}"
+            Background="{ThemeResource GlassCardBrush}">
             <Border.Shadow><ThemeShadow /></Border.Shadow>
             <Grid Padding="0,4">
                 <Grid.RowDefinitions>
@@ -36,6 +36,8 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+                <Rectangle x:Name="PaneAcrylic" Grid.RowSpan="3" Margin="0,-4" Visibility="Collapsed"
+                           Fill="{ThemeResource AcrylicInAppFillColorDefaultBrush}" />
 
                 <ListView x:Name="NavList" SelectionMode="Single" SelectionChanged="OnNavSelectionChanged">
                     <ListViewItem Tag="home" x:Name="HomeItem" ToolTipService.ToolTip="Inicio">

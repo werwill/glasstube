@@ -79,8 +79,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        SystemBackdrop = DesktopAcrylicController.IsSupported() ? new DesktopAcrylicBackdrop()
-            : MicaController.IsSupported() ? new MicaBackdrop() : null;
+        ApplyBackdrop();
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -617,6 +616,8 @@ public sealed partial class MainWindow : Window
         Pane.Visibility = !chromeHidden && paneWidth > 0 ? Visibility.Visible : Visibility.Collapsed;
         Pane.Width = paneWidth;
         Pane.Translation = new System.Numerics.Vector3(0, 0, paneOverlayOpen ? 32 : 8);
+        // Encima del contenido hace falta el acrílico (desenfoca lo de abajo); fijo basta el velo de vidrio.
+        PaneAcrylic.Visibility = paneOverlayOpen ? Visibility.Visible : Visibility.Collapsed;
         DismissLayer.Visibility = paneOverlayOpen && !chromeHidden ? Visibility.Visible : Visibility.Collapsed;
         SetPaneLabelsVisible(paneWidth >= PaneOpenWidth);
 
@@ -717,6 +718,15 @@ public sealed partial class MainWindow : Window
     }
 
     void OnThemeChanged(FrameworkElement sender, object args) => UpdateCaptionColors();
+
+    /// <summary>El fondo de Configuración: Vidrio, Mica u Opaco (sin acrílico ni Mica, Windows 10, queda Mica o nada).</summary>
+    public void ApplyBackdrop()
+    {
+        var backdrop = AppSettings.Shared.Backdrop;
+        SystemBackdrop = backdrop == "mica" && MicaController.IsSupported() ? new MicaBackdrop()
+            : DesktopAcrylicController.IsSupported() ? new GlassBackdrop(opaque: backdrop == "opaco")
+            : MicaController.IsSupported() ? new MicaBackdrop() : null;
+    }
 
     /// <summary>
     /// El tema de Configuración ("sistema", "claro", "oscuro"). `--tema` (capturas) manda sobre él: ya fijó el de la

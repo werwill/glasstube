@@ -27,6 +27,8 @@ public sealed partial class SettingsPage : Page
         loading = true;
         ThemeBox.SelectedItem = ThemeBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Prefs.Theme)
                                 ?? ThemeBox.Items[0];
+        BackdropBox.SelectedItem = BackdropBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Prefs.Backdrop)
+                                   ?? BackdropBox.Items[0];
         HoverSwitch.IsOn = Prefs.HoverPreviews;
         QualityBox.SelectedItem = QualityBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Player.Quality.ToString())
                                   ?? QualityBox.Items[0];
@@ -89,6 +91,14 @@ public sealed partial class SettingsPage : Page
         Prefs.Theme = theme;
         Prefs.Save();
         App.Window?.ApplyTheme();
+    }
+
+    void OnBackdropChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (loading || BackdropBox.SelectedItem is not ComboBoxItem { Tag: string backdrop }) return;
+        Prefs.Backdrop = backdrop;
+        Prefs.Save();
+        App.Window?.ApplyBackdrop();
     }
 
     void OnHoverToggled(object sender, RoutedEventArgs e)
