@@ -163,7 +163,7 @@ struct BrowseView: View {
             case .shorts:
                 loaded = try await model.service.shorts()
             }
-            withAnimation(.smooth) { page = loaded }
+            withAnimation(Motion.animation(.smooth)) { page = loaded }
             // Capturas: la tarjeta N de la primera fila con la vista previa activa (`GTHoverIndex`).
             if let index = Automation.shared.hoverIndex, let first = groups.first, first.items.indices.contains(index) {
                 Automation.shared.forcedHoverId = first.items[index].videoId

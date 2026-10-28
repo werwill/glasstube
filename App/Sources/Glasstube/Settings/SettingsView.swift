@@ -1,8 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Ajustes: escena `Settings` con `TabView` y `Form` agrupado, con las pestañas de los presenters de SmartTube. En
-/// esta fase funcionan Interfaz, Reproductor, Subtítulos y SponsorBlock; el resto explica cuándo llega.
+/// Ajustes: escena `Settings` con `TabView` y `Form` agrupado, con las pestañas de los presenters de SmartTube. Desde la
+/// fase 5b funcionan todas (Respaldo está en `Backup/BackupViews.swift`).
 struct SettingsView: View {
     /// La pestaña abierta se recuerda (y se puede fijar al lanzar con `-settingsTab player`).
     @AppStorage("settingsTab") private var tab = "general"
@@ -95,13 +95,22 @@ struct BlockedSettings: View {
     }
 }
 
-/// Ajustes › General › Actualizaciones: el aviso de versiones nuevas y lo que consulta.
+/// Ajustes › General › Actualizaciones: Sparkle (fase 5b) o, en una compilación sin su clave, el aviso de GitHub.
 struct UpdateSettingsSection: View {
     @Environment(AppModel.self) private var model
     @Environment(AppSettings.self) private var settings
     @ViewState private var result: UpdateChecker.Result?
 
     var body: some View {
+        if let sparkle = model.sparkle {
+            SparkleSettingsSection(sparkle: sparkle, releasesPage: model.updates.releasesPage)
+        } else {
+            noticeSection
+        }
+    }
+
+    @ViewBuilder
+    private var noticeSection: some View {
         @Bindable var settings = settings
         let updates = model.updates
         Section {
@@ -142,6 +151,41 @@ struct UpdateSettingsSection: View {
         case .failed: "No se pudo consultar GitHub; revisa la conexión"
         case .unconfigured, nil: nil
         }
+    }
+}
+
+/// Las actualizaciones con Sparkle: búsqueda automática, descarga automática y «Buscar ahora».
+struct SparkleSettingsSection: View {
+    let sparkle: SparkleUpdater
+    let releasesPage: URL?
+
+    var body: some View {
+        Section {
+            Toggle("Buscar actualizaciones automáticamente", isOn: Binding(get: { sparkle.automaticallyChecks },
+                                                                          set: { sparkle.setAutomaticallyChecks($0) }))
+            Toggle("Descargarlas e instalarlas solas", isOn: Binding(get: { sparkle.automaticallyDownloads },
+                                                                   set: { sparkle.setAutomaticallyDownloads($0) }))
+                .disabled(!sparkle.automaticallyChecks)
+            LabeledContent {
+                Button("Buscar ahora") { sparkle.checkForUpdates() }
+                    .disabled(!sparkle.canCheck)
+            } label: {
+                Text(lastCheckText)
+                if let found = sparkle.foundVersion { Text("Hay una versión nueva: \(found)") }
+            }
+            if let releasesPage {
+                Link("Ver todas las versiones en GitHub", destination: releasesPage)
+            }
+        } header: {
+            Text("Actualizaciones")
+        } footer: {
+            Text("Una vez al día, Glasstube lee la lista de versiones (\(sparkle.feedURL.flatMap { URL(string: $0)?.host() } ?? "GitHub")) y, si hay una nueva, ofrece instalarla sin salir de la app. Cada versión va firmada (EdDSA) y con el mismo certificado que esta: si no, no se instala. La consulta no lleva datos tuyos ni de lo que ves.")
+        }
+    }
+
+    private var lastCheckText: String {
+        guard let date = sparkle.lastCheck else { return "Todavía no se ha buscado" }
+        return "Última búsqueda: \(date.formatted(.relative(presentation: .named)))"
     }
 }
 
@@ -304,46 +348,6 @@ struct SponsorBlockSettings: View {
             }
         }
         .formStyle(.grouped)
-    }
-}
-
-struct BackupSettings: View {
-    @Environment(AppModel.self) private var model
-    @Environment(LocalLibrary.self) private var library
-    @Environment(ChannelGroupStore.self) private var groups
-    @ViewState private var importing = false
-    @ViewState private var lastImport: String?
-
-    var body: some View {
-        Form {
-            Section("Datos de esta Mac") {
-                LabeledContent("Historial", value: "\(library.history.count) videos")
-                LabeledContent("Ver más tarde", value: "\(library.watchLater.count) videos")
-                LabeledContent("Grupos de canales", value: "\(groups.groups.count)")
-                LabeledContent("Suscripciones de esta Mac", value: "\(groups.subscriptions.count) canales")
-                LabeledContent("Archivos", value: "~/Library/Application Support/Glasstube/library.json y groups.json")
-            }
-            Section {
-                LabeledContent {
-                    Button("Importar…") { importing = true }
-                } label: {
-                    Text("Importar grupos de canales")
-                    Text(lastImport ?? "Un archivo de PocketTube (.json), de GrayJay (subscription_groups) o de NewPipe (suscripciones .json)")
-                }
-            } header: {
-                Text("Importar")
-            } footer: {
-                Text("Los mismos formatos que acepta SmartTube. De PocketTube y GrayJay llegan grupos (uno con el mismo nombre recibe los canales que le falten); de NewPipe, las suscripciones, que pasan a Suscripciones de esta Mac.")
-            }
-            Section {
-                Text("Exportar e importar un respaldo completo de Glasstube (y el de SmartTube) llega en la fase 5b.")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .formStyle(.grouped)
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
-            if case .success(let url) = result { lastImport = model.importGroups(from: url) }
-        }
     }
 }
 

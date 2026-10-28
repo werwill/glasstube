@@ -197,6 +197,10 @@ final class Automation {
             if defaults.string(forKey: "GTPlay") == nil { scheduleKeys() }
             phase4(model)
             phase5a(model)
+            phase5b(model)
+            updates(model)
+            tvMode(model)
+            accessibilityAudit(model)
             if defaults.bool(forKey: "GTOpenSettings") {
                 Task {
                     try? await Task.sleep(for: .seconds(2))
@@ -656,6 +660,184 @@ extension Automation {
                 model.groupPrompt = .create(nil)
                 try? await Task.sleep(for: .seconds(1))
                 self.forceActivate()
+            }
+        }
+    }
+}
+
+// MARK: - Fase 5b: respaldo
+
+extension Automation {
+    /// Registro del respaldo (`GTRegistroRespaldo` o cualquier opción `GTRespaldo…`).
+    var logsBackup: Bool {
+        let defaults = UserDefaults.standard
+        return defaults.bool(forKey: "GTRegistroRespaldo") || defaults.bool(forKey: "GTVerbose")
+            || ["GTRespaldoExportar", "GTRespaldoAbrir", "GTRespaldoRestaurar"].contains { defaults.string(forKey: $0) != nil }
+            || defaults.bool(forKey: "GTRespaldoiCloud")
+    }
+
+    /// - `GTRespaldoExportar ruta`: escribe ahí el respaldo de lo que haya (con `GTGruposEnMemoria` y
+    ///   `GTBibliotecaEnMemoria`, solo lo que pongan las demás opciones) y anota qué lleva.
+    /// - `GTRespaldoRestaurar ruta`: restaura todas las partes de ese ZIP (de Glasstube o de SmartTube), sin hoja.
+    /// - `GTRespaldoAbrir ruta`: abre Ajustes › Respaldo con la hoja «Restaurar» de ese ZIP (capturas).
+    /// - `GTRespaldoiCloud`: guarda el respaldo en iCloud Drive al arrancar (con `GTiCloudCarpeta ruta`, en esa carpeta).
+    func phase5b(_ model: AppModel) {
+        let defaults = UserDefaults.standard
+        if let path = defaults.string(forKey: "GTRespaldoRestaurar") {
+            let url = URL(fileURLWithPath: path)
+            model.backup.open(url)
+            if let pending = model.backup.pending {
+                NSLog("Glasstube respaldo: \(url.lastPathComponent): \(pending.file.source), partes \(pending.file.contents.sections.map { "\($0.rawValue) \(pending.file.contents.count($0))" }.joined(separator: ", "))")
+                model.backup.restorePending(sections: Set(BackupSection.allCases))
+                NSLog("Glasstube respaldo: grupos \(model.groups.groups.map { "\($0.title) (\($0.channels.count))" }.joined(separator: ", ")); suscripciones \(model.groups.subscriptions.count); bloqueados \(model.library.blockedChannels.count); historial \(model.library.history.count); cola \(model.queue.items.count)")
+            }
+        }
+        if let path = defaults.string(forKey: "GTRespaldoExportar") {
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                do {
+                    let data = try model.backup.makeArchive()
+                    try data.write(to: URL(fileURLWithPath: path), options: .atomic)
+                    let contents = try BackupArchive.read(data).contents
+                    NSLog("Glasstube respaldo: exportado \(data.count) bytes → \(path): \(contents.sections.map { "\($0.rawValue) \(contents.count($0))" }.joined(separator: ", "))")
+                } catch {
+                    NSLog("Glasstube respaldo: no se pudo exportar: \(error)")
+                }
+            }
+        }
+        if defaults.bool(forKey: "GTRespaldoiCloud") {
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                let url = model.backup.backupToICloud()
+                NSLog("Glasstube respaldo: iCloud → \(url?.path ?? "no"); en la carpeta: \(model.backup.iCloudBackups().map(\.lastPathComponent))")
+            }
+        }
+        if let path = defaults.string(forKey: "GTRespaldoAbrir") {
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                UserDefaults.standard.set("backup", forKey: "settingsTab")
+                self.press("cmd+,")
+                try? await Task.sleep(for: .seconds(1.5))
+                model.backup.open(URL(fileURLWithPath: path))
+                try? await Task.sleep(for: .seconds(1))
+                NSApp.perform(NSSelectorFromString("activateIgnoringOtherApps:"), with: NSNumber(value: true))
+                if let settings = NSApp.windows.last(where: { $0.isVisible && $0.canBecomeKey && $0.identifier?.rawValue != "main" && $0.title != "Glasstube" }) {
+                    settings.makeKeyAndOrderFront(nil)
+                    if let file = defaults.string(forKey: "GTWindowFile") {
+                        try? String(settings.windowNumber).write(toFile: file, atomically: true, encoding: .utf8)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Fase 5b: actualizaciones
+
+extension Automation {
+    /// Registro de Sparkle (`GTRegistroActualizaciones`, `GTActualizar` o `GTVerbose`).
+    var logsUpdates: Bool {
+        let defaults = UserDefaults.standard
+        return defaults.bool(forKey: "GTRegistroActualizaciones") || defaults.object(forKey: "GTActualizar") != nil
+            || defaults.bool(forKey: "GTVerbose")
+    }
+
+    /// - `GTActualizar N`: a los N s, Sparkle busca una versión sin ventana (con `-SUAutomaticallyUpdate YES` la baja y
+    ///   la instala al salir; `GTSalirTras M` cierra la app M s después). `GTActualizacionesFeed url`: otro appcast.
+    func updates(_ model: AppModel) {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: "GTActualizar") != nil else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(max(1, defaults.double(forKey: "GTActualizar"))))
+            guard let sparkle = model.sparkle else {
+                NSLog("Glasstube actualizaciones: esta compilación no lleva Sparkle (falta SUFeedURL o SUPublicEDKey)")
+                return
+            }
+            NSLog("Glasstube actualizaciones: buscando en \(sparkle.feedURL ?? "?") (versión \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") ?? "?"))")
+            sparkle.checkInBackground()
+            if defaults.object(forKey: "GTSalirTras") != nil {
+                try? await Task.sleep(for: .seconds(defaults.double(forKey: "GTSalirTras")))
+                NSLog("Glasstube actualizaciones: cerrando la app")
+                NSApp.terminate(nil)
+            }
+        }
+    }
+}
+
+// MARK: - Fase 5b: modo TV
+
+extension Automation {
+    /// Registro del modo TV (`GTRegistroTV`, `GTTV` o `GTVerbose`).
+    var logsTV: Bool {
+        let defaults = UserDefaults.standard
+        return defaults.bool(forKey: "GTRegistroTV") || defaults.bool(forKey: "GTTV") || defaults.bool(forKey: "GTVerbose")
+    }
+
+    /// - `GTTV`: entra al modo TV al arrancar (`GTTVSinPantallaCompleta`: sin pasar a pantalla completa, para capturar la
+    ///   ventana a su tamaño). Las teclas de `GTKeys` llegan al modo TV como las del teclado; `GTTVEstado N` anota a los
+    ///   N s dónde está el foco.
+    func tvMode(_ model: AppModel) {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: "GTTV") else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1.2))
+            model.enterTVMode()
+            if defaults.object(forKey: "GTTVEstado") != nil {
+                for delay in String(describing: defaults.object(forKey: "GTTVEstado")!).split(separator: ",").compactMap({ Double($0) }) {
+                    Task {
+                        try? await Task.sleep(for: .seconds(delay))
+                        NSLog("Glasstube modo TV: a los \(delay) s: \(model.tvMode?.summary ?? "fuera del modo TV"), reproductor \(model.player.map { "\($0.item.videoId ?? "?") en \(String(format: "%.1f", $0.position)) s" } ?? "no")")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Fase 5b: auditoría de accesibilidad
+
+extension Automation {
+    /// `GTAuditarAccesibilidad N[,M…]`: a los N s recorre el árbol de accesibilidad (lo que lee VoiceOver) de la ventana
+    /// principal, o de la de Ajustes si se abrió con `GTOpenSettings`, y anota cuántos elementos hay de cada rol y los
+    /// botones, casillas, menús e imágenes sin nombre (VoiceOver diría solo «botón»).
+    func accessibilityAudit(_ model: AppModel) {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "GTRegistroAccesibilidad") {
+            // Para nombrar las capturas: qué ajustes de Accesibilidad › Pantalla ve la app.
+            let workspace = NSWorkspace.shared
+            var state: [String] = []
+            if workspace.accessibilityDisplayShouldReduceTransparency { state.append("sin-transparencia") }
+            if workspace.accessibilityDisplayShouldIncreaseContrast { state.append("contraste") }
+            if workspace.accessibilityDisplayShouldReduceMotion || defaults.bool(forKey: "GTReducirMovimiento") { state.append("sin-movimiento") }
+            if workspace.accessibilityDisplayShouldDifferentiateWithoutColor { state.append("sin-color") }
+            NSLog("Glasstube accesibilidad: estado=\(state.isEmpty ? "normal" : state.joined(separator: "+"))")
+        }
+        guard let raw = defaults.string(forKey: "GTAuditarAccesibilidad") else { return }
+        for delay in raw.split(separator: ",").compactMap({ Double($0) }) {
+            Task {
+                try? await Task.sleep(for: .seconds(delay))
+                let window = defaults.bool(forKey: "GTOpenSettings")
+                    ? NSApp.windows.last { $0.isVisible && $0 !== model.mainWindow && $0.canBecomeKey } : model.mainWindow
+                guard let root = window else { return }
+                var roles: [String: Int] = [:]
+                var unnamed: [String] = []
+                func visit(_ element: Any, path: String, depth: Int) {
+                    guard depth < 60, let node = element as? NSAccessibilityProtocol else { return }
+                    let role = node.accessibilityRole()?.rawValue ?? "?"
+                    let label = [node.accessibilityLabel(), node.accessibilityTitle(), (node.accessibilityValue() as? String)]
+                        .compactMap { $0 }.first { !$0.isEmpty }
+                    roles[role, default: 0] += 1
+                    let actionable: Set<String> = ["AXButton", "AXCheckBox", "AXMenuButton", "AXPopUpButton", "AXImage", "AXSlider", "AXRadioButton", "AXLink"]
+                    if actionable.contains(role), label == nil, !node.isAccessibilityElement() == false {
+                        unnamed.append("\(path)/\(role)")
+                    }
+                    let here = label.map { "\(role)«\($0.prefix(30))»" } ?? role
+                    for child in node.accessibilityChildren() ?? [] { visit(child, path: depth < 6 ? "\(path)/\(here)" : path, depth: depth + 1) }
+                }
+                visit(root, path: "", depth: 0)
+                let summary = roles.sorted { $0.value > $1.value }.prefix(14).map { "\($0.key) \($0.value)" }.joined(separator: ", ")
+                NSLog("Glasstube accesibilidad a los \(delay) s («\(root.title)»): \(summary)")
+                NSLog("Glasstube accesibilidad: \(unnamed.count) sin nombre\(unnamed.isEmpty ? "" : ":\n" + unnamed.prefix(40).joined(separator: "\n"))")
             }
         }
     }

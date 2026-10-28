@@ -137,7 +137,8 @@ final class MiniPanel: NSPanel {
         let bounds = screen.visibleFrame.insetBy(dx: MiniPlayerController.margin, dy: MiniPlayerController.margin)
         let target = Self.snapped(frame, in: bounds)
         guard target != frame else { return }
-        if animated {
+        // Con «Reducir movimiento», la ventana se pega al borde sin deslizarse.
+        if animated, !Motion.isReduced {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.25
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)

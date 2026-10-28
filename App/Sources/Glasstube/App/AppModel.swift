@@ -141,14 +141,21 @@ final class AppModel {
     /// Control remoto desde el teléfono (Lounge) y Spotlight (fase 4).
     @ObservationIgnored private(set) var remote: RemoteControl!
     @ObservationIgnored let spotlight: SpotlightIndex
-    /// Aviso de versiones nuevas publicadas en GitHub.
+    /// Aviso de versiones nuevas publicadas en GitHub: solo si la app no lleva Sparkle (ver `sparkle`).
     let updates: UpdateChecker
+    /// Actualizaciones dentro de la app (fase 5b), si el `Info.plist` trae el appcast y la clave pública.
+    /// `-GTSinActualizaciones`: ni Sparkle ni el aviso (pruebas y capturas).
+    let sparkle: SparkleUpdater?
+    /// Respaldo: exportar e importar, iCloud Drive y otras apps (fase 5b).
+    @ObservationIgnored private(set) var backup: BackupService!
     /// Volumen del reproductor (0…1); se conserva de un video al siguiente (el teléfono lo cambia aunque no haya video).
     @ObservationIgnored private(set) var volume: Double = 1
 
     /// El modelo de la app, para lo que llega de macOS al delegado (URL, Spotlight, Dock, Servicios).
     @ObservationIgnored nonisolated(unsafe) static weak var current: AppModel?
 
+    /// El modo TV (fase 5b) mientras no es nil: ocupa la ventana a pantalla completa, debajo del reproductor.
+    private(set) var tvMode: TVMode?
     /// El reproductor ocupa la ventana mientras no es nil (y `playerPresentation` es `.full`).
     var player: PlayerModel?
     private(set) var playerPresentation = PlayerPresentation.full
@@ -206,20 +213,46 @@ final class AppModel {
         deArrow = DeArrowStore(settings: settings)
         spotlight = SpotlightIndex(settings: settings)
         updates = UpdateChecker(settings: settings)
+        sparkle = SparkleUpdater.isConfigured() && !UserDefaults.standard.bool(forKey: "GTSinActualizaciones")
+            ? SparkleUpdater(settings: settings) : nil
         settings.applyAppearance()
         accounts.start()
         remote = RemoteControl(app: self)
+        backup = BackupService(app: self)
         Self.current = self
         Automation.shared.attach(to: self)
+    }
+
+    /// «Buscar actualizaciones…» del menú de la app: Sparkle con su ventana o, sin él, la consulta a GitHub (con aviso).
+    func checkForUpdates() {
+        if let sparkle {
+            sparkle.checkForUpdates()
+            return
+        }
+        Task {
+            switch await updates.check() {
+            case .available: break // el aviso sale abajo a la derecha
+            case .upToDate: show(banner: "Tienes la versión más reciente de Glasstube")
+            case .failed: show(banner: "No se pudo consultar GitHub; revisa la conexión")
+            case .unconfigured: show(banner: "Esta compilación no busca versiones nuevas (no se empaquetó con Scripts/package-app.sh)")
+            }
+        }
     }
 
     /// Ya corre el bucle de la app: se busca una versión nueva si toca y el control remoto se conecta si estaba activado
     /// (como SmartTube, un poco después del arranque para no competir con la primera página).
     func didFinishLaunching() {
-        updates.checkIfDue()
+        if let sparkle {
+            sparkle.start()
+        } else if !UserDefaults.standard.bool(forKey: "GTSinActualizaciones") {
+            updates.checkIfDue()
+        }
         Task {
             try? await Task.sleep(for: .seconds(1.5))
             remote.startIfEnabled()
+            // La copia diaria en iCloud Drive (si está activada), cuando ya cargó lo primero.
+            try? await Task.sleep(for: .seconds(8))
+            backup.backupToICloudIfDue()
         }
     }
 
@@ -392,6 +425,40 @@ final class AppModel {
         case .playlist, .mix:
             item.playlistId.flatMap { URL(string: "https://www.youtube.com/playlist?list=\($0)") }
         }
+    }
+}
+
+// MARK: - Modo TV (fase 5b)
+
+extension AppModel {
+    /// Entra al modo TV: la ventana pasa a pantalla completa (si no lo estaba), el puntero se esconde hasta que se mueva y
+    /// los controles de juego empiezan a contar como teclas.
+    func enterTVMode() {
+        guard tvMode == nil else { return }
+        let tv = TVMode(app: self)
+        tv.controllers.window = { [weak self] in self?.mainWindow }
+        tvMode = tv
+        tv.controllers.start()
+        if let window = mainWindow, !window.styleMask.contains(.fullScreen), !UserDefaults.standard.bool(forKey: "GTTVSinPantallaCompleta") {
+            tv.enteredFullScreen = true
+            window.toggleFullScreen(nil)
+        }
+        NSCursor.setHiddenUntilMouseMoves(true)
+        if Automation.shared.logsTV { NSLog("Glasstube modo TV: dentro (pantalla completa \(tv.enteredFullScreen ? "activada" : "ya estaba o no se pidió"))") }
+    }
+
+    /// Sale del modo TV (Esc en el menú de secciones o el menú Visualización) y deja la ventana como estaba.
+    func exitTVMode() {
+        guard let tv = tvMode else { return }
+        tv.controllers.stop()
+        tvMode = nil
+        if tv.enteredFullScreen, let window = mainWindow, window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil) }
+        focusContent()
+        if Automation.shared.logsTV { NSLog("Glasstube modo TV: fuera") }
+    }
+
+    func toggleTVMode() {
+        if tvMode == nil { enterTVMode() } else { exitTVMode() }
     }
 }
 

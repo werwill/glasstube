@@ -163,7 +163,7 @@ struct GridKeyboardNavigation: ViewModifier {
                 if focused, grid.selection.flatMap(item(at:)) == nil { grid.selection = firstSlot }
             }
             .onChange(of: grid.selection) { _, slot in
-                if let slot { withAnimation(.smooth(duration: 0.25)) { grid.scroll.scrollTo(id: slot) } }
+                if let slot { withAnimation(Motion.animation(.smooth(duration: 0.25))) { grid.scroll.scrollTo(id: slot) } }
                 if Automation.shared.logsKeys { NSLog("Glasstube automation: tarjeta enfocada = \(String(describing: slot)) (foco \(grid.hasFocus))") }
             }
     }

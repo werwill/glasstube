@@ -34,7 +34,7 @@ struct SidePanel: View {
                 }
                 .scrollIndicators(.automatic)
                 .onChange(of: player.panelFocus) { _, focus in
-                    if case .row(let id)? = focus { withAnimation(.smooth(duration: 0.2)) { proxy.scrollTo(id, anchor: .center) } }
+                    if case .row(let id)? = focus { withAnimation(Motion.animation(.smooth(duration: 0.2))) { proxy.scrollTo(id, anchor: .center) } }
                 }
                 // El chat baja solo con cada mensaje nuevo.
                 .onChange(of: player.chat?.messages.last?.id) {

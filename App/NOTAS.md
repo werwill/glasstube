@@ -1,4 +1,4 @@
-# Glasstube.app — notas (fase 1, interfaz; fase 2, cuentas; 15-oct-2026; fase 3, comunidad y reproductor; 16-oct-2026; fase 4, sistema y control remoto; distribución; 18-oct-2026; fase 5a, organizar y descubrir; 23-oct-2026)
+# Glasstube.app — notas (fase 1, interfaz; fase 2, cuentas; 15-oct-2026; fase 3, comunidad y reproductor; 16-oct-2026; fase 4, sistema y control remoto; distribución; 18-oct-2026; fase 5a, organizar y descubrir; 23-oct-2026; fase 5b, respaldo, actualizaciones, accesibilidad y modo TV; 26-oct-2026)
 
 App nativa de macOS que reimplementa SmartTube con el lenguaje Liquid Glass, sobre YTKit (catálogo, streams y cuentas)
 y PlaybackKit (libmpv LGPL propia, SABR). Hecha según `smarttube-re/BRIEF-app-swiftui.md`. Mac de prueba: M1 Pro,
@@ -10,7 +10,9 @@ YouTube del teléfono, `glasstube://`, pegar y arrastrar enlaces, el menú Servi
 [Fase 4](#fase-4-control-remoto-enlaces-y-sistema)). Para descargar desde GitHub Releases: el aviso de versiones nuevas,
 `Scripts/release.sh` (DMG, suma, notas y notarización opcional) y los entitlements (ver [Distribución](#distribución)).
 La fase 5a agrega grupos de canales, suscripciones de esta Mac por RSS, bloqueos en todos los feeds, el feed de Shorts y
-los filtros de búsqueda (ver [Fase 5a](#fase-5a-organizar-y-descubrir)).
+los filtros de búsqueda (ver [Fase 5a](#fase-5a-organizar-y-descubrir)). La 5b cierra el plan: respaldo en ZIP (también
+el de SmartTube) e iCloud Drive, actualizaciones con Sparkle, accesibilidad y el modo TV (ver
+[Fase 5b](#fase-5b-respaldo-actualizaciones-accesibilidad-y-modo-tv)).
 
 ```bash
 Scripts/package-app.sh             # swift build -c release + build/Glasstube.app firmado con «Glasstube Desarrollo» (o ad hoc)
@@ -21,9 +23,10 @@ CON_SESION=1 Scripts/capturas.sh sesion   # y las de la cuenta (con sesión inic
 Scripts/capturas.sh panel          # las de la fase 3: panel, a-continuacion, dearrow, minirreproductor
 Scripts/capturas.sh vincular       # las de la fase 4: la hoja «Vincular un teléfono» y Ajustes > Control remoto
 Scripts/capturas.sh grupo          # las de la fase 5a que dicen «grupo» (también: filtros, suscripciones-esta-mac, ajustes-bloqueos)
+Scripts/capturas.sh respaldo       # las de la fase 5b (también: tv-, y a11y con el ajuste de accesibilidad que esté activo)
 Scripts/capturas-readme.sh         # las de la portada (../docs/capturas/), solo con Big Buck Bunny
-swift test                         # 44 pruebas: cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones, minirreproductor, grupos, bloqueos y filtros (fase 5a)
-Scripts/release.sh 0.5.0           # versión para GitHub Releases: ../dist/Glasstube-0.5.0.dmg, su SHA-256 y las notas (no sube nada)
+swift test                         # 66 pruebas: cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones, minirreproductor, grupos, bloqueos y filtros (fase 5a), respaldo y modo TV (fase 5b)
+CAMBIOS=cambios.md Scripts/release.sh 0.6.0   # versión para GitHub Releases: ../dist/Glasstube-0.6.0.dmg, su SHA-256, las notas y la entrada firmada de ../appcast.xml (no sube nada)
 open "glasstube://watch?v=aqz-KE-bpKQ&t=60"   # abre la app (o la que está abierta) en ese video
 ```
 
@@ -607,9 +610,9 @@ sesión ni Llavero (`-GTSinLlavero`, `-GTSinPersonas`, `-remoteEnabled NO`).
   del dueño en Ajustes del Sistema. Los pasos son los de la fase 1 y de Apple para macOS 15 o posterior.
 - **LGPL al pie de la letra:** las notas enlazan el código de MPVKit en su commit y de mpv y FFmpeg en sus etiquetas
   (servidores de terceros). Para no depender de ellos, se pueden adjuntar a cada versión los tarballs de las fuentes.
-- **El repositorio `werwill/glasstube` aún no existe en GitHub** (la cuenta `werwill` sí): hasta que se suba y tenga
-  una versión publicada, la consulta da 404 y la app no avisa nada. Si se publica con otro nombre, cambiar
-  `GITHUB_REPO` y los enlaces de los README y de `PROMPT.md`.
+- **El repositorio ya existe**: `werwill/glasstube` en GitHub, público, con las versiones v0.4.0 y v0.5.0 de la Mac y
+  las `windows-v…` de Windows (al escribir esto se decía que no existía; se subió el 18-oct-2026). Si algún día se
+  publica con otro nombre, cambiar `GITHUB_REPO` y los enlaces de los README y de `PROMPT.md`.
 - **«Ahora no» vuelve a avisar en la siguiente consulta** (al día siguiente como pronto); no hay «saltar esta versión».
 - **Las notas de cada versión** traen un comentario para escribir qué cambió: el script no lo inventa.
 
@@ -759,6 +762,218 @@ revisó, no se guardó).
 - **El botón «…»** de la cabecera del canal y del grupo sale como un círculo más chico que los botones con texto: el
   botón de menú de macOS no toma el alto de su etiqueta.
 
+## Fase 5b: respaldo, actualizaciones, accesibilidad y modo TV
+
+Cierra el plan original («extras y pulido»; 26-oct-2026): el respaldo de SmartTube sin Google Drive, Sparkle en lugar de
+su actualizador propio, la revisión de accesibilidad y el modo TV (el Leanback de SmartTube para la Mac conectada a la
+tele). YTKit y PlaybackKit no se tocaron.
+
+### Estado frente a "Terminado"
+
+| Criterio | Estado |
+|---|---|
+| Paso 0 (lo de Windows en YTKit) | Antes de tocar nada: `swift build` pasa en los tres paquetes y las pruebas también (YTKit 110 en 23 suites, con `ScriptEngine`/`QuickJSEngine`, `BotGuardPage` y `WebView2BotGuardPage`; PlaybackKit 6 en 2; la app 44 en 10). No se rompió nada de la Mac. |
+| `swift build` y todas las pruebas | Pasan. La app: 66 pruebas en 12 suites (14 nuevas en `BackupTests`, 8 en `TVModeTests`). YTKit 110 y PlaybackKit 6, sin cambios. Avisos nuevos, ninguno (sigue el de `PlayerSpace.name`, que ya estaba). |
+| Capturas nuevas | En `capturas/` (tabla abajo): respaldo, la hoja «Restaurar» con el respaldo de SmartTube de las pruebas, el modo TV en tres estados, las ventanas de Sparkle y las `a11y-normal-*` (sin ajustes de accesibilidad; las que llevan un ajuste puesto faltan). |
+| `Scripts/package-app.sh` | Arma la app con `Sparkle.framework` (release de 55 MB, `codesign --verify --strict` válido, firmada con «Glasstube Desarrollo»). |
+| Informe de lo no verificado | «Qué falta (fase 5b)», abajo. |
+
+### Qué hay
+
+1. **Respaldo** (`Backup/`, `Support/Zip.swift`; Ajustes › Respaldo, como `BackupSettingsPresenter` de SmartTube):
+   - **Exportar…** guarda un ZIP donde quien usa la app elija (`fileExporter`): `manifest.json` (formato
+     `mx.glasstube.respaldo`, versión 1, versión de la app, fecha y cuántos elementos), `groups.json` y `library.json`
+     (los mismos esquemas que los archivos de Application Support: grupos, suscripciones de esta Mac, historial con
+     posiciones, Ver más tarde, «No me interesa» y bloqueados), `queue.json` (la cola) y `settings.json` (ajustes).
+     JSON legible, para revisarlo o editarlo a mano.
+   - **Nunca lleva tokens ni nada del Llavero**: las sesiones de YouTube no salen de `AccountManager`, y de las
+     tarjetas guardadas se quitan el `feedbackToken` y el menú de TV (`menuPanel`), que vienen de respuestas con
+     sesión. Tampoco van la vinculación del teléfono (`remoteIdentity`), su nombre, el aviso de versiones ni lo de
+     iCloud Drive: son de cada Mac. Lo comprueba `BackupTests` (busca los tokens en todo el ZIP).
+   - **Importar…** lee un ZIP de Glasstube o de **SmartTube** y abre la hoja «Restaurar», donde cada parte se puede
+     dejar fuera. Restaurar **combina** con lo que hay y no borra nada: grupos por id o por nombre (reciben los canales
+     que falten), suscripciones y bloqueados que falten, el historial por fecha (de un video en los dos queda la
+     posición más reciente), la cola al final; los ajustes sí se reemplazan, y solo con valores válidos.
+   - **Del respaldo de SmartTube** se trae lo que tiene equivalente (`SmartTubeBackup.swift`, formato leído en su
+     código): el historial con posiciones (`*_state_updater_data`), los grupos (`*_channel_group_data`; el «1000» son
+     las suscripciones sin cuenta) y los canales bloqueados (`blocked_channel_data`, también el formato viejo), de
+     `files/app_prefs` y `files/yt_service_prefs` o, en versiones viejas, de los XML de `shared_prefs`. Sus ajustes no:
+     son de Android TV y van en otro formato; la hoja lo dice, igual que las entradas sin un id válido.
+   - **iCloud Drive** (opcional, apagado): «Guardar un respaldo cada día en iCloud Drive» escribe
+     `iCloud Drive/Glasstube/Glasstube-respaldo-<fecha>.zip` al abrir la app si pasaron 20 h, deja los 7 más nuevos, y
+     hay «Guardar ahora» y «Mostrar en Finder». Sin Google Drive.
+   - **Otras apps**: «Grupos para PocketTube» y «Suscripciones para NewPipe» (solo las de esta Mac, o también los
+     canales de los grupos), los formatos que leen PocketTube, NewPipe, SmartTube y Glasstube (lo pendiente de la 5a).
+     Importar grupos de PocketTube, GrayJay y NewPipe sigue igual.
+2. **Actualizaciones con Sparkle 2.10.1** (`Services/SparkleUpdater.swift`; dependencia de SwiftPM, MIT):
+   - SwiftPM baja `Sparkle.xcframework` (binario) y `package-app.sh` copia `Sparkle.framework` a `Contents/Frameworks`
+     sin cabeceras ni XPCServices (solo los usan las apps en el sandbox) y lo vuelve a firmar de dentro hacia fuera
+     (`Autoupdate`, `Updater.app`, el framework) con la misma identidad que la app. Sigue sin Xcode.
+   - `Info.plist`: `SUFeedURL` (`https://raw.githubusercontent.com/werwill/glasstube/main/appcast.xml`, sin GitHub
+     Pages), `SUPublicEDKey`, búsqueda automática diaria, `SUVerifyUpdateBeforeExtraction` (la firma EdDSA se comprueba
+     antes de abrir el DMG), `SURequireSignedFeed` (el appcast va firmado) y sin perfil del sistema.
+   - **Solo en las versiones de `release.sh`** (`SPARKLE=1`): una copia compilada por alguien no lleva Sparkle, para que
+     no se reemplace con el DMG publicado, y sigue con el aviso de GitHub (`UpdateChecker`, que se queda como respaldo).
+   - En la app: menú **Glasstube › Buscar actualizaciones…** y Ajustes › General › Actualizaciones (búsqueda
+     automática, descargar e instalar solas, «Buscar ahora», la última búsqueda). Quien había apagado el aviso de
+     GitHub arranca con la búsqueda automática apagada. Las ventanas son las de Sparkle, en español.
+   - **`release.sh`**: tras el DMG, `sign_update` (con la clave privada del Llavero de quien publica, o
+     `SPARKLE_ED_KEY_FILE`) firma el DMG; `Scripts/verificar-firma-sparkle.swift` comprueba esa firma con la clave
+     pública que lleva la app (si no son pareja, se detiene); `Scripts/appcast-entrada.py` pone la entrada de la versión
+     en `appcast.xml` (reemplaza la de la misma versión, de la más nueva a la más vieja, notas en markdown dentro del
+     appcast, `minimumSystemVersion` 26.0 y `hardwareRequirements` arm64) y `sign_update` firma el appcast. `CAMBIOS=archivo.md`
+     pone qué cambió en las notas de GitHub y en la ventana de Sparkle. Solo versiones de la Mac (`v…`): las de Windows
+     (`windows-v…`) no van en este appcast.
+   - **Las claves las crea quien publica**, una vez: `App/.build/artifacts/sparkle/Sparkle/bin/generate_keys` (la
+     privada queda en su Llavero) y pega la pública en `Packaging/sparkle-clave-publica.txt`. No se generó ni se leyó
+     ninguna clave de Glasstube; las pruebas usaron una desechable (ver «Hallazgos»).
+3. **Accesibilidad** (ver la sección de abajo): «Reducir movimiento» en toda la app (`Support/Motion.swift`), las
+   tarjetas como un solo botón para VoiceOver con acciones, la barra de posición como control deslizante, y la
+   auditoría del árbol de accesibilidad de las pantallas principales.
+4. **Modo TV** (`TV/`): **Visualización › Entrar en el modo TV** (⌃⌘T). La ventana pasa a pantalla completa (y vuelve
+   como estaba al salir), el puntero se esconde hasta que se mueva y la app se maneja solo con flechas, Retorno y Esc:
+   - A la izquierda, el menú de secciones en una columna de vidrio (Inicio, Suscripciones, Historial, Shorts, Música,
+     Gaming, Noticias, En vivo y los grupos de canales); con el foco en las filas se encoge a íconos, como los
+     encabezados de Leanback. A la derecha, la ficha grande de lo enfocado (título de 46 pt, canal, duración y fecha)
+     con su imagen al fondo, fundida con el negro, y las filas de tarjetas de 400 pt (Shorts verticales de 220 pt).
+     Arriba a la derecha, la hora; abajo, la ayuda de teclas en una cápsula de vidrio.
+   - Foco muy visible: anillo blanco de 5 pt (7 con «Aumentar contraste»), sombra y la tarjeta un 8 % más grande (sin
+     crecer con «Reducir movimiento»); en el menú, la sección enfocada en blanco con texto negro.
+   - ↑↓ cambian de fila o de sección, ←→ recorren la fila (cada fila recuerda su tarjeta, y ← en la primera vuelve al
+     menú), Retorno abre (videos y Shorts en el reproductor de siempre; canales y playlists como otra página de filas)
+     y Esc retrocede un nivel: cierra el canal abierto, vuelve al menú y, desde el menú, sale del modo TV. Al acercarse
+     al final de una fila se piden más tarjetas (`continueGroup`).
+   - **Controles de juego** (GameController, `TVGameControllers`): cruceta y palanca izquierda son las flechas (con
+     repetición), A es Retorno, B y Menú son Esc, X pausa y L1/R1 retroceden y adelantan 10 s. Se convierten en las
+     mismas teclas (`KeyInjector`) que manda la **cruceta del teléfono** (control remoto de la fase 4), así que los tres
+     funcionan igual en el modo TV y en el reproductor que se abre desde él.
+
+### Decisiones
+
+- **ZIP propio** (`ZipArchive`, unas 200 líneas): escribe con DEFLATE del framework Compression (`COMPRESSION_ZLIB` es
+  DEFLATE crudo) y lee ZIP corrientes, también con descriptor de datos (los de `ZipOutputStream` de Java, como el de
+  SmartTube), con CRC. Sin dependencias ni procesos (`ditto`). Probado contra `/usr/bin/zip`, `ditto` y `unzip -t`.
+- **El respaldo y el lector de SmartTube viven en la app**, no en YTKit: Compression no existe en Windows y la app de
+  Windows compila YTKit.
+- **iCloud Drive sin contenedor**: un contenedor de iCloud pide un perfil de Apple (Developer ID). La app no está en el
+  sandbox y escribe en `~/Library/Mobile Documents/com~apple~CloudDocs/Glasstube` con `NSFileCoordinator`.
+- **El appcast en `main` por raw.githubusercontent.com**: no hace falta activar GitHub Pages. Se sube después de
+  publicar la versión (si no, Sparkle encontraría un DMG que todavía no existe); `release.sh` lo recuerda.
+- **`UpdateChecker` se queda** solo para lo que no lleva Sparkle (copias compiladas). Las apps 0.4 y 0.5 ya
+  instaladas consultan `releases/latest`: las versiones de la Mac deben quedar como «Latest» y las de Windows con
+  `--latest=false` (hoy `releases/latest` da `v0.5.0` aunque `windows-v0.2.0` es más nueva). Con un tag `windows-v…`
+  el aviso viejo no se rompe: no lo entiende como versión y no avisa.
+- **`CFBundleVersion`** (`sparkle:version`) es la fecha y hora de la compilación: siempre crece.
+- **Modo TV dentro de la ventana principal**, como el reproductor (una capa encima de la navegación y debajo del
+  reproductor): las teclas del teléfono ya van a esa ventana, y el reproductor y sus atajos no cambian.
+- **Esc como el «atrás» de Leanback**: un nivel por vez (canal abierto → menú → salir). Desde el menú, una sola vez.
+- **«Reducir movimiento» con un ayudante** (`Motion.isReduced` lee `NSWorkspace`; `-GTReducirMovimiento YES` lo simula):
+  deslizamientos y zoom pasan a fundidos, las listas que siguen al foco saltan en lugar de deslizarse, las tarjetas no
+  se elevan, el minirreproductor se pega al borde sin deslizarse y la cápsula del reproductor se encoge en 0,15 s.
+
+### Hallazgos: Sparkle y Gatekeeper (26-oct-2026)
+
+Probado en esta Mac (macOS 27.0.1) con dos versiones de prueba, 0.5.90 y 0.5.91, armadas con `release.sh` y firmadas con
+«Glasstube Desarrollo», sin notarizar, con una **clave EdDSA desechable** generada con CryptoKit en una carpeta temporal
+(nunca en el Llavero ni en el repositorio; la de Glasstube la crea el dueño) y el appcast servido por
+`python3 -m http.server` en 127.0.0.1:
+
+- **Appcast alterado** (una letra cambiada después de firmarlo): Sparkle lo rechaza («The update feed is improperly
+  signed») y no baja nada.
+- **Actualización sola** (`-SUAutomaticallyUpdate YES`, con la app vieja marcada con `com.apple.quarantine` como si se
+  hubiera bajado de internet): al salir, Sparkle instala la 0.5.91; la app nueva **no lleva cuarentena** (solo
+  `com.apple.provenance`), `codesign --verify --deep --strict` pasa con el mismo requisito designado y **abre con `open`
+  sin aviso de Gatekeeper**, aunque `spctl -a` la rechace (sin notarizar, como siempre). `syspolicyd` no la evalúa.
+- **Con la ventana de Sparkle** (los clics, por accesibilidad): «Instalar actualización» la baja, «Instalar y volver a
+  abrir» la reemplaza y la vuelve a abrir, ya en 0.5.91, sin aviso.
+- **Conclusión**: con la firma propia y sin notarizar, el paso de Gatekeeper («Abrir de todos modos») es una sola vez,
+  al instalar a mano; las versiones que llegan por Sparkle abren directo. Sparkle también mira la firma de código de la
+  nueva; con el mismo certificado coincide (requisito designado = identificador + hoja del certificado). No se probó
+  una versión firmada con otro certificado: conviene no cambiar «Glasstube Desarrollo» (y guardar una copia). La prueba
+  dejó claves `SU*` en las preferencias de `mx.glasstube.Glasstube`; se borraron.
+
+### Accesibilidad
+
+- **VoiceOver**, con un lector del árbol de accesibilidad desde fuera (lo mismo que recorre VoiceOver; la terminal
+  tiene el permiso de Accesibilidad) en Inicio, búsqueda, el feed de un grupo, el reproductor con los controles y el
+  modo TV: sin botones ni imágenes sin nombre (solo las piezas de las barras de desplazamiento del sistema y el campo de
+  búsqueda, que se lee por su texto de ejemplo). Se arreglaron:
+  - **Las tarjetas se leían dos veces** (el botón «Reproducir: título» y otra vez el título): ahora cada tarjeta es un
+    solo botón «título, duración, canal · vistas · fecha, visto 40 %», con el menú del video en VO-Mayús-M y en el rotor
+    de acciones «Reproducir a continuación», «Agregar a la cola», «Ver más tarde» y «Abrir canal». Igual Shorts y canales.
+  - **La barra de posición** del reproductor era un elemento sin rol: ahora es un control deslizante («Posición, 0:40 de
+    10:35») que las flechas de VoiceOver mueven de 5 en 5 s. (Con un `step` de 5 s, SwiftUI se caía mientras la
+    duración era desconocida: se quitó.)
+  - Modo TV: secciones como botones (la elegida, «seleccionada»), filas con su título como encabezado y tarjetas como
+    botones con título, canal, duración y «Short».
+- **Teclado**: las cuadrículas, la barra lateral y el reproductor ya iban con flechas, Tab, Retorno y Esc (fases 1 y 3);
+  el modo TV va entero con flechas, Retorno y Esc; la hoja «Restaurar» tiene Retorno (Restaurar) y Esc (Cancelar).
+- **Reducir transparencia, Aumentar contraste y Reducir movimiento**: no se vieron con el ajuste del sistema puesto (ver
+  «Qué falta (fase 5b)»); las capturas `a11y-normal-*` quedan como referencia para compararlas.
+
+### Verificación (cómo)
+
+Con `build/Glasstube.app` (debug para iterar), `-GTSinLlavero -GTGruposEnMemoria -GTBibliotecaEnMemoria -remoteEnabled
+NO -GTSinActualizaciones` y las opciones nuevas de `Support/Automation.swift` (`-GTRespaldoExportar`,
+`-GTRespaldoRestaurar`, `-GTRespaldoAbrir`, `-GTRespaldoiCloud`, `-GTiCloudCarpeta`, `-GTActualizar`,
+`-GTActualizacionesFeed`, `-GTSalirTras`, `-GTSinActualizaciones`, `-GTTV`, `-GTTVSinPantallaCompleta`, `-GTTVSeccion`,
+`-GTTVEstado`, `-GTReducirMovimiento`, `-GTRegistroAccesibilidad`, `-GTAuditarAccesibilidad`):
+
+- **Respaldo**: restaurar el ZIP de SmartTube de las pruebas sobre un grupo «Blender» y un bloqueo → «2 grupos nuevos,
+  2 suscripciones, 2 canales bloqueados, 3 videos del historial»; exportar → ZIP de 1,8 KB con las seis partes, que
+  `unzip -t` da por bueno y `ditto -x -k` abre.
+- **Sparkle**: ver «Hallazgos».
+- **Modo TV**: con el grupo «Blender» (videos CC): → entra a las filas, ↓ va a Shorts, Retorno abre el Short en el
+  reproductor (SABR, VP9 608×1080), Esc lo cierra y vuelve a la tarjeta, Esc va al menú y Esc sale del modo TV. Un video
+  de 2 h abierto desde ahí avanza (0,2 → 4,4 s).
+- **VoiceOver**: el lector del árbol de accesibilidad de arriba (`AXEnhancedUserInterface`, como VoiceOver).
+
+### Capturas nuevas
+
+`Scripts/capturas.sh` (bloque «Fase 5b»). Solo contenido Creative Commons del canal oficial de Blender (los videos de
+`-GTSoloVideos` de la 5a) y Big Buck Bunny; el respaldo es el de SmartTube de las pruebas (ids de prueba).
+
+| Captura | Qué muestra |
+|---|---|
+| `ajustes-respaldo-claro.png` | Ajustes › Respaldo tras restaurar el respaldo de SmartTube: qué incluye, Importar/Exportar, iCloud Drive y otras apps |
+| `respaldo-restaurar-smarttube-claro.png`, `…-oscuro.png` | La hoja «Restaurar» con el respaldo de SmartTube: cuatro partes y lo que no se trae |
+| `tv-menu-oscuro.png` | Modo TV con el foco en el menú (la sección «Blender» en blanco) |
+| `tv-tarjeta-oscuro.png` | Modo TV con el foco en una tarjeta: el menú encogido, la ficha y la imagen al fondo |
+| `tv-shorts-oscuro.png` | Modo TV con el foco en la fila de Shorts |
+| `actualizacion-sparkle-claro.png`, `actualizacion-lista-claro.png` | Las ventanas de Sparkle con la versión de prueba 0.5.91 (notas en markdown) y «Instalar y volver a abrir». Se tomaron a mano en la prueba de los hallazgos (necesitan una app vieja y el servidor local) |
+| `a11y-normal-grupo.png`, `…-reproductor.png`, `…-tv.png`, `…-ajustes.png` | Las pantallas de la revisión de accesibilidad sin ningún ajuste (`Scripts/capturas.sh a11y`). Con un ajuste puesto, el mismo comando las guarda como `a11y-sin-transparencia-*`, `a11y-contraste-*` o `a11y-sin-movimiento-*` (el nombre sale de lo que ve la app) |
+
+### Qué falta (fase 5b)
+
+- **Accesibilidad con los ajustes del sistema** («Reducir transparencia», «Aumentar contraste», «Reducir movimiento»):
+  esta sesión no puede cambiarlos; se le pidieron al dueño y un script esperó 30 min por cada uno, pero la Mac estaba
+  bloqueada y no llegó ninguno, así que solo están las `a11y-normal-*`. Para cerrarlo: activar uno en Ajustes del
+  Sistema › Accesibilidad › Pantalla, correr `Scripts/capturas.sh a11y`, desactivarlo y seguir con el siguiente;
+  después comparar con las `a11y-normal-*`. Lo esperado: todo el vidrio es del SDK (sin `Material` ni `blur`), así que
+  con los dos primeros debería volverse opaco o con borde sin cambiar nada en la app; con «Aumentar contraste» el anillo
+  del modo TV pasa a 7 pt; con «Reducir movimiento» los deslizamientos pasan a fundidos y la tarjeta enfocada del modo
+  TV no crece. `-GTReducirMovimiento YES` simula el tercero dentro de la app, pero no lo que cambia el sistema.
+- **Sin clave de Sparkle todavía**: falta que el dueño corra `generate_keys` y pegue la clave pública en
+  `Packaging/sparkle-clave-publica.txt`; hasta entonces `release.sh` arma la versión sin appcast (con aviso). La
+  primera versión con Sparkle la instala a mano quien venga de la 0.5 (el aviso viejo la anuncia si queda como «Latest»).
+- **Sparkle contra GitHub de verdad** no se probó (no se publica nada sin aprobación): raw.githubusercontent.com sirve
+  el appcast como `text/plain` y con unos minutos de caché, y la descarga del DMG redirige a `objects.githubusercontent.com`;
+  ninguna de las dos cosas debería importarle a Sparkle, pero la primera versión conviene revisarla.
+- **iCloud Drive real**: se probó con `-GTiCloudCarpeta` (otra carpeta) para no escribir en el iCloud del dueño ni
+  disparar el permiso de macOS. Falta activarlo una vez en la app y aceptar el aviso «Glasstube quiere acceder a
+  iCloud Drive».
+- **Controles de juego**: sin un control a mano; el mapeo tiene pruebas, pero nadie apretó un botón.
+- **Selectores de archivos** («Exportar…», «Importar…», los de PocketTube y NewPipe): no se pulsaron (las pruebas y
+  `-GTRespaldo…` cubren lo que hacen). Los archivos exportados para PocketTube y NewPipe se leyeron con los importadores
+  de Glasstube (los mismos formatos que SmartTube), no con esas apps.
+- **Modo TV**: sin búsqueda ni Playlists (piden escribir o cuenta); la pantalla completa real no se capturó (las capturas
+  van en una ventana de 1600×900 con `-GTTVSinPantallaCompleta`); el fondo de un Short es la miniatura 16:9 que da
+  YouTube (con franjas).
+- **El menú de una tarjeta sin VoiceOver ni ratón**: con el teclado solo no hay cómo abrirlo (macOS no tiene una tecla
+  de menú contextual); VoiceOver sí (VO-Mayús-M y el rotor).
+- **Del respaldo de SmartTube no se traen** sus ajustes ni Ver más tarde (en SmartTube es de la cuenta de YouTube). Si un
+  SmartTube con varios perfiles exporta historiales de varias cuentas, se juntan en el historial de esta Mac.
+
 ## Paso 0: un solo YTKit
 
 - La copia de `Spike/` era idéntica a YTKit salvo el `public` y el reloj (`SabrPlaybackClock` → `PlaybackClock`), así que
@@ -786,14 +1001,17 @@ revisó, no se guardó).
 | `App/PlayQueue.swift`, `Services/Community.swift` | Cola de reproducción y DeArrow en la app (fase 3) |
 | `Services/*` | Imágenes con caché, storyboard y subtítulos (VISIONOS), SponsorBlock |
 | `Settings/SettingsView.swift` | `TabView` + `Form` `.grouped` |
-| `Support/Automation.swift` | Opciones `-GT…` para pruebas y capturas (teclas y clics reales dentro de la app; fase 2: `-GTSignIn`, `-GTPlaylistPicker`, `-GTAnonimo`; fase 4: `-GTRemoto`, `-GTRemotoEnMemoria`, `-GTPairing`, `-GTCodigoDePrueba`, `-GTEnlaces`, `-GTPegar`, `-GTSoltar`, `-GTSpotlight`, `-GTSpotlightQuery`, `-GTSpotlightOpen`, `-GTDockMenu`; fase 5a: `-GTGruposEnMemoria`, `-GTBibliotecaEnMemoria`, `-GTGrupos`, `-GTGrupo`, `-GTSuscripcionesLocales`, `-GTImportar`, `-GTBloquear`, `-GTFiltro`, `-GTEditarGrupo`, `-GTNuevoGrupo`, `-GTSoloVideos`, `-GTRegistroGrupos`) |
-| `Tests/GlasstubeTests` | Pruebas de la lógica de cuentas de la app (fase 2) y de cola, DeArrow, comentarios y chat con servicios falsos (fase 3) |
+| `Support/Automation.swift` | Opciones `-GT…` para pruebas y capturas (teclas y clics reales dentro de la app; fase 2: `-GTSignIn`, `-GTPlaylistPicker`, `-GTAnonimo`; fase 4: `-GTRemoto`, `-GTRemotoEnMemoria`, `-GTPairing`, `-GTCodigoDePrueba`, `-GTEnlaces`, `-GTPegar`, `-GTSoltar`, `-GTSpotlight`, `-GTSpotlightQuery`, `-GTSpotlightOpen`, `-GTDockMenu`; fase 5a: `-GTGruposEnMemoria`, `-GTBibliotecaEnMemoria`, `-GTGrupos`, `-GTGrupo`, `-GTSuscripcionesLocales`, `-GTImportar`, `-GTBloquear`, `-GTFiltro`, `-GTEditarGrupo`, `-GTNuevoGrupo`, `-GTSoloVideos`, `-GTRegistroGrupos`; fase 5b: `-GTRespaldoExportar`, `-GTRespaldoRestaurar`, `-GTRespaldoAbrir`, `-GTRespaldoiCloud`, `-GTiCloudCarpeta`, `-GTActualizar`, `-GTActualizacionesFeed`, `-GTSalirTras`, `-GTSinActualizaciones`, `-GTTV`, `-GTTVSinPantallaCompleta`, `-GTTVSeccion`, `-GTTVEstado`, `-GTReducirMovimiento`, `-GTRegistroAccesibilidad`, `-GTAuditarAccesibilidad`) |
+| `Tests/GlasstubeTests` | Pruebas de la lógica de cuentas de la app (fase 2), de cola, DeArrow, comentarios y chat con servicios falsos (fase 3), y del respaldo y el modo TV (fase 5b; `Fixtures/smarttube-respaldo.zip` lo arma `make-smarttube-respaldo.py`) |
 | `App/RemoteControl.swift`, `Remote/RemoteViews.swift` | Control remoto desde el teléfono sobre `LoungeScreen`: comandos, reportes, hoja «Vincular un teléfono» con QR y Ajustes > Control remoto (fase 4) |
 | `App/SystemIntegration.swift` | Delegado de la app: `glasstube://`, Spotlight, menú del Dock, Servicios y ⌘V; abrir enlaces, soltar (fase 4) |
 | `Services/Spotlight.swift`, `Support/KeyInjector.swift` | Índice de Core Spotlight; teclas reales dentro de la app (automatización y cruceta del teléfono) (fase 4) |
 | `Scripts/package-app.sh`, `Scripts/capturas.sh`, `Licenses/` | Empaquetado (Info.plist con `glasstube://` y `NSServices` desde la fase 4), capturas y avisos de licencias |
 | `Services/UpdateChecker.swift`, `Scripts/release.sh`, `Glasstube.entitlements`, `Packaging/dmg-fondo.svg` | Aviso de versiones nuevas; versión para GitHub Releases (DMG, suma, notas, notarización opcional); entitlements (`allow-jit`); fondo del DMG (distribución) |
 | `App/ChannelGroups.swift`, `Browse/ChannelFeedView.swift`, `Browse/SearchFilterMenu.swift` | Grupos de canales y suscripciones de esta Mac (groups.json); feed RSS de un grupo o de las suscripciones, hoja «Canales del grupo», avisos de nombre y borrado; menú de filtros de búsqueda (fase 5a) |
+| `Backup/*`, `Support/Zip.swift` | Respaldo: formato del ZIP, lector del de SmartTube, ajustes del respaldo, `BackupService` (exportar, restaurar combinando, iCloud Drive, PocketTube y NewPipe) y Ajustes › Respaldo con la hoja «Restaurar»; ZIP propio con Compression (fase 5b) |
+| `Services/SparkleUpdater.swift`, `Scripts/appcast-entrada.py`, `Scripts/verificar-firma-sparkle.swift`, `Packaging/sparkle-clave-publica.txt` | Sparkle en la app; la entrada del appcast y la comprobación de la firma que usa `release.sh`; la clave pública (la pone el dueño) (fase 5b) |
+| `TV/TVMode.swift`, `TV/TVModeView.swift`, `Support/Motion.swift` | Modo TV (secciones, filas, foco, controles de juego) y su interfaz; «Reducir movimiento» (fase 5b) |
 
 ## Alcance (puntos 1–7)
 
@@ -821,7 +1039,7 @@ revisó, no se guardó).
    la barra lateral y → vuelve (ver «Verificación»). `MPNowPlayingInfoCenter` (título, canal, duración, posición, carátula) y
    `MPRemoteCommandCenter` (play/pausa, siguiente/anterior, ±10 s, posición).
 7. **Ajustes:** escena `Settings` con `TabView` (General, Interfaz, Reproductor, Subtítulos, SponsorBlock, DeArrow,
-   Cuentas, Control remoto, Respaldo) y `Form(.grouped)`. Funcionan Control remoto (desde la fase 4), DeArrow (desde la fase 3), Cuentas (desde la fase 2), Interfaz (apariencia, vista previa, Shorts en
+   Cuentas, Control remoto, Respaldo) y `Form(.grouped)`. Funcionan Respaldo (desde la fase 5b), Control remoto (desde la fase 4), DeArrow (desde la fase 3), Cuentas (desde la fase 2), Interfaz (apariencia, vista previa, Shorts en
    Inicio, tiempo de los controles), Reproductor (calidad máxima, códec, búfer, seguir donde lo dejé, siguiente al
    terminar), Subtítulos (activar al empezar, idioma), SponsorBlock (activar, saltar solo) y General; ocultos y
    bloqueados están en su propia pestaña, Bloqueos, desde la fase 5a. Las demás explican en qué fase llegan.
@@ -938,9 +1156,10 @@ menú abierto, y los mismos controles y orden.
 
 ## Qué falta
 
-- **Verificar con «Reducir transparencia» y «Aumentar contraste».** Son ajustes del sistema que esta sesión no puede
-  cambiar. Todo el vidrio es del SDK (no hay `Material` ni `blur` en la app), así que debería adaptarse solo, pero no se
-  vio. Quien tenga el Mac a mano: activarlos en Accesibilidad > Pantalla y correr `Scripts/capturas.sh`.
+- **Verificar con «Reducir transparencia», «Aumentar contraste» y «Reducir movimiento».** Son ajustes del sistema que
+  ninguna sesión puede cambiar. Todo el vidrio es del SDK (no hay `Material` ni `blur` en la app), así que debería
+  adaptarse solo, pero no se vio. Quien tenga el Mac a mano: activar uno por vez en Accesibilidad > Pantalla y correr
+  `Scripts/capturas.sh a11y` con cada uno (ver «Qué falta (fase 5b)»).
 - **No verificado a simple vista:** «Ahora suena» dibujado en el Centro de control y una tecla multimedia física (desde
   la fase 4 se comprobó por MediaRemote que el sistema tiene a Glasstube como la app que suena, con sus datos y carátula,
   y que sus comandos llegan; ver «Fase 4»), el audio (nadie escuchó) y la pantalla completa (F la alterna; no se
@@ -958,8 +1177,9 @@ menú abierto, y los mismos controles y orden.
   es la versión simplificada para 16 y 32 px. `Scripts/make-icon.sh` genera `Icon/AppIcon.icns` (qlmanage + sips +
   iconutil) y `package-app.sh` lo copia y lo declara en `CFBundleIconFile`. Falta el ícono "vivo" (vidrio del
   sistema, modos teñido y transparente): se arma en Icon Composer con `Icon/capas/` y necesita Xcode (`actool`).
-- **Pendientes del producto:** respaldo, Sparkle, accesibilidad y modo «TV» (fase 5b). Comentarios, chat, panel
-  lateral, minirreproductor, DeArrow y la cola llegaron en la fase 3; el control remoto en la fase 4; grupos de canales,
-  suscripciones sin cuenta, bloqueos, feed de Shorts y filtros de búsqueda en la 5a.
+- **El plan original está completo** con la fase 5b (respaldo, Sparkle, accesibilidad y modo TV). Comentarios, chat,
+  panel lateral, minirreproductor, DeArrow y la cola llegaron en la fase 3; el control remoto en la fase 4; grupos de
+  canales, suscripciones sin cuenta, bloqueos, feed de Shorts y filtros de búsqueda en la 5a. Lo que queda abierto de
+  cada fase está en su «Qué falta».
 - **Atajos:** Tab desde la búsqueda no llega al contenido (ver Decisiones); ⌘K, ⌘[, ⌘] y ⌘R sin probar.
 - **Solo arm64** (como PlaybackKit) y probado en una sola Mac y región (MX, `es-419`).

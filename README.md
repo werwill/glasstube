@@ -83,7 +83,7 @@ El código está en tres paquetes de Swift:
 
 Baja **`Glasstube-<versión>.dmg`** de [Releases](https://github.com/werwill/glasstube/releases/latest). Es una **vista
 previa**: funciona, pero YouTube cambia seguido su reproductor y a veces algo deja de andar hasta la siguiente versión
-(la app te avisa cuando sale una).
+(la app busca las nuevas y, desde la 0.6, se actualiza sola).
 
 - **Requisitos:** macOS 26 Tahoe o posterior y una Mac con Apple Silicon (M1 o posterior). No funciona en Mac con Intel.
 - **Instalar:** abre el `.dmg` y arrastra Glasstube a **Applications** (Aplicaciones).
@@ -97,21 +97,27 @@ por primera vez. Las notas de cada versión dicen si viene notarizada; si lo est
    «Trasladar a la Papelera»).
 2. Ve a **Ajustes del Sistema › Privacidad y seguridad**, baja hasta **Seguridad** y, junto a «Se bloqueó
    "Glasstube"…», pulsa **Abrir de todos modos**.
-3. Confirma con tu contraseña o Touch ID y pulsa **Abrir**. No vuelve a preguntar hasta la siguiente versión.
+3. Confirma con tu contraseña o Touch ID y pulsa **Abrir**. Las versiones que instala la propia app (Sparkle, desde la
+   0.6) abren sin volver a pedirlo; si bajas otro `.dmg` a mano, se repite este paso.
 
 Si inicias sesión en YouTube, macOS también pregunta si Glasstube puede usar el Llavero: elige **Permitir siempre**.
 
-### Aviso de versiones nuevas
+### Actualizaciones
 
-Al abrirse, y como mucho una vez al día, Glasstube pregunta a GitHub cuál es la última versión publicada
-(`api.github.com/repos/werwill/glasstube/releases/latest`). Si hay una más nueva que la tuya, aparece un aviso de
-vidrio abajo a la derecha con **Descargar**, que abre la página de esa versión en el navegador, y **Ahora no**, que lo
-cierra hasta la siguiente consulta. No instala nada por su cuenta: para actualizar, baja el `.dmg` nuevo y reemplaza la
-app en Aplicaciones. Tus ajustes, tu historial y tu sesión se quedan.
+**Desde la 0.6, con [Sparkle](https://sparkle-project.org).** Una vez al día Glasstube lee la lista de versiones de la
+Mac (`appcast.xml`, en este repositorio) y, si hay una nueva, muestra sus notas con **Instalar actualización**: la baja
+de GitHub Releases, la instala y se vuelve a abrir, sin pasar otra vez por Gatekeeper. Cada versión va firmada con una
+clave EdDSA y con el mismo certificado que la que tienes; si algo no coincide, no se instala. También está en el menú
+**Glasstube › Buscar actualizaciones…**. En **Ajustes › General › Actualizaciones** se apaga la búsqueda automática o se
+pide que las descargue e instale solas. Tus ajustes, tu historial y tu sesión se quedan.
 
-Es la única consulta que la app hace por su cuenta, y no lleva datos tuyos ni de lo que ves. Se apaga en **Ajustes ›
-General › Actualizaciones**, donde también está «Buscar ahora». Una copia que compilas tú consulta el mismo repositorio;
-`GITHUB_REPO= App/Scripts/package-app.sh` arma una sin aviso.
+**Hasta la 0.5** no había Sparkle: la app avisa abajo a la derecha (consulta `releases/latest` de GitHub como mucho una
+vez al día) y **Descargar** abre la página de la versión. Para pasar a la 0.6 baja el `.dmg` una vez; de ahí en
+adelante se actualiza sola.
+
+Es la única consulta que la app hace por su cuenta, y no lleva datos tuyos ni de lo que ves (Sparkle no manda el perfil
+del sistema). Una copia que compilas tú no lleva Sparkle (así no se reemplaza con el `.dmg` publicado; se actualiza con
+`git pull`) y se queda con el aviso de GitHub; `GITHUB_REPO= App/Scripts/package-app.sh` arma una sin nada de esto.
 
 ### Windows
 
@@ -179,12 +185,21 @@ Lo que sigue es la app de Mac; la de Windows tiene una parte (ver [Windows](#win
   suscripciones, playlists y Ver más tarde. Las sesiones se guardan en el Llavero.
 - **Control desde el teléfono:** vinculas la app de YouTube del teléfono con un código de TV o un QR. Desde ahí eliges
   videos, pausas, adelantas y cambias el volumen o los subtítulos.
+- **Modo TV:** para la Mac conectada a la tele. Pantalla completa con filas de tarjetas grandes, como el Leanback de
+  SmartTube, y se maneja solo con flechas, Retorno y Esc: con el teclado, con un control de juego o con la cruceta de la
+  app de YouTube del teléfono. Se entra desde **Visualización › Entrar en el modo TV** (⌃⌘T) y se sale con Esc.
+- **Respaldo:** un ZIP con tus grupos, suscripciones de la Mac, canales bloqueados, historial con las posiciones, la
+  cola y los ajustes, nunca con tu sesión ni nada del Llavero. Se guarda donde quieras o, cada día, en iCloud Drive.
+  Importa también el respaldo de SmartTube y exporta grupos para PocketTube y suscripciones para NewPipe.
+- **Actualizaciones:** se instalan sin salir de la app, firmadas (Sparkle). Ver [Actualizaciones](#actualizaciones).
+- **Accesibilidad:** etiquetas de VoiceOver en tarjetas y controles (la barra de posición es un control deslizante), las
+  animaciones respetan «Reducir movimiento» y el vidrio es el del sistema, que se adapta a «Reducir transparencia» y
+  «Aumentar contraste».
 - **macOS:** enlaces `glasstube://`, pegar (⌘V) o soltar enlaces de YouTube, «Abrir en Glasstube» en el menú
   Servicios, Spotlight, menú del Dock, «Ahora suena» y teclas multimedia. Atajos como los de YouTube (K, J/L, F, C, M,
   0–9) y apariencia clara u oscura.
 
-**Todavía no hay:** respaldo de ajustes, actualización automática ni modo TV (llegan en la fase 5b). Los widgets, Atajos
-y la extensión de compartir necesitan Xcode y por ahora quedan fuera.
+**Fuera por ahora:** los widgets, Atajos y la extensión de compartir necesitan Xcode.
 
 ---
 
@@ -222,8 +237,11 @@ Otras opciones:
 | `SIGN_IDENTITY=- App/Scripts/package-app.sh` | firma ad hoc aunque tengas el certificado |
 | `SIGN_IDENTITY="Otro nombre" App/Scripts/package-app.sh` | firma con otra identidad de firma de código |
 
-**Una versión para descargar** (para quien publica): `App/Scripts/release.sh 0.5.0` pone esa versión, compila, empaqueta
-y deja en `dist/` el `.dmg` (con el acceso a Aplicaciones), su SHA-256 y las notas para GitHub Releases. No sube nada.
+**Una versión para descargar** (para quien publica): `CAMBIOS=cambios.md App/Scripts/release.sh 0.6.0` pone esa
+versión, compila, empaqueta y deja en `dist/` el `.dmg` (con el acceso a Aplicaciones), su SHA-256 y las notas para
+GitHub Releases; además firma el `.dmg` para Sparkle y agrega la versión a `appcast.xml`. No sube nada. La clave de
+Sparkle se crea una sola vez con `App/.build/artifacts/sparkle/Sparkle/bin/generate_keys` (la privada se queda en tu
+Llavero) y la pública se pega en `App/Packaging/sparkle-clave-publica.txt`.
 Si en el Llavero hay un certificado «Developer ID Application» y un perfil de `notarytool`, firma con hardened runtime,
 notariza y engrapa el `.dmg`. Detalles en [App/NOTAS.md](App/NOTAS.md#distribución).
 

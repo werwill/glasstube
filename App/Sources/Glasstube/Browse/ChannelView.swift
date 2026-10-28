@@ -285,7 +285,7 @@ struct ChannelView: View {
         failure = nil
         do {
             let loaded = try await model.service.channel(channelId, tab: tab)
-            withAnimation(.smooth) { page = loaded }
+            withAnimation(Motion.animation(.smooth)) { page = loaded }
             if let name = loaded.title {
                 // Spotlight: el canal abierto (fase 4).
                 model.spotlight.index(channel: loaded.channelId, name: name, avatar: loaded.avatar,

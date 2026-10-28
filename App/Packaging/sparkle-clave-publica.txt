@@ -1,0 +1,9 @@
+# Clave pública EdDSA de Sparkle para las versiones de Glasstube (fase 5b). No es secreta: viaja en el Info.plist de la
+# app (SUPublicEDKey). La privada se queda en el Llavero de quien publica y nunca va al repositorio.
+#
+# Para crearla, una sola vez, en la Mac desde la que se publica (después de un `swift build` en App/):
+#
+#   App/.build/artifacts/sparkle/Sparkle/bin/generate_keys
+#
+# Pega abajo, en su propia línea, la clave que imprime (44 caracteres, termina en «=»). Las líneas con # no cuentan.
+# Mientras no haya clave, Scripts/release.sh arma la versión sin Sparkle (con el aviso de GitHub de siempre).

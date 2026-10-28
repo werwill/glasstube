@@ -85,7 +85,7 @@ The code is split into three Swift packages:
 
 Get **`Glasstube-<version>.dmg`** from [Releases](https://github.com/werwill/glasstube/releases/latest). It is a
 **preview**: it works, but YouTube changes its player often and something may break until the next version (the app
-tells you when one is out).
+looks for new ones and, from 0.6 on, updates itself).
 
 - **Requirements:** macOS 26 Tahoe or later on an Apple silicon Mac (M1 or later). It does not run on Intel Macs.
 - **Install:** open the `.dmg` and drag Glasstube to **Applications**.
@@ -99,21 +99,29 @@ it. Each release's notes say whether it is notarised; if it is, it opens straigh
    Trash").
 2. Go to **System Settings › Privacy & Security**, scroll down to **Security** and click **Open Anyway** next to
    "Glasstube" was blocked….
-3. Confirm with your password or Touch ID and click **Open**. It won't ask again until the next version.
+3. Confirm with your password or Touch ID and click **Open**. Versions the app installs itself (Sparkle, from 0.6 on)
+   open without asking again; if you download another `.dmg` by hand, repeat this step.
 
 If you sign in to YouTube, macOS also asks whether Glasstube may use the Keychain: choose **Always Allow**.
 
-### New-version notice
+### Updates
 
-When it opens, and at most once a day, Glasstube asks GitHub for the latest published release
-(`api.github.com/repos/werwill/glasstube/releases/latest`). If there is a newer one, a glass notice appears in the
-bottom-right corner with **Descargar** (Download), which opens that release's page in your browser, and **Ahora no**
-(Not now), which hides it until the next check. Nothing is installed automatically: to update, download the new `.dmg`
-and replace the app in Applications. Your settings, history and session stay.
+**From 0.6 on, with [Sparkle](https://sparkle-project.org).** Once a day Glasstube reads the list of Mac releases
+(`appcast.xml`, in this repository) and, if there is a new one, shows its notes with **Instalar actualización** (Install
+update): it downloads it from GitHub Releases, installs it and reopens, without going through Gatekeeper again. Each
+release is signed with an EdDSA key and with the same certificate as the one you have; if anything doesn't match, it
+isn't installed. It is also in **Glasstube › Buscar actualizaciones…** (Check for updates). In **Ajustes › General ›
+Actualizaciones** you can turn the daily check off or let it download and install updates on its own. Your settings,
+history and session stay.
 
-It is the only request the app makes on its own, and it carries no data about you or what you watch. Turn it off in
-**Ajustes › General › Actualizaciones** (Settings › General › Updates), where there is also a "check now" button. A copy
-you build yourself checks the same repository; `GITHUB_REPO= App/Scripts/package-app.sh` builds one without the notice.
+**Up to 0.5** there was no Sparkle: the app shows a notice in the bottom-right corner (it checks GitHub's
+`releases/latest` at most once a day) and **Descargar** opens the release page. Download the 0.6 `.dmg` once; from then
+on it updates itself.
+
+It is the only request the app makes on its own, and it carries no data about you or what you watch (Sparkle doesn't
+send the system profile). A copy you build yourself has no Sparkle (so it isn't replaced by the published `.dmg`; you
+update it with `git pull`) and keeps the GitHub notice; `GITHUB_REPO= App/Scripts/package-app.sh` builds one without any
+of this.
 
 ### Windows
 
@@ -186,8 +194,17 @@ What follows is the Mac app; the Windows one has part of it (see [Windows](#wind
   Spotlight, a Dock menu, Now Playing and media keys. YouTube-style shortcuts (K, J/L, F, C, M, 0–9) and light or dark
   appearance.
 
-**Not there yet:** settings backup, automatic updates and a TV mode (coming in phase 5b). Widgets, Shortcuts and a
-share extension need Xcode and are out of scope for now.
+- **TV mode:** for a Mac hooked up to a TV. Full screen with rows of big cards, like SmartTube's Leanback, driven only
+  by the arrows, Return and Esc: from the keyboard, a game controller or the d-pad in the YouTube app on your phone.
+  Enter it from **Visualización › Entrar en el modo TV** (View, ⌃⌘T) and leave with Esc.
+- **Backup:** a ZIP with your groups, Mac subscriptions, blocked channels, history with positions, the queue and the
+  settings, never your session or anything from the Keychain. Save it wherever you like or, daily, to iCloud Drive. It
+  also imports a SmartTube backup and exports groups for PocketTube and subscriptions for NewPipe.
+- **Updates:** installed in place and signed (Sparkle). See [Updates](#updates).
+- **Accessibility:** VoiceOver labels on cards and controls (the scrubber is a slider), animations follow Reduce Motion
+  and the glass is the system's, which adapts to Reduce Transparency and Increase Contrast.
+
+**Out of scope for now:** widgets, Shortcuts and a share extension need Xcode.
 
 ---
 
@@ -225,9 +242,11 @@ Other options:
 | `SIGN_IDENTITY=- App/Scripts/package-app.sh` | sign ad hoc even if the certificate exists |
 | `SIGN_IDENTITY="Some name" App/Scripts/package-app.sh` | sign with a different code-signing identity |
 
-**A release for download** (for whoever publishes): `App/Scripts/release.sh 0.5.0` sets that version, builds, packages
-and leaves the `.dmg` (with the Applications shortcut), its SHA-256 and the release notes in `dist/`. It uploads
-nothing. If the Keychain holds a "Developer ID Application" certificate and a `notarytool` profile, it signs with the
+**A release for download** (for whoever publishes): `CAMBIOS=changes.md App/Scripts/release.sh 0.6.0` sets that
+version, builds, packages and leaves the `.dmg` (with the Applications shortcut), its SHA-256 and the release notes in
+`dist/`; it also signs the `.dmg` for Sparkle and adds the release to `appcast.xml`. It uploads nothing. Sparkle's key is
+created once with `App/.build/artifacts/sparkle/Sparkle/bin/generate_keys` (the private half stays in your Keychain) and
+the public one goes in `App/Packaging/sparkle-clave-publica.txt`. If the Keychain holds a "Developer ID Application" certificate and a `notarytool` profile, it signs with the
 hardened runtime, notarises and staples the `.dmg`. Details in [App/NOTAS.md](App/NOTAS.md#distribución) (Spanish).
 
 **Tests** (each package on its own):

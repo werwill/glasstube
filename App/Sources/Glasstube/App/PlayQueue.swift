@@ -45,6 +45,19 @@ final class PlayQueue {
         return item
     }
 
+    /// Restaurar un respaldo (fase 5b): lo que falte va al final. Con la cola vacía, también el nombre de la playlist.
+    @discardableResult
+    func restore(_ incoming: [MediaItem], title: String?) -> Int {
+        let wasEmpty = items.isEmpty
+        var added = 0
+        for item in incoming where item.isPlayable && !items.contains(where: { $0.id == item.id }) {
+            items.append(item)
+            added += 1
+        }
+        if wasEmpty, added > 0 { sourceTitle = title }
+        return added
+    }
+
     /// Al abrir un video de una playlist: la cola pasa a ser el resto de la lista (lo que viene después), como en
     /// SmartTube. Lo que se había puesto a mano se pierde, igual que al empezar otra lista en YouTube.
     func load(playlist: [MediaItem], after item: MediaItem, title: String?) {

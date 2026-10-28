@@ -10,6 +10,10 @@
 #      (Packaging/dmg-fondo.svg). Finder acomoda la ventana por AppleScript; si macOS no le da permiso a quien corre el
 #      script para controlar Finder, el DMG sale igual, sin fondo ni posiciones.
 #   4. Escribe la SHA-256 (dist/Glasstube-<versión>.dmg.sha256) y dist/RELEASE-NOTES-<versión>.md.
+#   5. Sparkle (fase 5b): firma el DMG con EdDSA (sign_update, con la clave privada del Llavero de quien publica),
+#      comprueba que la firma vale con la clave pública que lleva la app, pone la entrada de esta versión en appcast.xml
+#      (en la raíz del repositorio; solo versiones de la Mac, etiquetas v…) y firma el appcast. Si la app no lleva clave
+#      pública (falta Packaging/sparkle-clave-publica.txt), se salta este paso y la app usa el aviso de GitHub.
 #
 # Notarización (opcional). Si en el Llavero hay una identidad «Developer ID Application» (security find-identity -p
 # codesigning), firma la app con ella, con hardened runtime y los entitlements de Glasstube.entitlements. Si además hay
@@ -25,6 +29,15 @@
 #   NOTARIZE=0                   con Developer ID, firma pero no notariza
 #   DEVELOPER_ID=<SHA-1|nombre>  qué identidad Developer ID usar si hay varias
 #   SKIP_BUILD=1                 no recompila: usa App/build/Glasstube.app si ya tiene esa versión (para rehacer el DMG)
+#   CAMBIOS=<archivo.md>         qué cambió (dos o tres viñetas en markdown): va a las notas y a la ventana de Sparkle
+#   SPARKLE_ED_KEY_FILE=<ruta>   la clave privada de Sparkle en un archivo en lugar del Llavero (sign_update -f)
+#   APPCAST=<ruta>               otro appcast (por omisión appcast.xml en la raíz del repositorio)
+#   DMG_URL=<url>                otra dirección para el DMG en el appcast (pruebas con un servidor local)
+#
+# La clave de Sparkle se crea UNA vez, la persona que publica, y la privada no sale de su Llavero:
+#
+#   App/.build/artifacts/sparkle/Sparkle/bin/generate_keys     # imprime la clave pública
+#   (pega la clave pública en App/Packaging/sparkle-clave-publica.txt y súbela al repositorio)
 set -euo pipefail
 
 VERSION="${1:-}"
@@ -42,6 +55,12 @@ NOTES="$DIST/RELEASE-NOTES-$VERSION.md"
 VOLNAME="Glasstube"
 NOTARY_PROFILE="${NOTARY_PROFILE:-glasstube-notarizacion}"
 PLIST_BUDDY=/usr/libexec/PlistBuddy
+APPCAST="${APPCAST:-$ROOT/appcast.xml}"
+SPARKLE_BIN="$APP_DIR/.build/artifacts/sparkle/Sparkle/bin"
+if [ -n "${CAMBIOS:-}" ] && [ ! -f "$CAMBIOS" ]; then
+    echo "No existe CAMBIOS=$CAMBIOS" >&2
+    exit 1
+fi
 
 log() { printf '\033[1m==> %s\033[0m\n' "$*"; }
 # hdiutil sigue funcionando en macOS 27, pero avisa en cada llamada que lo reemplaza `diskutil image`; el aviso se calla.
@@ -96,9 +115,9 @@ else
     sed -i '' -E "s/^VERSION=\"[^\"]*\"/VERSION=\"$VERSION\"/" "$PACKAGE"
     grep -q "^VERSION=\"$VERSION\"\$" "$PACKAGE" || { echo "No se pudo poner la versión en $PACKAGE" >&2; exit 1; }
     if [ -n "$DEVID_SHA" ]; then
-        CONFIG=release HARDENED_RUNTIME=1 SIGN_IDENTITY="$DEVID_SHA" "$PACKAGE"
+        CONFIG=release SPARKLE=1 HARDENED_RUNTIME=1 SIGN_IDENTITY="$DEVID_SHA" "$PACKAGE"
     else
-        CONFIG=release "$PACKAGE"
+        CONFIG=release SPARKLE=1 "$PACKAGE"
     fi
 fi
 
@@ -108,6 +127,16 @@ BUILT_VERSION="$($PLIST_BUDDY -c 'Print :CFBundleShortVersionString' "$APP/Conte
 BUILD_NUMBER="$($PLIST_BUDDY -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")"
 REPO="$($PLIST_BUDDY -c 'Print :GlasstubeGitHubRepository' "$APP/Contents/Info.plist" 2>/dev/null || true)"
 [ -n "$REPO" ] || warn "La app no tiene GlasstubeGitHubRepository (GITHUB_REPO vacío): sin aviso de versiones ni enlaces"
+SPARKLE_KEY="$($PLIST_BUDDY -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist" 2>/dev/null || true)"
+SPARKLE_FEED="$($PLIST_BUDDY -c 'Print :SUFeedURL' "$APP/Contents/Info.plist" 2>/dev/null || true)"
+MINIMUM_SYSTEM="$($PLIST_BUDDY -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")"
+if [ -n "$SPARKLE_KEY" ]; then
+    log "Sparkle: $SPARKLE_FEED"
+    [ -x "$SPARKLE_BIN/sign_update" ] || { echo "Falta $SPARKLE_BIN/sign_update (corre swift build en App/)" >&2; exit 1; }
+else
+    warn "La app no lleva clave pública de Sparkle (App/Packaging/sparkle-clave-publica.txt): sin appcast; esta versión"
+    warn "solo tendrá el aviso de GitHub. Para crear la clave: App/.build/artifacts/sparkle/Sparkle/bin/generate_keys"
+fi
 codesign --verify --deep --strict "$APP"
 
 SIGN_INFO="$(codesign -dvv "$APP" 2>&1)"
@@ -272,6 +301,21 @@ TAG="v$VERSION"
 REPO_URL="https://github.com/${REPO:-<dueño>/<repo>}"
 MPVKIT_COMMIT="98c3453e252922e3136422da3fbb2e341ed9edc8"
 
+if [ -n "$SPARKLE_KEY" ]; then
+    UPDATES_TEXT="Glasstube busca versiones nuevas una vez al día y las instala sin salir de la app (Sparkle, con
+> firma EdDSA); se apaga en **Ajustes › General › Actualizaciones**. Si vienes de la 0.5 o anterior, esta la instalas a
+> mano una vez; las siguientes llegan solas."
+    UPDATES_TEXT_EN="The app looks for new versions once a day and installs them in place (Sparkle, EdDSA-signed); turn it
+off in Ajustes › General › Actualizaciones."
+    ONCE_TEXT="una sola vez (las versiones siguientes llegan por Sparkle y abren sin este paso)"
+    ONCE_TEXT_EN="You only do this once: later versions arrive through Sparkle and open without it."
+else
+    UPDATES_TEXT="Glasstube avisa al abrirse cuando hay una nueva (consulta GitHub como mucho una vez al día; se
+> apaga en **Ajustes › General › Actualizaciones**)."
+    UPDATES_TEXT_EN="The app checks GitHub for new versions at most once a day (turn it off in Ajustes › General › Actualizaciones)."
+    ONCE_TEXT="una sola vez por versión"
+    ONCE_TEXT_EN="You only do this once per version."
+fi
 if [ "$NOTARIZED" = "1" ]; then
     OPEN_STEPS="Está firmada con Developer ID y notarizada por Apple: se abre directo, sin avisos de Gatekeeper.
 
@@ -281,7 +325,7 @@ if [ "$NOTARIZED" = "1" ]; then
 drag Glasstube to Applications and open it."
 else
     OPEN_STEPS="Es una **vista previa sin notarizar** ($SIGN_TEXT): Apple no la revisó, así que macOS la bloquea la primera
-vez. Se abre así, una sola vez por versión:
+vez. Se abre así, $ONCE_TEXT:
 
 1. Abre \`Glasstube-$VERSION.dmg\` y arrastra **Glasstube** a **Applications** (Aplicaciones).
 2. Abre Glasstube desde Aplicaciones. macOS dice que no puede verificar que esté libre de malware: pulsa **Listo**
@@ -297,7 +341,7 @@ xattr -dr com.apple.quarantine /Applications/Glasstube.app
 \`\`\`"
     OPEN_STEPS_EN="This is an **unnotarised preview** ($SIGN_TEXT_EN), so macOS blocks it the first time. Open the DMG,
 drag Glasstube to Applications and open it; click **Done**, then go to **System Settings › Privacy & Security**, click
-**Open Anyway** next to the Glasstube message and confirm. You only do this once per version."
+**Open Anyway** next to the Glasstube message and confirm. $ONCE_TEXT_EN"
 fi
 if [ "$SIGN_KIND" = "adhoc" ]; then
     KEYCHAIN_NOTE="Si inicias sesión en YouTube, macOS pregunta si Glasstube puede usar el Llavero: elige **Permitir siempre**.
@@ -306,15 +350,20 @@ else
     KEYCHAIN_NOTE="Si inicias sesión en YouTube, macOS pregunta si Glasstube puede usar el Llavero: elige **Permitir siempre**."
 fi
 
+if [ -n "${CAMBIOS:-}" ]; then
+    CHANGES_TEXT="$(cat "$CAMBIOS")"
+else
+    CHANGES_TEXT="<!-- Escribe aquí, en dos o tres viñetas, qué cambió en esta versión (o pásalas con CAMBIOS=archivo.md). -->"
+fi
+
 cat >"$NOTES" <<NOTES
 # Glasstube $VERSION
 
-<!-- Escribe aquí, en dos o tres viñetas, qué cambió en esta versión. -->
+$CHANGES_TEXT
 
 > [!NOTE]
 > **Vista previa.** YouTube cambia seguido su reproductor y sus defensas, y a veces eso rompe la reproducción hasta la
-> siguiente versión. Glasstube avisa al abrirse cuando hay una nueva (consulta GitHub como mucho una vez al día; se
-> apaga en **Ajustes › General › Actualizaciones**).
+> siguiente versión. $UPDATES_TEXT
 
 Glasstube no está afiliado a YouTube ni a Google. Lee las [preguntas frecuentes]($REPO_URL#preguntas-frecuentes) antes
 de usarlo con tu cuenta.
@@ -359,7 +408,7 @@ Glasstube $VERSION for **macOS 26 or later on Apple silicon**. Not affiliated wi
 
 $OPEN_STEPS_EN
 
-The app checks GitHub for new versions at most once a day (turn it off in Ajustes › General › Actualizaciones). Source
+$UPDATES_TEXT_EN Source
 code: [$TAG]($REPO_URL/tree/$TAG); the LGPL sources for the bundled libmpv are linked above.
 
 ---
@@ -367,13 +416,48 @@ code: [$TAG]($REPO_URL/tree/$TAG); the LGPL sources for the bundled libmpv are l
 <sub>Versión $VERSION ($BUILD_NUMBER) · $SIGN_TEXT · $([ "$NOTARIZED" = "1" ] && echo "notarizada" || echo "sin notarizar") · DMG $LAYOUT</sub>
 NOTES
 
+# --- 5. Sparkle: firma EdDSA del DMG y entrada del appcast ------------------------------------------------------------
+
+APPCAST_DONE=0
+if [ -n "$SPARKLE_KEY" ]; then
+    log "Firma EdDSA del DMG para Sparkle"
+    KEY_ARGS=()
+    [ -n "${SPARKLE_ED_KEY_FILE:-}" ] && KEY_ARGS=(--ed-key-file "$SPARKLE_ED_KEY_FILE")
+    # sign_update lee la clave privada del Llavero (macOS puede pedir permiso); imprime `sparkle:edSignature="…" …length="…"`.
+    SIGNED="$("$SPARKLE_BIN/sign_update" ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} "$DMG")" || {
+        echo "sign_update no pudo firmar. ¿Creaste la clave con generate_keys en esta Mac (o pasaste SPARKLE_ED_KEY_FILE)?" >&2
+        exit 1
+    }
+    ED_SIGNATURE="$(sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p' <<<"$SIGNED")"
+    ED_LENGTH="$(sed -n 's/.*length="\([0-9]*\)".*/\1/p' <<<"$SIGNED")"
+    [ -n "$ED_SIGNATURE" ] && [ "$ED_LENGTH" = "$(stat -f %z "$DMG")" ] || { echo "Salida inesperada de sign_update: $SIGNED" >&2; exit 1; }
+    # La pareja de la clave privada tiene que ser la clave pública que viaja en la app; si no, nadie podría actualizar.
+    swift "$APP_DIR/Scripts/verificar-firma-sparkle.swift" "$SPARKLE_KEY" "$ED_SIGNATURE" "$DMG" || {
+        echo "La clave privada con la que firmaste no es la de Packaging/sparkle-clave-publica.txt" >&2
+        exit 1
+    }
+    DMG_URL="${DMG_URL:-$REPO_URL/releases/download/$TAG/$(basename "$DMG")}"
+    python3 -I "$APP_DIR/Scripts/appcast-entrada.py" "$APPCAST" "$VERSION" "$BUILD_NUMBER" "$DMG_URL" "$ED_SIGNATURE" \
+        "$ED_LENGTH" "$REPO_URL/releases/tag/$TAG" "$MINIMUM_SYSTEM" ${CAMBIOS:+"$CAMBIOS"}
+    "$SPARKLE_BIN/sign_update" ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} "$APPCAST" >/dev/null
+    "$SPARKLE_BIN/sign_update" --verify ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} "$APPCAST" >/dev/null || { echo "El appcast firmado no se verifica" >&2; exit 1; }
+    APPCAST_DONE=1
+fi
+
 log "Listo"
 echo "  $DMG ($SIZE, $LAYOUT)"
 echo "  $DMG.sha256: $SHA256"
 echo "  $NOTES"
 echo "  Firma: $SIGN_TEXT · $([ "$NOTARIZED" = "1" ] && echo "notarizada y engrapada" || echo "sin notarizar")"
 echo
+[ "$APPCAST_DONE" = "1" ] && echo "  $APPCAST: entrada de $VERSION ($BUILD_NUMBER), firmado"
+echo
 echo "Para publicarla (lo haces tú): crea la versión $TAG en $REPO_URL/releases/new con el texto de"
-echo "$(basename "$NOTES") y adjunta el .dmg y el .sha256. No la marques como «pre-release»: el aviso de versiones"
-echo "consulta releases/latest, que no las incluye. Con gh:"
-echo "  gh release create $TAG \"$DMG\" \"$DMG.sha256\" --title \"Glasstube $VERSION\" --notes-file \"$NOTES\""
+echo "$(basename "$NOTES") y adjunta el .dmg y el .sha256. No la marques como «pre-release» y déjala como «Latest»: las"
+echo "apps 0.4 y 0.5 (sin Sparkle) consultan releases/latest. Las versiones de Windows (windows-v…) van con --latest=false."
+echo "Con gh:"
+echo "  gh release create $TAG \"$DMG\" \"$DMG.sha256\" --title \"Glasstube $VERSION\" --notes-file \"$NOTES\" --latest"
+if [ "$APPCAST_DONE" = "1" ]; then
+    echo "Después (cuando el DMG ya esté en la versión de GitHub), sube el appcast a main; Sparkle lo lee de ahí:"
+    echo "  git -C \"$ROOT\" add \"$APPCAST\" && git -C \"$ROOT\" commit -m \"Appcast: Glasstube $VERSION\" && git -C \"$ROOT\" push"
+fi

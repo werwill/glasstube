@@ -368,11 +368,18 @@ struct SeekBar: View {
                 }
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Posición")
-        .accessibilityValue("\(Format.time(player.position)) de \(Format.time(player.duration))")
-        .accessibilityAdjustableAction { direction in
-            player.seek(by: direction == .increment ? 5 : -5)
+        // Para VoiceOver es un control deslizante (antes era un elemento sin rol): «Posición, 0:40 de 10:35», y las flechas
+        // de VoiceOver adelantan o retroceden 5 s (fase 5b).
+        // (Sin `step`: con la duración aún desconocida el rango es 0…1 y SwiftUI se cae con un paso mayor que el rango.)
+        .accessibilityRepresentation {
+            Slider(value: Binding(get: { min(player.position, max(1, player.duration ?? 1)) }, set: { player.seek(to: $0) }),
+                   in: 0...max(1, player.duration ?? 1)) {
+                Text("Posición")
+            }
+            .accessibilityValue("\(Format.time(player.position)) de \(Format.time(player.duration))")
+            .accessibilityAdjustableAction { direction in
+                player.seek(by: direction == .increment ? 5 : -5)
+            }
         }
     }
 

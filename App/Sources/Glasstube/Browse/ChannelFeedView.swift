@@ -231,7 +231,7 @@ struct ChannelFeedView: View {
             NSLog("Glasstube grupos: feed de \(ids.count) canales → \(loaded.items.count) videos (\(loaded.items.filter(\.isShort).count) Shorts) en %.2f s; de caché \(loaded.cached), sin respuesta \(loaded.failed.count)\(refresh ? ", recargado" : "")",
                   Date().timeIntervalSince(start))
         }
-        withAnimation(.smooth) {
+        withAnimation(Motion.animation(.smooth)) {
             result = loaded
             loadedChannels = ids
         }

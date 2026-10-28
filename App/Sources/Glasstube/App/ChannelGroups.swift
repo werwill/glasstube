@@ -225,6 +225,59 @@ final class ChannelGroupStore {
         return summary
     }
 
+    // MARK: - Restaurar un respaldo (fase 5b)
+
+    /// Junta los grupos de un respaldo con los de esta Mac: el mismo grupo (por id o por nombre) recibe los canales que le
+    /// falten y los demás se agregan al final, en el orden del respaldo. No borra nada.
+    @discardableResult
+    func restore(groups incoming: [ChannelGroup]) -> (created: Int, updated: Int) {
+        var created = 0
+        var updated = 0
+        for group in incoming {
+            guard let title = Self.clean(group.title) else { continue }
+            var seen = Set<String>()
+            let channels = group.channels.filter { ChannelGroupImport.isChannelId($0.id) && seen.insert($0.id).inserted }
+            if let index = groups.firstIndex(where: { $0.id == group.id })
+                ?? groups.firstIndex(where: { $0.title.localizedCaseInsensitiveCompare(title) == .orderedSame }) {
+                var changed = false
+                for channel in channels {
+                    if let existing = groups[index].channels.firstIndex(where: { $0.id == channel.id }) {
+                        let merged = Self.merged(channel, groups[index].channels[existing])
+                        if merged != groups[index].channels[existing] {
+                            groups[index].channels[existing] = merged
+                        }
+                    } else {
+                        groups[index].channels.append(channel)
+                        changed = true
+                    }
+                }
+                if changed { updated += 1 }
+            } else {
+                let id = groups.contains { $0.id == group.id } || group.id.isEmpty ? UUID().uuidString : group.id
+                groups.append(ChannelGroup(id: id, title: uniqueTitle(title), iconURL: group.iconURL, channels: channels))
+                created += 1
+            }
+        }
+        scheduleSave()
+        return (created, updated)
+    }
+
+    /// Suma las suscripciones que falten (al final, en el orden del respaldo). Devuelve cuántas entraron.
+    @discardableResult
+    func restore(subscriptions incoming: [GroupChannel]) -> Int {
+        var added = 0
+        for channel in incoming where ChannelGroupImport.isChannelId(channel.id) {
+            if let index = subscriptions.firstIndex(where: { $0.id == channel.id }) {
+                subscriptions[index] = Self.merged(channel, subscriptions[index])
+            } else {
+                subscriptions.append(channel)
+                added += 1
+            }
+        }
+        scheduleSave()
+        return added
+    }
+
     // MARK: - Ayudas
 
     private static func clean(_ title: String) -> String? {

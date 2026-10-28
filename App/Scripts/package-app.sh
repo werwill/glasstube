@@ -9,7 +9,9 @@
 #   SIGN_IDENTITY=- Scripts/package-app.sh             # ad hoc aunque haya certificado
 #   SIGN_IDENTITY="Otro nombre" Scripts/package-app.sh # otra identidad de firma de código
 #   HARDENED_RUNTIME=1 SIGN_IDENTITY=<Developer ID> Scripts/package-app.sh  # para notarizar (lo usa release.sh)
-#   GITHUB_REPO= Scripts/package-app.sh                # sin aviso de versiones nuevas
+#   GITHUB_REPO= Scripts/package-app.sh                # sin actualizaciones (ni Sparkle ni el aviso de GitHub)
+#   SPARKLE=1 Scripts/package-app.sh                   # con Sparkle (lo pone release.sh; una copia compilada no lo lleva)
+#   SPARKLE_FEED_URL=http://127.0.0.1:8123/appcast.xml SPARKLE_PUBLIC_KEY=<base64> Scripts/package-app.sh  # pruebas
 #
 # Para publicar una versión (DMG, suma y notas; notarización si hay Developer ID): Scripts/release.sh <versión>.
 #
@@ -31,6 +33,22 @@ BUILD_NUMBER="$(date +%Y%m%d%H%M)"
 # cuenta o un fork, cámbialo aquí. Vacío (GITHUB_REPO=) apaga el aviso en esa compilación.
 GITHUB_REPO="${GITHUB_REPO-werwill/glasstube}"
 ENTITLEMENTS="$APP_DIR/Glasstube.entitlements"
+# Sparkle (fase 5b): el appcast va en la raíz del repositorio, en la rama main, y se sirve tal cual desde
+# raw.githubusercontent.com (sin GitHub Pages). Lo escribe y firma Scripts/release.sh.
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL-${GITHUB_REPO:+https://raw.githubusercontent.com/$GITHUB_REPO/main/appcast.xml}}"
+# La clave pública EdDSA (no es secreta; la privada se queda en el Llavero de quien publica). La crea esa persona una vez
+# con `.build/artifacts/sparkle/Sparkle/bin/generate_keys` y pega lo que imprime en este archivo. Sin clave, la app no
+# usa Sparkle y se queda con el aviso de versiones de GitHub.
+# Solo las versiones para descargar (release.sh pone SPARKLE=1) llevan Sparkle: una copia compilada por alguien no debe
+# reemplazarse con el DMG publicado (se actualiza con git pull) y sigue con el aviso de GitHub.
+SPARKLE_KEY_FILE="$APP_DIR/Packaging/sparkle-clave-publica.txt"
+if [ -z "${SPARKLE_PUBLIC_KEY+x}" ]; then
+    SPARKLE_PUBLIC_KEY=""
+    if [ "${SPARKLE:-0}" = "1" ] && [ -f "$SPARKLE_KEY_FILE" ]; then
+        # Sin clave todavía (solo los comentarios), grep no da nada y sale con 1: no debe cortar el script.
+        SPARKLE_PUBLIC_KEY="$({ grep -v '^#' "$SPARKLE_KEY_FILE" || true; } | tr -d ' \n\r')"
+    fi
+fi
 
 log() { printf '\033[1m==> %s\033[0m\n' "$*"; }
 
@@ -80,6 +98,16 @@ rm -rf "$APP/Contents/Frameworks/Libmpv.framework/Versions/A/Headers" "$APP/Cont
 # dentro de la app y dirían en qué carpeta se compiló. Se conservan los símbolos (las mpv_* exportadas incluidas).
 strip -S "$APP/Contents/MacOS/Glasstube" "$APP/Contents/Frameworks/Libmpv.framework/Versions/A/Libmpv" 2>/dev/null
 
+# Sparkle.framework (fase 5b), lo deja SwiftPM junto al ejecutable. Sin cabeceras ni módulos, y sin XPCServices: solo los
+# usan las apps en el sandbox, y Glasstube no lo está (así lo dice la documentación de Sparkle).
+SPARKLE_SRC="$BIN/Sparkle.framework"
+[ -d "$SPARKLE_SRC" ] || { echo "Falta $SPARKLE_SRC (swift build no copió Sparkle)" >&2; exit 1; }
+ditto "$SPARKLE_SRC" "$APP/Contents/Frameworks/Sparkle.framework"
+rm -rf "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Headers" "$APP/Contents/Frameworks/Sparkle.framework/Headers" \
+       "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/PrivateHeaders" "$APP/Contents/Frameworks/Sparkle.framework/PrivateHeaders" \
+       "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Modules" "$APP/Contents/Frameworks/Sparkle.framework/Modules" \
+       "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices" "$APP/Contents/Frameworks/Sparkle.framework/XPCServices"
+
 # Recursos de los paquetes (YTKit: clients.json, solver de n y firma, página del PoToken). El accesor de SwiftPM busca
 # primero en Bundle.main.resourceURL, o sea Contents/Resources.
 for bundle in "$BIN"/*.bundle; do
@@ -89,7 +117,7 @@ done
 
 # Licencias.
 cp "$APP_DIR"/Licenses/* "$APP/Contents/Resources/Licenses/"
-for required in LGPL-2.1.txt LGPL-3.0.txt GPL-3.0.txt SmartTube-MIT.txt libmpv-sources.txt; do
+for required in LGPL-2.1.txt LGPL-3.0.txt GPL-3.0.txt SmartTube-MIT.txt Sparkle-MIT.txt libmpv-sources.txt; do
     [ -f "$APP_DIR/Licenses/$required" ] || echo "AVISO: falta Licenses/$required (ver Licenses/THIRD-PARTY-NOTICES.md)" >&2
 done
 
@@ -107,6 +135,23 @@ if [ -n "$GITHUB_REPO" ]; then
     REPO_PLIST="    <!-- Aviso de versiones nuevas: api.github.com/repos/$GITHUB_REPO/releases/latest (Ajustes › General). -->
     <key>GlasstubeGitHubRepository</key><string>$GITHUB_REPO</string>
 "
+fi
+# Sparkle solo con appcast y clave pública; si falta algo, la app sigue con el aviso de GitHub.
+SPARKLE_PLIST=""
+if [ -n "$SPARKLE_FEED_URL" ] && [ -n "$SPARKLE_PUBLIC_KEY" ]; then
+    [[ "$SPARKLE_PUBLIC_KEY" =~ ^[A-Za-z0-9+/]{43}=$ ]] || { echo "La clave pública de Sparkle no parece una clave EdDSA en base64: $SPARKLE_KEY_FILE" >&2; exit 1; }
+    SPARKLE_PLIST="    <!-- Sparkle (fase 5b): appcast firmado, actualizaciones firmadas con EdDSA y verificadas antes de abrir el DMG. -->
+    <key>SUFeedURL</key><string>$SPARKLE_FEED_URL</string>
+    <key>SUPublicEDKey</key><string>$SPARKLE_PUBLIC_KEY</string>
+    <key>SUEnableAutomaticChecks</key><true/>
+    <key>SUScheduledCheckInterval</key><integer>86400</integer>
+    <key>SUVerifyUpdateBeforeExtraction</key><true/>
+    <key>SURequireSignedFeed</key><true/>
+    <key>SUEnableSystemProfiling</key><false/>
+"
+    log "Sparkle: $SPARKLE_FEED_URL"
+else
+    log "Sin Sparkle (solo con SPARKLE=1 y Packaging/sparkle-clave-publica.txt): la app usa el aviso de GitHub"
 fi
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -130,7 +175,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSSupportsAutomaticTermination</key><false/>
     <key>NSSupportsSuddenTermination</key><false/>
     <key>NSHumanReadableCopyright</key><string>Reimplementación de SmartTube (MIT). Usa mpv y FFmpeg bajo LGPL.</string>
-$REPO_PLIST    <!-- Fase 4: glasstube://watch?v=…, ://channel/…, ://playlist?list=…, ://search?q=…, ://open?url=… -->
+$REPO_PLIST$SPARKLE_PLIST    <!-- Fase 4: glasstube://watch?v=…, ://channel/…, ://playlist?list=…, ://search?q=…, ://open?url=… -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
@@ -176,6 +221,10 @@ fi
 # bibliotecas no dejaría cargar un Libmpv.framework vuelto a compilar por el usuario, que es lo que pide la LGPL. Con
 # Developer ID (HARDENED_RUNTIME=1) carga porque lleva el mismo Team ID; quien la reemplace vuelve a firmar ad hoc.
 sign "$APP/Contents/Frameworks/Libmpv.framework"
+# Sparkle de dentro hacia fuera: el instalador, la app de progreso y el framework (como pide su documentación).
+sign "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"
+sign "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app"
+sign "$APP/Contents/Frameworks/Sparkle.framework"
 for bundle in "$APP"/Contents/Resources/*.bundle; do
     [ -e "$bundle" ] || continue
     sign "$bundle" 2>/dev/null || true
@@ -190,5 +239,5 @@ plutil -lint "$APP/Contents/Info.plist" >/dev/null
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP" || true
 
 log "Listo: $APP ($(du -sh "$APP" | cut -f1))"
-otool -L "$APP/Contents/MacOS/Glasstube" | grep -i libmpv
+otool -L "$APP/Contents/MacOS/Glasstube" | grep -iE "libmpv|sparkle"
 if [ "${OPEN:-0}" = "1" ]; then open "$APP"; fi

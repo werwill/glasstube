@@ -131,9 +131,43 @@ shot_rect filtros-busqueda-claro 13 -appearance light -remoteEnabled NO -GTBibli
 shot_rect canal-grupos-oscuro 14 -appearance dark "${F5[@]}" -GTChannel $BLENDER -GTClicks "10:1222;312"
 shot filtros-sin-resultados-oscuro 12 -appearance dark -remoteEnabled NO -GTBibliotecaEnMemoria YES -GTSearch "blender open movie" \
     -GTFiltro "tipo=shorts,cc"
-# Ajustes: la pestaña Bloqueos (canales de prueba, ids inventados) y Respaldo tras importar el PocketTube de las pruebas.
+# Ajustes: la pestaña Bloqueos (canales de prueba, ids inventados). La de Respaldo va en la fase 5b.
 ACTIVAR=1 shot ajustes-bloqueos-claro 8 -appearance light "${F5[@]}" -GTOpenSettings YES -settingsTab blocked \
     -GTBloquear "UCcanaldeprueba000000001=Canal de prueba 1;UCcanaldeprueba000000002=Canal de prueba 2"
-ACTIVAR=1 shot ajustes-respaldo-claro 8 -appearance light -GTGruposEnMemoria YES -GTBibliotecaEnMemoria YES -remoteEnabled NO \
-    -GTImportar "$APP_DIR/../YTKit/Tests/YTKitTests/Fixtures/descubrir/pockettube.json" -GTOpenSettings YES -settingsTab backup
+# Fase 5b: respaldo, modo TV y accesibilidad. Sin actualizaciones (-GTSinActualizaciones) ni el aviso de ventanas
+# que macOS ofrece reabrir tras una caída (-ApplePersistenceIgnoreState). El respaldo es el de SmartTube de las pruebas
+# (ids de prueba y videos de Blender) y los grupos, los de la fase 5a.
+F5B=(-ApplePersistenceIgnoreState YES -GTSinActualizaciones YES -GTGruposEnMemoria YES -GTBibliotecaEnMemoria YES -remoteEnabled NO)
+SMARTTUBE="$APP_DIR/Tests/GlasstubeTests/Fixtures/smarttube-respaldo.zip"
+ACTIVAR=1 shot ajustes-respaldo-claro 9 -appearance light "${F5B[@]}" -GTRespaldoRestaurar "$SMARTTUBE" -GTOpenSettings YES -settingsTab backup
+ACTIVAR=1 shot respaldo-restaurar-smarttube-claro 9 -appearance light "${F5B[@]}" -GTRespaldoAbrir "$SMARTTUBE"
+ACTIVAR=1 shot respaldo-restaurar-smarttube-oscuro 9 -appearance dark "${F5B[@]}" -GTRespaldoAbrir "$SMARTTUBE"
+# Modo TV en una ventana de 1600×900 (16:9; en la tele va a pantalla completa): el grupo «Blender» con los videos CC de
+# arriba. Primero con el foco en el menú, luego en una tarjeta (→) y en la fila de Shorts (→ ↓).
+TV=(-appearance dark "${F5B[@]}" -GTSoloVideos "$CC_BLENDER" -GTGrupos "Blender=$BLENDER;Animación 3D=$BLENDER;Software libre=$BLENDER"
+    -GTTV YES -GTTVSinPantallaCompleta YES -GTTVSeccion Blender -GTWindowSize 1600x900)
+shot tv-menu-oscuro 9 "${TV[@]}"
+shot tv-tarjeta-oscuro 11 "${TV[@]}" -GTKeys "6:right,7:right"
+shot tv-shorts-oscuro 11 "${TV[@]}" -GTKeys "6:right,7:down"
+# Accesibilidad (Ajustes del Sistema › Accesibilidad › Pantalla): las mismas pantallas con el ajuste que esté activo. El
+# nombre lleva lo que vio la app: a11y-<estado>-<pantalla>.png, con estado normal, sin-transparencia, contraste o
+# sin-movimiento. Se corre una vez por ajuste: `Scripts/capturas.sh a11y`.
+shot_a11y() {
+    local name="$1" wait="$2"; shift 2
+    [[ -z "$FILTER" || "a11y-$name" == *"$FILTER"* ]] || return 0
+    pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true
+    sleep 1
+    rm -f "$TMP/wid"
+    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowSize 1440x900 -GTSinLlavero YES -GTRegistroAccesibilidad YES "$@" > "$TMP/a11y-$name.log" 2>&1 &
+    sleep "$wait"
+    local state
+    state="$(sed -n 's/.*Glasstube accesibilidad: estado=//p' "$TMP/a11y-$name.log" | head -1)"
+    screencapture -x -o -l"$(cat "$TMP/wid")" "$OUT/a11y-${state:-desconocido}-$name.png"
+    echo "capturas/a11y-${state:-desconocido}-$name.png"
+}
+shot_a11y grupo 13 -appearance light "${F5[@]}" -GTGrupo Blender -GTSinActualizaciones YES -ApplePersistenceIgnoreState YES
+shot_a11y reproductor 15 -appearance dark -GTPlay aqz-KE-bpKQ -GTStartAt 120 -GTKeepControls YES -GTSinActualizaciones YES \
+    -GTBibliotecaEnMemoria YES -remoteEnabled NO -ApplePersistenceIgnoreState YES
+shot_a11y tv 11 "${TV[@]}" -GTKeys "6:right"
+shot_a11y ajustes 9 -appearance light "${F5B[@]}" -GTOpenSettings YES -settingsTab backup
 pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true

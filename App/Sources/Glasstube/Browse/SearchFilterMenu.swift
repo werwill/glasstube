@@ -53,7 +53,7 @@ struct SearchFilterMenu: View {
                             .labelStyle(.iconOnly)
                     }
                     .help("Quitar los filtros")
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.moving(.scale.combined(with: .opacity)))
                 }
             }
             .buttonStyle(.glass)

@@ -141,7 +141,7 @@ struct HomeView: View {
         do {
             let loaded = try await model.service.home()
             if Log.verbose { NSLog("Glasstube: Inicio: \(loaded.groups.count) filas, \(loaded.itemCount) elementos (cancelada: \(Task.isCancelled))") }
-            withAnimation(.smooth) { page = loaded }
+            withAnimation(Motion.animation(.smooth)) { page = loaded }
             if !model.searchFieldFocused {
                 try? await Task.sleep(for: .milliseconds(100))
                 model.focusContent()

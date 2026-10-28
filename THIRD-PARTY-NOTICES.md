@@ -6,8 +6,8 @@ Los textos completos están en [App/Licenses/](App/Licenses/), y `App/Scripts/pa
 `Glasstube.app/Contents/Resources/Licenses/`.
 
 *Third-party notices: Glasstube is new MIT-licensed code that reimplements SmartTube for macOS. It ships mpv and FFmpeg
-as a replaceable LGPL dynamic library and bundles the yt-dlp/ejs challenge solver (Unlicense) with meriyah (ISC) and
-astring (MIT). Full texts are in `App/Licenses/`.*
+as a replaceable LGPL dynamic library, Sparkle (MIT) for in-app updates, and bundles the yt-dlp/ejs challenge solver
+(Unlicense) with meriyah (ISC) and astring (MIT). Full texts are in `App/Licenses/`.*
 
 ## Código y recursos incluidos
 
@@ -21,7 +21,17 @@ astring (MIT). Full texts are in `App/Licenses/`.*
 | **QuickJS** (quickjs-ng 0.17.0): motor de JavaScript del solver fuera de Apple; solo se compila en Windows (y Linux) | `YTKit/Sources/CQuickJS/` | MIT, © 2017-2026 Fabrice Bellard, Charlie Gordon, Ben Noordhuis y otros | [LICENSE](YTKit/Sources/CQuickJS/LICENSE) |
 | **WebView2** `WebView2.h` (paquete NuGet Microsoft.Web.WebView2 1.0.4258.31): interfaces COM del WebView del PoToken en Windows | `YTKit/Sources/CWebView2/` | BSD-3-Clause, © Microsoft Corporation | [LICENSE-WebView2.txt](YTKit/Sources/CWebView2/LICENSE-WebView2.txt) |
 
-## Biblioteca que se descarga al compilar (no está en el repositorio)
+## Bibliotecas que se descargan al compilar (no están en el repositorio)
+
+**Sparkle** 2.10.1 (github.com/sparkle-project/Sparkle), desde la fase 5b: actualizaciones dentro de la app de la Mac.
+SwiftPM baja su binario (`Sparkle.xcframework`) de las versiones de GitHub del proyecto y `App/Scripts/package-app.sh`
+copia `Sparkle.framework` en `Glasstube.app/Contents/Frameworks/` (sin los XPCServices, que solo usan las apps en el
+sandbox). Licencia MIT, © 2006-2013 Andy Matuschak y otros; incluye bsdiff (BSD-2-Clause, © 2003-2005 Colin Percival),
+sais-lite (MIT, © 2008-2010 Yuta Mori) y ed25519 de orlp (zlib, © 2015 Orson Peters). Texto completo:
+[Sparkle-MIT.txt](App/Licenses/Sparkle-MIT.txt). Las herramientas `generate_keys` y `sign_update` del mismo paquete solo
+las usa quien publica, para firmar cada versión.
+
+### libmpv
 
 `PlaybackKit/Scripts/fetch-libmpv.sh` descarga los binarios de **MPVKit** 1.1.0-n9.0.2 (github.com/mpvkit/MPVKit, solo
 las variantes LGPL) y `link-libmpv.sh` los enlaza en `Libmpv.framework`, una biblioteca dinámica que la app carga desde

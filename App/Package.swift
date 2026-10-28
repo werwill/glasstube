@@ -13,6 +13,9 @@ let package = Package(
     dependencies: [
         .package(path: "../YTKit"),
         .package(path: "../PlaybackKit"),
+        // Fase 5b: actualizaciones dentro de la app (MIT). Es un binario (Sparkle.xcframework) que SwiftPM baja de las
+        // versiones de GitHub; trae también `bin/` con generate_keys, sign_update y generate_appcast.
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.1"),
     ],
     targets: [
         .executableTarget(
@@ -21,6 +24,7 @@ let package = Package(
                 .product(name: "YTKit", package: "YTKit"),
                 .product(name: "PlaybackKit", package: "PlaybackKit"),
                 .product(name: "YouTubeSource", package: "PlaybackKit"),
+                .product(name: "Sparkle", package: "Sparkle"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
@@ -37,6 +41,8 @@ let package = Package(
         .testTarget(
             name: "GlasstubeTests",
             dependencies: ["Glasstube", .product(name: "YTKit", package: "YTKit")],
+            // Fase 5b: un respaldo de SmartTube de prueba (Fixtures/smarttube-respaldo.zip).
+            resources: [.copy("Fixtures")],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
                 .unsafeFlags(["-plugin-path", "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing"]),

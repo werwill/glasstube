@@ -52,12 +52,11 @@ struct VideoCard: View {
                 thumbnail
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Reproducir: \(title)")
             .overlay(alignment: .topTrailing) {
                 if lifted {
                     CardMoreButton(item: item)
                         .padding(8)
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        .transition(.moving(.opacity.combined(with: .scale(scale: 0.9))))
                 }
             }
 
@@ -72,9 +71,15 @@ struct VideoCard: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .accessibilityElement(children: .combine)
         }
         .contentShape(.rect)
+        // VoiceOver: la tarjeta es un solo botón con todo su texto (antes leía el título dos veces), el menú del video con
+        // VO-Mayús-M y las acciones más usadas en el rotor de acciones (fase 5b).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(CardAccessibility.label(for: item, title: title, watched: watched))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { model.open(item, context: playContext) }
+        .modifier(CardAccessibilityActions(item: item))
         .onHover { inside in
             withAnimation(.smooth(duration: 0.2)) { hovering = inside && !Automation.shared.ignoresPointer }
         }
@@ -149,8 +154,47 @@ struct VideoCard: View {
                     .padding(-4)
             }
         }
-        .offset(y: lifted ? -4 : 0)
+        .offset(y: lifted && !Motion.isReduced ? -4 : 0)
         .shadow(color: .black.opacity(lifted ? 0.24 : 0.10), radius: lifted ? 17 : 1, y: lifted ? 16 : 1)
+    }
+}
+
+/// Lo que dice VoiceOver de una tarjeta: título, tipo, datos y cuánto se vio.
+enum CardAccessibility {
+    static func label(for item: MediaItem, title: String, watched: Double?) -> String {
+        var parts = [title]
+        switch item.kind {
+        case .channel: parts.append("canal")
+        case .playlist, .mix: parts.append("playlist")
+        case .video:
+            if item.isShort { parts.append("Short") }
+            if item.isLive { parts.append("en vivo") } else if let duration = item.durationText { parts.append(duration) }
+        }
+        let subtitle = item.cardSubtitle
+        if !subtitle.isEmpty { parts.append(subtitle) }
+        if let watched, watched > 0.02 { parts.append("visto \(Int((watched * 100).rounded())) %") }
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// Las acciones del menú de una tarjeta que más se usan, en el rotor de acciones de VoiceOver (el menú completo sale con
+/// VO-Mayús-M, como el clic derecho).
+struct CardAccessibilityActions: ViewModifier {
+    let item: MediaItem
+    @Environment(AppModel.self) private var model
+    @Environment(LocalLibrary.self) private var library
+
+    func body(content: Content) -> some View {
+        content.accessibilityActions {
+            if item.isPlayable {
+                Button("Reproducir a continuación") { model.enqueue(item, next: true) }
+                Button("Agregar a la cola") { model.enqueue(item, next: false) }
+                Button(library.isInWatchLater(item) ? "Quitar de Ver más tarde" : "Ver más tarde") { library.toggleWatchLater(item) }
+            }
+            if item.kind != .channel, item.channelId != nil {
+                Button("Abrir canal") { model.openChannel(of: item) }
+            }
+        }
     }
 }
 
@@ -315,11 +359,12 @@ struct ShortCard: View {
                         .padding(-4)
                 }
             }
-            .offset(y: hovering || isFocused ? -4 : 0)
+            .offset(y: (hovering || isFocused) && !Motion.isReduced ? -4 : 0)
             .shadow(color: .black.opacity(hovering || isFocused ? 0.24 : 0.1), radius: hovering || isFocused ? 17 : 1, y: hovering || isFocused ? 16 : 1)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Reproducir Short: \(item.title)")
+        .accessibilityLabel(CardAccessibility.label(for: item, title: model.deArrow.title(for: item), watched: nil))
+        .modifier(CardAccessibilityActions(item: item))
         .onHover { inside in withAnimation(.smooth(duration: 0.2)) { hovering = inside && !Automation.shared.ignoresPointer } }
         .contextMenu { ItemMenu(item: item) }
     }
@@ -352,7 +397,8 @@ struct ChannelCard: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Abrir canal: \(item.title)")
+        .accessibilityLabel(CardAccessibility.label(for: item, title: item.title, watched: nil))
+        .modifier(CardAccessibilityActions(item: item))
         .contextMenu { ItemMenu(item: item) }
     }
 }

@@ -52,6 +52,13 @@ Textos de licencia incluidos: `LGPL-2.1.txt`, `LGPL-3.0.txt` y `GPL-3.0.txt` (LG
 https://www.gnu.org/licenses/gpl-3.0.txt el 15-oct-2026 (SHA-256 `e3a994d8…5c5f23118` y `3972dc97…9dfb36986`).
 `Scripts/package-app.sh` copia todo `App/Licenses/` en `Contents/Resources/Licenses/` y avisa si falta alguno.
 
+## Sparkle (actualizaciones, MIT)
+
+`Contents/Frameworks/Sparkle.framework` es Sparkle 2.10.1 (github.com/sparkle-project/Sparkle), el binario que publica
+el proyecto para SwiftPM, sin cabeceras ni XPCServices y firmado de nuevo con el certificado de la app. MIT, © 2006-2013
+Andy Matuschak y otros, con bsdiff (BSD-2-Clause), sais-lite (MIT) y ed25519 (zlib): texto completo en
+`Sparkle-MIT.txt`.
+
 ## yt-dlp/ejs (solver de `n` y firma)
 
 `YTKit_YTKit.bundle/…/nsigsolver/yt.solver.core.js` sale de github.com/yt-dlp/ejs (Unlicense), con meriyah 6.1.4

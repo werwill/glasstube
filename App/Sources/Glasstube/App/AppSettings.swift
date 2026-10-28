@@ -50,7 +50,7 @@ final class AppSettings {
         (2160, "2160p (4K)"), (1440, "1440p"), (1080, "1080p"), (720, "720p"), (480, "480p"), (360, "360p"),
     ]
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     // Interfaz
     var appearance: Appearance { didSet { save(appearance.rawValue, "appearance"); applyAppearance() } }
@@ -101,8 +101,14 @@ final class AppSettings {
     /// Avisar de versiones nuevas (una consulta a la API de GitHub al abrir, como mucho una vez al día).
     var checkForUpdates: Bool { didSet { save(checkForUpdates, "checkForUpdates") } }
 
-    init() {
-        let d = UserDefaults.standard
+    // Respaldo (fase 5b)
+    /// Guardar cada día un respaldo en la carpeta Glasstube de iCloud Drive (apagado por omisión; es de cada Mac).
+    var iCloudBackup: Bool { didSet { save(iCloudBackup, "iCloudBackup") } }
+
+    /// `defaults`: otro dominio en las pruebas, para no tocar los ajustes de esta Mac.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        let d = defaults
         appearance = Appearance(rawValue: d.string(forKey: "appearance") ?? "") ?? .system
         hoverPreviews = Self.flag(d, "hoverPreviews", true)
         showShortsOnHome = Self.flag(d, "showShortsOnHome", false)
@@ -128,6 +134,7 @@ final class AppSettings {
         remoteName = d.string(forKey: "remoteName").flatMap { $0.isEmpty ? nil : $0 } ?? RemoteControl.defaultName
         spotlightEnabled = Self.flag(d, "spotlightEnabled", true)
         checkForUpdates = Self.flag(d, "checkForUpdates", true)
+        iCloudBackup = Self.flag(d, "iCloudBackup", false)
     }
 
     /// Booleano de `UserDefaults` con valor por omisión. `bool(forKey:)` entiende también "YES"/"NO" como texto, que es

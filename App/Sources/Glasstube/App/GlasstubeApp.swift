@@ -58,12 +58,20 @@ struct GlasstubeCommands: Commands {
             Button("Recargar") { model.reload() }
                 .keyboardShortcut("r", modifiers: .command)
             Divider()
+            // Fase 5b: interfaz a pantalla completa para la tele; Esc (en el menú de secciones) también sale.
+            Button(model.tvMode == nil ? "Entrar en el modo TV" : "Salir del modo TV") { model.toggleTVMode() }
+                .keyboardShortcut("t", modifiers: [.command, .control])
+            Divider()
         }
         CommandGroup(after: .textEditing) {
             Button("Buscar en YouTube") { model.focusSearch() }
                 .keyboardShortcut("k", modifiers: .command)
             Button("Abrir el enlace copiado") { model.openPasteboard() }
                 .keyboardShortcut("v", modifiers: [.command, .shift])
+        }
+        CommandGroup(after: .appInfo) {
+            Button("Buscar actualizaciones…") { model.checkForUpdates() }
+                .disabled(model.sparkle.map { !$0.canCheck } ?? model.updates.isChecking)
         }
         CommandGroup(after: .appSettings) {
             Button("Vincular un teléfono…") { model.remote.beginPairing() }

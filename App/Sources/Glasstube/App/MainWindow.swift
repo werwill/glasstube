@@ -38,10 +38,19 @@ struct MainWindow: View {
             .task(id: model.searchText) { await loadSuggestions(for: model.searchText) }
             .onChange(of: model.searchFocusRequest) { searchFocused = true }
             .onChange(of: searchFocused) { _, focused in model.searchFieldFocused = focused }
-            .toolbarVisibility(playerCoversWindow ? .hidden : .automatic, for: .windowToolbar)
-            .allowsHitTesting(!playerCoversWindow)
-            .disabled(playerCoversWindow)
-            .accessibilityHidden(playerCoversWindow)
+            .toolbarVisibility(navigationCovered ? .hidden : .automatic, for: .windowToolbar)
+            .allowsHitTesting(!navigationCovered)
+            .disabled(navigationCovered)
+            .accessibilityHidden(navigationCovered)
+
+            // Fase 5b: el modo TV tapa la navegación; el reproductor que se abre desde él va encima.
+            if let tv = model.tvMode {
+                TVModeView(tv: tv)
+                    .disabled(playerCoversWindow)
+                    .accessibilityHidden(playerCoversWindow)
+                    .transition(.opacity)
+                    .zIndex(0.5)
+            }
 
             if let player = model.player {
                 switch model.playerPresentation {
@@ -65,6 +74,7 @@ struct MainWindow: View {
             }
         }
         .animation(.smooth(duration: 0.25), value: playerCoversWindow)
+        .animation(.smooth(duration: 0.3), value: model.tvMode == nil)
         // Fase 4: soltar un enlace de YouTube (de Safari, Mensajes, Notas…) lo abre.
         .onDrop(of: DropTypes.accepted, isTargeted: $dropTargeted) { model.openDropped($0) }
         .overlay {
@@ -75,7 +85,7 @@ struct MainWindow: View {
                     .padding(.vertical, 14)
                     .glassEffect(.regular, in: .capsule)
                     .allowsHitTesting(false)
-                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    .transition(.moving(.scale(scale: 0.9).combined(with: .opacity)))
             }
         }
         .animation(.smooth(duration: 0.2), value: dropTargeted)
@@ -94,7 +104,7 @@ struct MainWindow: View {
                     .padding(.vertical, 10)
                     .glassEffect(.regular, in: .capsule)
                     .padding(.bottom, 24)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(.moving(.move(edge: .bottom).combined(with: .opacity)))
                     .onTapGesture { model.accounts.notice = nil }
                     .task(id: model.accounts.notice) {
                         guard model.accounts.notice != nil else { return }
@@ -107,10 +117,10 @@ struct MainWindow: View {
         .overlay(alignment: .bottomTrailing) {
             // Versión nueva en GitHub: abajo a la derecha, fuera del camino; con el reproductor en la ventana espera a que
             // se cierre.
-            if let update = model.updates.available, !playerCoversWindow {
+            if let update = model.updates.available, !navigationCovered {
                 UpdateNotice(update: update)
                     .padding([.trailing, .bottom], 20)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(.moving(.move(edge: .bottom).combined(with: .opacity)))
             }
         }
         .animation(.smooth, value: model.updates.available)
@@ -124,6 +134,9 @@ struct MainWindow: View {
 
     /// El reproductor ocupa la ventana (no en el minirreproductor ni en el PiP).
     private var playerCoversWindow: Bool { model.player != nil && model.playerPresentation == .full }
+
+    /// La navegación queda tapada por el reproductor o por el modo TV.
+    private var navigationCovered: Bool { playerCoversWindow || model.tvMode != nil }
 
     private var pairingPresented: Binding<Bool> {
         Binding(get: { remote.pairing != nil }, set: { if !$0 { remote.closePairing() } })

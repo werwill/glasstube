@@ -59,7 +59,7 @@ struct PlayerView: View {
                             .padding(.top, 20)
                             .padding(.bottom, 28)
                             .padding(.trailing, 24)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                            .transition(.moving(.move(edge: .trailing).combined(with: .opacity)))
                     }
                 }
             }
@@ -81,7 +81,7 @@ struct PlayerView: View {
             if case .active = phase { player.bumpControls() }
         }
         .background(WindowAccessor { player.window = $0 })
-        .animation(.smooth(duration: 0.35), value: player.controlsVisible)
+        .animation(Motion.isReduced ? .easeInOut(duration: 0.15) : .smooth(duration: 0.35), value: player.controlsVisible)
         .animation(.smooth(duration: 0.25), value: player.activeSegment?.id)
         .animation(.smooth(duration: 0.3), value: player.panelTab == nil)
         .animation(.smooth(duration: 0.25), value: player.upNext?.item.id)
@@ -156,7 +156,7 @@ struct PlayerView: View {
                 PlayerTopBar()
                     .padding(.top, 20)
                     .padding(.horizontal, 24)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.moving(.opacity.combined(with: .move(edge: .top))))
             }
             if let toast = player.toast {
                 Text(toast)
@@ -176,11 +176,11 @@ struct PlayerView: View {
                         UpNextCard(upNext: upNext)
                             .glassEffect(.regular, in: .rect(cornerRadius: 24))
                             .glassEffectID("upnext", in: glass)
-                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                            .transition(.moving(.opacity.combined(with: .scale(scale: 0.95))))
                     } else if let segment = player.activeSegment {
                         SkipSegmentButton(segment: segment, remaining: segment.end - player.position)
                             .glassEffectID("skip", in: glass)
-                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                            .transition(.moving(.opacity.combined(with: .scale(scale: 0.9))))
                     }
                 }
                 .onGeometryChange(for: ClosedRange<CGFloat>.self) { proxy in
@@ -193,7 +193,7 @@ struct PlayerView: View {
             // solo, muy arriba).
             .padding(.trailing, player.popover == nil ? 32 : 446)
             .padding(.bottom, (player.controlsVisible ? 16 : 14) + (clearsBubble ? StoryboardBubble.height + 8 : 0))
-            .animation(.smooth(duration: 0.25), value: clearsBubble)
+            .animation(Motion.animation(.smooth(duration: 0.25)), value: clearsBubble)
 
             if player.controlsVisible {
                 PlayerControlsCapsule()

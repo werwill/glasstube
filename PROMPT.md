@@ -121,7 +121,9 @@ Cuéntale también del **aviso de versiones nuevas**: al abrirse, y como mucho u
 (`api.github.com/repos/werwill/glasstube/releases/latest`) por la última versión publicada y, si hay una más nueva,
 muestra un aviso con «Descargar» y «Ahora no». Es la única consulta que hace por su cuenta, sin datos de la persona.
 Con una copia compilada, el aviso solo informa: se actualiza con `git pull` y `package-app.sh`. Se apaga en **Ajustes ›
-General › Actualizaciones**, o se compila sin él con `GITHUB_REPO= App/Scripts/package-app.sh`.
+General › Actualizaciones**, o se compila sin él con `GITHUB_REPO= App/Scripts/package-app.sh`. Las versiones del `.dmg`
+de GitHub Releases (desde la 0.6) se actualizan solas con Sparkle; una copia compilada no lleva Sparkle a propósito,
+para que no se reemplace con el `.dmg` publicado.
 
 ## Si algo no sale
 

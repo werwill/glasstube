@@ -41,7 +41,7 @@ final class LocalLibrary {
     /// Sin archivo: pruebas y capturas (`-GTBibliotecaEnMemoria`), que no tocan el historial de esta Mac.
     @ObservationIgnored private let persistent: Bool
 
-    static let historyLimit = 500
+    nonisolated static let historyLimit = 500
 
     private nonisolated static let fileURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -146,6 +146,44 @@ final class LocalLibrary {
     func visible(_ items: [MediaItem]) -> [MediaItem] {
         guard !hiddenVideos.isEmpty || !blockedChannels.isEmpty else { return items }
         return items.filter { !hiddenVideos.contains($0.id) && !isBlocked($0) }
+    }
+
+    // MARK: - Restaurar un respaldo (fase 5b)
+
+    /// Junta el historial de un respaldo con el de esta Mac: de un video que está en los dos queda el más reciente, y todo
+    /// se ordena por fecha (hasta `historyLimit`). Ver más tarde y «No me interesa» suman lo que falte. No borra nada.
+    /// Devuelve cuántos videos entraron o cambiaron.
+    @discardableResult
+    func restore(history incoming: [SavedVideo], watchLater laterIncoming: [SavedVideo] = [], hidden: [String] = []) -> Int {
+        var changed = 0
+        var byId = Dictionary(history.map { ($0.item.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for entry in incoming where entry.item.videoId != nil {
+            if let current = byId[entry.item.id], current.updatedAt >= entry.updatedAt { continue }
+            byId[entry.item.id] = entry
+            changed += 1
+        }
+        history = Array(byId.values.sorted { $0.updatedAt > $1.updatedAt }.prefix(Self.historyLimit))
+        for entry in laterIncoming where !watchLater.contains(where: { $0.item.id == entry.item.id }) {
+            watchLater.append(entry)
+            changed += 1
+        }
+        let before = hiddenVideos.count
+        hiddenVideos.formUnion(hidden)
+        changed += hiddenVideos.count - before
+        scheduleSave()
+        return changed
+    }
+
+    /// Suma los canales bloqueados que falten. Devuelve cuántos entraron.
+    @discardableResult
+    func restore(blocked incoming: [BlockedChannel]) -> Int {
+        var added = 0
+        for channel in incoming where !blockedChannels.contains(where: { $0.id == channel.id }) {
+            blockedChannels.append(channel)
+            added += 1
+        }
+        scheduleSave()
+        return added
     }
 
     // MARK: - Disco
