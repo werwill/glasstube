@@ -121,7 +121,7 @@ public func gt_shutdown() {
     Task { @MainActor in Engine.shared = nil }
 }
 
-let version = "0.4.0"
+let version = "0.5.0"
 
 @_cdecl("gt_version")
 public func gt_version() -> UnsafeMutablePointer<CChar>? {

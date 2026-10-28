@@ -26,6 +26,8 @@ enum MetadataCache {
     }
 
     static func invalidate(_ videoId: String) { entries[videoId] = nil }
+
+    static func invalidateAll() { entries = [:] }
 }
 
 // MARK: - Estado de la cuenta en un video
