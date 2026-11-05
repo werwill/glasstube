@@ -16,11 +16,12 @@ jobs:
     defaults:
       run:
         working-directory: YTKit
+    # Se compila con el Xcode del runner: las Command Line Tools de la imagen macos-26 ya no traen el módulo Testing.
+    # YTKIT_CON_XCODE le quita a las pruebas la ruta del plugin de las Command Line Tools (Package.swift), que el
+    # compilador de Xcode no carga.
+    env:
+      YTKIT_CON_XCODE: "1"
     steps:
-      # Package.swift le pasa a las pruebas el plugin de macros de Swift Testing de las Command Line Tools, que no carga
-      # con el compilador del Xcode del runner: se compila con las Command Line Tools, como en una Mac sin Xcode.
-      - run: sudo xcode-select -s /Library/Developer/CommandLineTools
-        working-directory: .
       - uses: actions/checkout@v4
       - run: swift build
       - run: swift test

@@ -8,3 +8,15 @@ public sealed record VideoAccountInfo(string VideoId, bool SignedIn, string? Lik
                                       string? Subscribers, string? LikeCountText, int? Likes, int? Dislikes);
 
 public sealed record SubscriptionState(bool SignedIn, bool? IsSubscribed, string? Params);
+
+// Iniciar y cerrar sesión (SignIn.swift).
+
+public sealed record SavedAccount(string Id, string Name, string? Byline, string? Avatar, bool IsBrand, bool IsSelected);
+
+public sealed record AccountList(bool SignedIn, List<SavedAccount> Accounts)
+{
+    public SavedAccount? Selected => Accounts.FirstOrDefault(a => a.IsSelected);
+}
+
+/// <summary>El código que se escribe en <see cref="VerificationUrl"/> (youtube.com/activate); vence en <see cref="ExpiresIn"/> s.</summary>
+public sealed record SignInCode(string UserCode, string VerificationUrl, int ExpiresIn);

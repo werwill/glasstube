@@ -143,7 +143,9 @@ public sealed partial class SubscriptionsPage : Page
         MoreButton.Visibility = Tabs.SelectedItem == InboxTab && store.HasMore ? Visibility.Visible : Visibility.Collapsed;
 
         EmptyPanel.Visibility = rows.Count == 0 && store.IsLoaded || store.Error != null ? Visibility.Visible : Visibility.Collapsed;
-        EmptyText.Text = store.Error != null ? $"No se pudieron cargar las suscripciones.\n{store.Error}"
+        SignInButton.Visibility = store.NeedsSignIn ? Visibility.Visible : Visibility.Collapsed;
+        EmptyText.Text = store.NeedsSignIn ? "Inicia sesión con tu cuenta de YouTube para ver los videos nuevos de tus canales."
+            : store.Error != null ? $"No se pudieron cargar las suscripciones.\n{store.Error}"
             : Tabs.SelectedItem == LaterTab ? "Nada en Ver más tarde."
             : Tabs.SelectedItem == ArchivedTab ? "Nada archivado." : "Estás al día.";
 
@@ -183,6 +185,11 @@ public sealed partial class SubscriptionsPage : Page
     void OnTabChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args) => Rebuild();
 
     void OnClearFilter(object sender, RoutedEventArgs e) => App.Window?.ShowSubscriptions(null);
+
+    async void OnSignInClick(object sender, RoutedEventArgs e)
+    {
+        if (App.Window is { } window) await window.SignIn();
+    }
 
     async void OnLoadMore(object sender, RoutedEventArgs e)
     {

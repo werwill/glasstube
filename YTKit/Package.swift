@@ -1,4 +1,5 @@
 // swift-tools-version:6.0
+import Foundation
 import PackageDescription
 
 // YTKit de Glasstube (fase 1): red y catálogo de YouTube, sin interfaz.
@@ -69,8 +70,10 @@ let package = Package(
             dependencies: ["YTKit"],
             resources: [.copy("Fixtures")],
             // Solo con Command Line Tools (sin Xcode), el build de SwiftPM no le pasa al compilador el plugin de las
-            // macros de Swift Testing (@Test, #expect). Con Xcode instalado esta ruta no existe y no estorba.
-            swiftSettings: [.unsafeFlags(["-plugin-path", "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing"])]
+            // macros de Swift Testing (@Test, #expect). Con Xcode instalado esta ruta no existe y no estorba; donde hay
+            // las dos (el runner de la CI) se compila con Xcode y YTKIT_CON_XCODE quita la ruta.
+            swiftSettings: ProcessInfo.processInfo.environment["YTKIT_CON_XCODE"] != nil ? [] :
+                [.unsafeFlags(["-plugin-path", "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing"])]
         ),
     ]
 )

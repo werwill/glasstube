@@ -1,11 +1,12 @@
+using Glasstube.Controls;
 using Glasstube.Models;
 using Glasstube.Native;
 using Glasstube.Pages;
 using Microsoft.UI;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -77,8 +78,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        SystemBackdrop = DesktopAcrylicController.IsSupported() ? new DesktopAcrylicBackdrop()
-            : MicaController.IsSupported() ? new MicaBackdrop() : null;
+        ApplyBackdrop();
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -90,6 +90,7 @@ public sealed partial class MainWindow : Window
         UpdateCaptionColors();
 
         NavList.SelectedItem = HomeItem;
+        ApplyTheme();
         if (CaptureMode.Enabled) return; // sin la cuenta ni sus canales
         _ = LoadAccount();
         SubscriptionsStore.Shared.Changed += (_, _) => UpdateChannels();
@@ -167,21 +168,137 @@ public sealed partial class MainWindow : Window
         try
         {
             await App.Ready;
-            var session = await GlasstubeFFI.LoadSession();
-            if (session.Selected is not { } account) return;
-            AccountName.Text = account.Name;
-            // La FFI no da el correo aparte: el byline de la cuenta es el correo (o el @ de una cuenta de marca).
-            AccountByline.Text = account.Byline ?? (session.AccountCount > 1 ? $"{session.AccountCount} cuentas" : "");
-            AccountPicture.DisplayName = AccountFlyoutPicture.DisplayName = account.Name;
-            if (account.Avatar != null)
-                AccountPicture.ProfilePicture = AccountFlyoutPicture.ProfilePicture = new BitmapImage(new Uri(account.Avatar));
-            ToolTipService.SetToolTip(AccountButton, account.Name);
-            AccountButton.Visibility = Visibility.Visible;
+            ShowAccount(await GlasstubeFFI.Accounts());
         }
         catch (Exception error)
         {
             GlasstubeFFI.Log("app", $"sesión: {error.Message}");
         }
+        AccountButton.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>El botón de cuenta y su menú: la elegida y las demás guardadas, o el botón de iniciar sesión.</summary>
+    void ShowAccount(AccountList accounts)
+    {
+        var account = accounts.Selected;
+        SignedInPanel.Visibility = account != null ? Visibility.Visible : Visibility.Collapsed;
+        SignedOutPanel.Visibility = account == null ? Visibility.Visible : Visibility.Collapsed;
+        OtherAccounts.Children.Clear();
+        if (account == null)
+        {
+            AccountPicture.DisplayName = "";
+            AccountPicture.ProfilePicture = null;
+            ToolTipService.SetToolTip(AccountButton, "Iniciar sesión");
+            return;
+        }
+        AccountName.Text = account.Name;
+        // La FFI no da el correo aparte: el byline de la cuenta es el correo (o el @ de una cuenta de marca).
+        AccountByline.Text = account.Byline ?? "";
+        AccountPicture.DisplayName = AccountFlyoutPicture.DisplayName = account.Name;
+        AccountPicture.ProfilePicture = AccountFlyoutPicture.ProfilePicture =
+            account.Avatar != null ? new BitmapImage(new Uri(account.Avatar)) : null;
+        ToolTipService.SetToolTip(AccountButton, account.Name);
+
+        foreach (var other in accounts.Accounts.Where(a => !a.IsSelected))
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            row.Children.Add(new PersonPicture
+            {
+                Width = 28, Height = 28, DisplayName = other.Name,
+                ProfilePicture = other.Avatar != null ? new BitmapImage(new Uri(other.Avatar)) { DecodePixelWidth = 56 } : null,
+            });
+            var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            text.Children.Add(new TextBlock { Text = other.Name, TextTrimming = TextTrimming.CharacterEllipsis });
+            if (other.Byline != null)
+                text.Children.Add(new TextBlock
+                {
+                    Text = other.Byline, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis,
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                });
+            row.Children.Add(text);
+            var button = new Button
+            {
+                Content = row, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush(Colors.Transparent), BorderThickness = new Thickness(0), Padding = new Thickness(8, 6, 8, 6),
+            };
+            AutomationProperties.SetName(button, $"Cambiar a {other.Name}");
+            var id = other.Id;
+            button.Click += async (_, _) =>
+            {
+                AccountFlyout.Hide();
+                try { AccountChanged(await GlasstubeFFI.SelectAccount(id)); }
+                catch (Exception error) { GlasstubeFFI.Log("app", $"cambiar de cuenta: {error.Message}"); }
+            };
+            OtherAccounts.Children.Add(button);
+        }
+        OtherAccountsPanel.Visibility = OtherAccounts.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    async void OnSignInClick(object sender, RoutedEventArgs e) => await SignIn();
+
+    async void OnAddAccountClick(object sender, RoutedEventArgs e) => await SignIn();
+
+    /// <summary>
+    /// El diálogo del código de youtube.com/activate; si se inicia sesión, la app se recarga con esa cuenta. Devuelve si
+    /// se inició.
+    /// </summary>
+    public async Task<bool> SignIn()
+    {
+        AccountFlyout.Hide();
+        try
+        {
+            if (await SignInDialog.ShowAsync(Content.XamlRoot) is not { } accounts) return false;
+            AccountChanged(accounts);
+            return true;
+        }
+        catch (Exception error)
+        {
+            GlasstubeFFI.Log("app", $"inicio de sesión: {error.Message}");
+            return false;
+        }
+    }
+
+    async void OnSignOutClick(object sender, RoutedEventArgs e) => await SignOut();
+
+    /// <summary>Pregunta y cierra la sesión de la cuenta elegida (y sus cuentas de marca); la app vuelve al Inicio.</summary>
+    public async Task SignOut()
+    {
+        AccountFlyout.Hide();
+        var name = AccountName.Text;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot, Title = "¿Cerrar sesión?",
+            Content = $"Glasstube dejará de usar la cuenta {name} (y las cuentas de marca de la misma sesión de Google) en esta PC. "
+                + "Tu historial y Ver más tarde de esta PC se quedan.",
+            PrimaryButtonText = "Cerrar sesión", CloseButtonText = "Cancelar", DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        try
+        {
+            var current = await GlasstubeFFI.Accounts();
+            if (current.Selected is { } account) AccountChanged(await GlasstubeFFI.SignOut(account.Id));
+        }
+        catch (Exception error)
+        {
+            GlasstubeFFI.Log("app", $"cerrar sesión: {error.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Otra cuenta (o ninguna): el Inicio, las Suscripciones y los canales del panel eran de la anterior. Se sueltan
+    /// las páginas guardadas y se vuelve al Inicio, que carga todo de nuevo.
+    /// </summary>
+    void AccountChanged(AccountList accounts)
+    {
+        ShowAccount(accounts);
+        SubscriptionsStore.Shared.Reset();
+        var cacheSize = ContentFrame.CacheSize;
+        ContentFrame.CacheSize = 0;
+        ContentFrame.CacheSize = cacheSize;
+        if (ContentFrame.Content is HomePage home) home.Reload();
+        else ContentFrame.Navigate(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
+        ContentFrame.BackStack.Clear();
+        BackButton.IsEnabled = false;
     }
 
     // MARK: Navegación
@@ -208,6 +325,8 @@ public sealed partial class MainWindow : Window
             ContentFrame.Navigate(typeof(HistoryPage), null, new EntranceNavigationTransitionInfo());
         else if (tag == "subscriptions" || tag.StartsWith("group:"))
             ContentFrame.Navigate(typeof(SubscriptionsPage), tag, new EntranceNavigationTransitionInfo());
+        else if (tag == "settings")
+            ContentFrame.Navigate(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
         else
             ContentFrame.Navigate(typeof(PlaceholderPage), tag, new EntranceNavigationTransitionInfo());
     }
@@ -220,9 +339,17 @@ public sealed partial class MainWindow : Window
         ChannelPage channel => channel.Section,
         LibraryPage library => library.Section,
         HistoryPage history => history.Section,
+        SettingsPage settings => settings.Section,
         PlaceholderPage placeholder => placeholder.Section,
         _ => null,
     };
+
+    /// <summary>Elige una sección del panel por su etiqueta ("home", "settings"…), como si se hiciera clic.</summary>
+    public void ShowSection(string tag)
+    {
+        foreach (var list in new[] { NavList, FooterList })
+            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => (string)i.Tag == tag) is { } item) list.SelectedItem = item;
+    }
 
     /// <summary>La página visible.</summary>
     public object? CurrentPage => ContentFrame.Content;
@@ -307,6 +434,79 @@ public sealed partial class MainWindow : Window
         GoBack();
     }
 
+    // MARK: Enlaces pegados
+
+    /// <summary>
+    /// Ctrl+V fuera de un campo de texto: si el portapapeles tiene un enlace de YouTube (video, lista o canal), lo abre
+    /// aquí, como «Abrir el enlace copiado» en la app de Mac.
+    /// </summary>
+    async void OnPasteKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (FocusManager.GetFocusedElement(Root.XamlRoot) is TextBox or RichEditBox or PasswordBox) return;
+        args.Handled = true;
+        string text;
+        try
+        {
+            var content = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+            if (content.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.WebLink))
+                text = (await content.GetWebLinkAsync()).ToString();
+            else if (content.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+                text = await content.GetTextAsync();
+            else return;
+        }
+        catch (Exception error)
+        {
+            GlasstubeFFI.Log("app", $"portapapeles: {error.Message}");
+            return;
+        }
+        await OpenLink(text, "pegar");
+    }
+
+    /// <summary>Abre un enlace de YouTube; si el texto no tiene, lo avisa abajo y devuelve false.</summary>
+    public async Task<bool> OpenLink(string text, string from)
+    {
+        LinkInfo link;
+        try
+        {
+            await App.Ready;
+            link = await GlasstubeFFI.ParseLink(text);
+        }
+        catch
+        {
+            ShowToast("Para abrirlo aquí, copia un enlace de YouTube (youtube.com o youtu.be).");
+            return false;
+        }
+        GlasstubeFFI.Log("app", $"enlace ({from}): {link.Kind} {link.Id}");
+        switch (link.Kind)
+        {
+            case "video":
+                Play(new VideoCard { Id = link.Id, Title = link.Id, StartAt = link.Start });
+                break;
+            case "playlist":
+                OpenPlaylist(link.Id, null);
+                break;
+            case "channel":
+                OpenChannel(link.Id, null);
+                break;
+            default:
+                Search(link.Id);
+                break;
+        }
+        return true;
+    }
+
+    /// <summary>Un aviso breve abajo en el centro (4 s).</summary>
+    void ShowToast(string message)
+    {
+        Toast.Message = message;
+        Toast.IsOpen = true;
+        var timer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromSeconds(4);
+        timer.IsRepeating = false;
+        timer.Tick += (_, _) => Toast.IsOpen = false;
+        timer.Start();
+    }
+
     // MARK: Búsqueda
 
     void OnSearchKey(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -320,8 +520,24 @@ public sealed partial class MainWindow : Window
     {
         var text = args.QueryText.Trim();
         if (text.Length == 0) return;
-        // La FFI aún no tiene búsqueda: la página solo muestra lo que se buscó.
+        // Un enlace de YouTube pegado en la búsqueda se abre directamente.
+        if (text.Contains("youtu", StringComparison.OrdinalIgnoreCase)) { _ = OpenLinkOrSearch(text); return; }
         ContentFrame.Navigate(typeof(SearchPage), text, new EntranceNavigationTransitionInfo());
+    }
+
+    async Task OpenLinkOrSearch(string text)
+    {
+        try
+        {
+            await App.Ready;
+            await GlasstubeFFI.ParseLink(text);
+        }
+        catch
+        {
+            ContentFrame.Navigate(typeof(SearchPage), text, new EntranceNavigationTransitionInfo());
+            return;
+        }
+        await OpenLink(text, "búsqueda");
     }
 
     // El foco lo tiene el TextBox de dentro (la AutoSuggestBox sigue en Unfocused): se siguen sus eventos.
@@ -399,6 +615,8 @@ public sealed partial class MainWindow : Window
         Pane.Visibility = !chromeHidden && paneWidth > 0 ? Visibility.Visible : Visibility.Collapsed;
         Pane.Width = paneWidth;
         Pane.Translation = new System.Numerics.Vector3(0, 0, paneOverlayOpen ? 32 : 8);
+        // Encima del contenido hace falta el acrílico (desenfoca lo de abajo); fijo basta el velo de vidrio.
+        PaneAcrylic.Visibility = paneOverlayOpen ? Visibility.Visible : Visibility.Collapsed;
         DismissLayer.Visibility = paneOverlayOpen && !chromeHidden ? Visibility.Visible : Visibility.Collapsed;
         SetPaneLabelsVisible(paneWidth >= PaneOpenWidth);
 
@@ -485,8 +703,10 @@ public sealed partial class MainWindow : Window
             rects.Add(new Rect(bounds.X * scale, bounds.Y * scale, bounds.Width * scale, bounds.Height * scale));
         }
         if (rects.SequenceEqual(passthrough)) return;
+        // Al cerrarse la ventana todavía llega algún LayoutUpdated, ya sin AppWindow.
+        if (AppWindow == null || InputNonClientPointerSource.GetForWindowId(AppWindow.Id) is not { } source) return;
         passthrough = [.. rects];
-        InputNonClientPointerSource.GetForWindowId(AppWindow.Id).SetRegionRects(NonClientRegionKind.Passthrough,
+        source.SetRegionRects(NonClientRegionKind.Passthrough,
             rects.Select(r => new RectInt32((int)Math.Round(r.X), (int)Math.Round(r.Y),
                                             (int)Math.Round(r.Width), (int)Math.Round(r.Height))).ToArray());
     }
@@ -499,6 +719,29 @@ public sealed partial class MainWindow : Window
     }
 
     void OnThemeChanged(FrameworkElement sender, object args) => UpdateCaptionColors();
+
+    /// <summary>El fondo de Configuración: Vidrio, Mica u Opaco (sin acrílico ni Mica, Windows 10, queda Mica o nada).</summary>
+    public void ApplyBackdrop()
+    {
+        if (SystemBackdrop is GlassBackdrop glass) glass.Mode = AppSettings.Shared.Backdrop;
+        else if (GlassBackdrop.IsSupported) SystemBackdrop = new GlassBackdrop(AppSettings.Shared.Backdrop);
+    }
+
+    /// <summary>
+    /// El tema de Configuración ("sistema", "claro", "oscuro"). `--tema` (capturas) manda sobre él: ya fijó el de la
+    /// app al arrancar.
+    /// </summary>
+    public void ApplyTheme()
+    {
+        if (Environment.GetCommandLineArgs().Contains("--tema")) return;
+        Root.RequestedTheme = AppSettings.Shared.Theme switch
+        {
+            "claro" => ElementTheme.Light,
+            "oscuro" => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
+        UpdateCaptionColors();
+    }
 
     /// <summary>
     /// Botones de la ventana sin fondo propio y con el color del tema. Encima de video (o de una imagen oscura) van en
@@ -523,9 +766,10 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>La página a pantalla completa cambia la barra de título (el Inicio, al desplazarse bajo ella).</summary>
-    public void SetTitleBarStyle(TitleBarStyle style)
+    public void SetTitleBarStyle(Page page, TitleBarStyle style)
     {
-        if (style == titleBarStyle) return;
+        // El Inicio termina de cargar a veces cuando ya se fue a otra página: esa manda.
+        if (!ReferenceEquals(ContentFrame.Content, page) || style == titleBarStyle) return;
         titleBarStyle = style;
         UpdateCaptionColors();
     }

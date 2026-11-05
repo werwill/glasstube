@@ -17,6 +17,12 @@
             <Viewbox Stretch="UniformToFill">
                 <Image x:Name="ThumbnailImage" Stretch="UniformToFill" Width="480" Height="270" />
             </Viewbox>
+            <!-- Vista previa al dejar el ratón encima: los cuadros del storyboard, recortados de su hoja. -->
+            <Canvas x:Name="PreviewCanvas" Visibility="Collapsed" SizeChanged="OnPreviewSizeChanged">
+                <Image x:Name="PreviewImage" Stretch="Fill">
+                    <Image.RenderTransform><CompositeTransform x:Name="PreviewTransform" /></Image.RenderTransform>
+                </Image>
+            </Canvas>
             <Border x:Name="PlayGlyph" Width="48" Height="48" CornerRadius="24" HorizontalAlignment="Center"
                     VerticalAlignment="Center" Background="#99000000" BorderBrush="#80FFFFFF" BorderThickness="1" Opacity="0">
                 <Border.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></Border.OpacityTransition>

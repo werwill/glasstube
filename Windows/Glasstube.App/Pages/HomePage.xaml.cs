@@ -97,7 +97,7 @@ public sealed partial class HomePage : Page, IFullBleedPage
         {
             LoadingPanel.Visibility = Visibility.Collapsed;
             RefreshButton.IsEnabled = true;
-            App.Window?.SetTitleBarStyle(InitialTitleBar);
+            App.Window?.SetTitleBarStyle(this, InitialTitleBar);
         }
     }
 
@@ -173,7 +173,7 @@ public sealed partial class HomePage : Page, IFullBleedPage
         var past = Hero.Visibility != Visibility.Visible || scroller.VerticalOffset > Hero.ActualHeight - 120;
         if (past == pastHero) return;
         pastHero = past;
-        App.Window?.SetTitleBarStyle(InitialTitleBar);
+        App.Window?.SetTitleBarStyle(this, InitialTitleBar);
     }
 
     void ShowNotice(InfoBarSeverity severity, string message)
@@ -186,7 +186,10 @@ public sealed partial class HomePage : Page, IFullBleedPage
 
     void OnNoticeClosed(InfoBar sender, InfoBarClosedEventArgs args) => Notice.Visibility = Visibility.Collapsed;
 
-    void OnRefresh(object sender, RoutedEventArgs e)
+    void OnRefresh(object sender, RoutedEventArgs e) => Reload();
+
+    /// <summary>Todo de nuevo (también al cambiar de cuenta).</summary>
+    public void Reload()
     {
         Feed.ItemsSource = null;
         _ = Load(refresh: true);

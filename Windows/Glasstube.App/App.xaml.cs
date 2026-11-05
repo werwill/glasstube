@@ -13,6 +13,8 @@ public partial class App : Application
     public static Task<Models.InitInfo> Ready { get; private set; } = new TaskCompletionSource<Models.InitInfo>().Task;
 
     DispatcherQueueTimer? pump;
+    /// <summary>Mientras exista, el instalador de una actualización espera a que la app se cierre (Glasstube.iss).</summary>
+    Mutex? running;
 
     public App()
     {
@@ -32,6 +34,7 @@ public partial class App : Application
         // El actor principal de Swift es la cola principal de libdispatch: la vacía este hilo (el principal del
         // proceso), así que los callbacks de GlasstubeFFI llegan aquí. La primera llamada a la DLL también es desde
         // aquí, para que libdispatch tome este hilo como el principal.
+        running = new Mutex(false, "GlasstubeApp");
         pump = DispatcherQueue.GetForCurrentThread().CreateTimer();
         pump.Interval = TimeSpan.FromMilliseconds(15);
         pump.Tick += (_, _) => GlasstubeFFI.Pump();
@@ -54,10 +57,17 @@ public partial class App : Application
         // `--buscar <texto>`: abre esa búsqueda (capturas).
         var search = Array.IndexOf(arguments, "--buscar");
         if (search >= 0 && search + 1 < arguments.Length) Window.Search(arguments[search + 1]);
+        // `--seccion <etiqueta>`: abre esa sección del panel ("settings", "library"…) (capturas y pruebas).
+        var section = Array.IndexOf(arguments, "--seccion");
+        if (section >= 0 && section + 1 < arguments.Length) Window.ShowSection(arguments[section + 1]);
         // `--sin-aviso-de-versiones`: no consulta GitHub (capturas y pruebas).
         if (!arguments.Contains("--sin-aviso-de-versiones") && !Models.CaptureMode.Enabled
+            && (Models.AppSettings.Shared.CheckForUpdates || arguments.Contains("--buscar-versiones"))
             && Window.Content is Microsoft.UI.Xaml.Controls.Grid root)
-            _ = Models.UpdateCheck.RunAsync(root);
+            _ = Models.UpdateCheck.RunAsync(root, force: arguments.Contains("--buscar-versiones")); // sin esperar un día
+        // `--actualizar-desde <Setup.exe>`: instala ese instalador local como una actualización (pruebas).
+        var local = Array.IndexOf(arguments, "--actualizar-desde");
+        if (local >= 0 && local + 1 < arguments.Length) Models.UpdateCheck.InstallLocal(arguments[local + 1]);
     }
 
     /// <summary>`--probar-ffi`: llama a la API 0.2 (Suscripciones, biblioteca, detalles, búsqueda) y anota un resumen en el registro.</summary>
@@ -94,6 +104,24 @@ public partial class App : Application
             return $"«{details.Title}», {details.Chapters.Count} capítulos, segmentos: {string.Join(", ", details.Segments.Select(s => $"{s.Category} {s.Start:0}-{s.End:0}"))}";
         });
         await Probe("búsqueda", async () => { var page = await GlasstubeFFI.Search("marques brownlee"); return $"{page.Items.Count} videos, más {page.HasMore}, primero «{page.Items.FirstOrDefault()?.Title}»"; });
+        // 0.4.0: filtros, storyboard, DeArrow y enlaces.
+        await Probe("búsqueda con filtros (esta semana, más de 20 min)", async () =>
+        {
+            var page = await GlasstubeFFI.Search("podcast", new Models.SearchFilterInfo { UploadDate = 3, Duration = 2 });
+            return $"{page.Items.Count} videos; duraciones {string.Join(", ", page.Items.Take(5).Select(i => i.Duration))}; fechas {string.Join(", ", page.Items.Take(5).Select(i => i.Published))}";
+        });
+        await Probe("storyboard", async () =>
+        {
+            var board = await GlasstubeFFI.Storyboard("aqz-KE-bpKQ");
+            return $"{board.Width}×{board.Height}, {board.Count} cuadros en {board.Sheets.Count} hojas de {board.Columns}×{board.Rows}, duración {board.Duration}; hoja 0 {board.Sheets.FirstOrDefault()?[..60]}…";
+        });
+        await Probe("DeArrow", async () =>
+        {
+            var info = await GlasstubeFFI.DeArrow(["dQw4w9WgXcQ", "jNQXAC9IVRw", "aqz-KE-bpKQ"]);
+            return string.Join("; ", info.Items.Select(i => $"{i.VideoId}: «{i.Title}» miniatura {(i.Thumbnail != null ? "sí" : "no")}"));
+        });
+        foreach (var text in new[] { "mira esto https://youtu.be/dQw4w9WgXcQ?t=42", "https://www.youtube.com/@mkbhd", "https://www.youtube.com/playlist?list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI", "hola" })
+            await Probe($"enlace «{text}»", async () => { var link = await GlasstubeFFI.ParseLink(text); return $"{link.Kind} {link.Id} t={link.Start}"; });
     }
 
     /// <summary>
