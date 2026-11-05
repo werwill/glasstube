@@ -32,7 +32,8 @@ own WinUI 3 interface and the Windows 11 glass finish. It is a step behind: see 
 It was built with [Claude Code](https://claude.com/claude-code), and the prompt that has Claude Code walk you through
 the build is in the repository: [PROMPT.md](PROMPT.md).
 
-The app's interface is in Spanish for now.
+The Mac app follows your system language: English or Spanish, and English for any other language. The Windows app's
+interface is in Spanish for now.
 
 | | |
 |---|---|
@@ -190,7 +191,7 @@ What follows is the Mac app; the Windows one has part of it (see [Windows](#wind
   playlists and Watch Later. Sessions are stored in the Keychain.
 - **Control from your phone:** pair the YouTube app on your phone with a TV code or a QR code, then pick videos,
   pause, seek and change the volume or subtitles from it.
-- **macOS:** `glasstube://` links, paste (⌘V) or drop YouTube links, "Abrir en Glasstube" in the Services menu,
+- **macOS:** `glasstube://` links, paste (⌘V) or drop YouTube links, "Open in Glasstube" in the Services menu,
   Spotlight, a Dock menu, Now Playing and media keys. YouTube-style shortcuts (K, J/L, F, C, M, 0–9) and light or dark
   appearance.
 

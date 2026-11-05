@@ -1079,9 +1079,9 @@ español. Para probarla sin cambiar nada del sistema: `-AppleLanguages '(en)'`.
   aparecen en algunas capturas de `capturas/en/`.
 - **Sparkle en inglés** no se vio en ejecución: hace falta una compilación con clave o `SPARKLE=1`.
 - **⌘[ y ⌘] con distribución de EE. UU.** no se probaron, porque no se cambian ajustes del sistema.
-- **Fuera del encargo, para que lo decida el dueño:** `README.en.md` todavía dice «The app's interface is in Spanish for
-  now.» (línea 36) y menciona «"Abrir en Glasstube"» (línea 193). Las capturas en español de `docs/capturas/` están
-  viejas (la barra lateral dice «Llegan en la fase 5»), y `README.md` y esas capturas no se tocaron.
+- **Fuera del encargo, para que lo decida el dueño:** las capturas en español de `docs/capturas/` están viejas (la barra
+  lateral dice «Llegan en la fase 5»), y `README.md` y esas capturas no se tocaron. `README.en.md` todavía nombra los
+  menús en español: «Glasstube › Buscar actualizaciones…» y «Ajustes › General › Actualizaciones» (líneas 114 y 115).
 
 ## Paso 0: un solo YTKit
 
