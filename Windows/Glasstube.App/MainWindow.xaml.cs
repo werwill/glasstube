@@ -3,7 +3,6 @@ using Glasstube.Models;
 using Glasstube.Native;
 using Glasstube.Pages;
 using Microsoft.UI;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -704,8 +703,10 @@ public sealed partial class MainWindow : Window
             rects.Add(new Rect(bounds.X * scale, bounds.Y * scale, bounds.Width * scale, bounds.Height * scale));
         }
         if (rects.SequenceEqual(passthrough)) return;
+        // Al cerrarse la ventana todavía llega algún LayoutUpdated, ya sin AppWindow.
+        if (AppWindow == null || InputNonClientPointerSource.GetForWindowId(AppWindow.Id) is not { } source) return;
         passthrough = [.. rects];
-        InputNonClientPointerSource.GetForWindowId(AppWindow.Id).SetRegionRects(NonClientRegionKind.Passthrough,
+        source.SetRegionRects(NonClientRegionKind.Passthrough,
             rects.Select(r => new RectInt32((int)Math.Round(r.X), (int)Math.Round(r.Y),
                                             (int)Math.Round(r.Width), (int)Math.Round(r.Height))).ToArray());
     }
@@ -722,10 +723,8 @@ public sealed partial class MainWindow : Window
     /// <summary>El fondo de Configuración: Vidrio, Mica u Opaco (sin acrílico ni Mica, Windows 10, queda Mica o nada).</summary>
     public void ApplyBackdrop()
     {
-        var backdrop = AppSettings.Shared.Backdrop;
-        SystemBackdrop = backdrop == "mica" && MicaController.IsSupported() ? new MicaBackdrop()
-            : DesktopAcrylicController.IsSupported() ? new GlassBackdrop(opaque: backdrop == "opaco")
-            : MicaController.IsSupported() ? new MicaBackdrop() : null;
+        if (SystemBackdrop is GlassBackdrop glass) glass.Mode = AppSettings.Shared.Backdrop;
+        else if (GlassBackdrop.IsSupported) SystemBackdrop = new GlassBackdrop(AppSettings.Shared.Backdrop);
     }
 
     /// <summary>
@@ -767,9 +766,10 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>La página a pantalla completa cambia la barra de título (el Inicio, al desplazarse bajo ella).</summary>
-    public void SetTitleBarStyle(TitleBarStyle style)
+    public void SetTitleBarStyle(Page page, TitleBarStyle style)
     {
-        if (style == titleBarStyle) return;
+        // El Inicio termina de cargar a veces cuando ya se fue a otra página: esa manda.
+        if (!ReferenceEquals(ContentFrame.Content, page) || style == titleBarStyle) return;
         titleBarStyle = style;
         UpdateCaptionColors();
     }

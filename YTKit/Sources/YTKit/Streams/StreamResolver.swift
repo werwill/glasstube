@@ -318,11 +318,14 @@ public final class StreamResolver: @unchecked Sendable {
             let video = attempt.video, audio = attempt.audio, muxed = attempt.muxed
             async let v = Self.checkIfPresent(video, userAgent: client.userAgent, speed: options.measureSpeed)
             async let a = Self.checkIfPresent(audio, userAgent: client.userAgent, speed: false)
-            async let m = Self.checkIfPresent(muxed, userAgent: client.userAgent, speed: false)
-            let (videoCheck, audioCheck, muxedCheck) = await (v, a, m)
+            let (videoCheck, audioCheck) = await (v, a)
             attempt.videoCheck = videoCheck
             attempt.audioCheck = audioCheck
-            attempt.muxedCheck = muxedCheck
+            // El combinado solo se prueba si las pistas separadas fallan: es diagnóstico, y cuando su servidor no
+            // responde hacía esperar hasta 80 s un video que ya era reproducible.
+            if !attempt.playable {
+                attempt.muxedCheck = await Self.checkIfPresent(muxed, userAgent: client.userAgent, speed: false)
+            }
             if let hls = attempt.hlsManifestURL, let url = URL(string: hls) {
                 let manifest = try? await HTTP.shared.string(url, headers: ["User-Agent": client.userAgent])
                 attempt.hlsOK = manifest?.hasPrefix("#EXTM3U") ?? false
