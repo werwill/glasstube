@@ -306,13 +306,13 @@ if [ -n "$SPARKLE_KEY" ]; then
 > firma EdDSA); se apaga en **Ajustes › General › Actualizaciones**. Si vienes de la 0.5 o anterior, esta la instalas a
 > mano una vez; las siguientes llegan solas."
     UPDATES_TEXT_EN="The app looks for new versions once a day and installs them in place (Sparkle, EdDSA-signed); turn it
-off in Ajustes › General › Actualizaciones."
+off in Settings › General › Updates."
     ONCE_TEXT="una sola vez (las versiones siguientes llegan por Sparkle y abren sin este paso)"
     ONCE_TEXT_EN="You only do this once: later versions arrive through Sparkle and open without it."
 else
     UPDATES_TEXT="Glasstube avisa al abrirse cuando hay una nueva (consulta GitHub como mucho una vez al día; se
 > apaga en **Ajustes › General › Actualizaciones**)."
-    UPDATES_TEXT_EN="The app checks GitHub for new versions at most once a day (turn it off in Ajustes › General › Actualizaciones)."
+    UPDATES_TEXT_EN="The app checks GitHub for new versions at most once a day (turn it off in Settings › General › Updates)."
     ONCE_TEXT="una sola vez por versión"
     ONCE_TEXT_EN="You only do this once per version."
 fi

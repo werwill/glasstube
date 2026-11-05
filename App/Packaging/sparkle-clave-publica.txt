@@ -7,3 +7,4 @@
 #
 # Pega abajo, en su propia línea, la clave que imprime (44 caracteres, termina en «=»). Las líneas con # no cuentan.
 # Mientras no haya clave, Scripts/release.sh arma la versión sin Sparkle (con el aviso de GitHub de siempre).
+StPce870601YYzkJBoi94BKzz+KpmwbO+e+7II3+6iQ=

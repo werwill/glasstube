@@ -25,7 +25,7 @@ OUT="$APP_DIR/build"
 APP="$OUT/Glasstube.app"
 FRAMEWORK_SRC="$PLAYBACKKIT/Vendor/Libmpv.xcframework/macos-arm64/Libmpv.framework"
 # La pone Scripts/release.sh; es CFBundleShortVersionString, con la que el aviso de actualizaciones compara.
-VERSION="0.5.0"
+VERSION="0.6.0"
 BUILD_NUMBER="$(date +%Y%m%d%H%M)"
 # Repositorio de GitHub (dueño/repo) donde se publican las versiones. ÚNICO LUGAR DONDE SE CONFIGURA: va al Info.plist
 # como GlasstubeGitHubRepository; de ahí lo lee la app para el aviso de versiones nuevas (consulta
