@@ -22,7 +22,7 @@ enum Format {
     /// "1080p60" para una calidad de video, con el criterio de YouTube: la altura equivalente en 16:9 (un video 2:1
     /// de 3840×1920 es "2160p", no "1920p"; uno vertical de 1080×1920, "1080p").
     static func quality(width: Int?, height: Int?, fps: Double?) -> String {
-        guard let height else { return "Auto" }
+        guard let height else { return String(localized: "Auto") }
         let fpsText = (fps ?? 0) > 30 ? String(Int((fps ?? 0).rounded())) : ""
         return "\(qualityClass(width: width, height: height))p\(fpsText)"
     }
@@ -45,6 +45,29 @@ extension Error {
     var isCancellation: Bool { self is CancellationError || (self as? URLError)?.code == .cancelled }
 }
 
+extension BrowsePage {
+    /// YTKit no sabe del idioma de la interfaz y pone en español los pocos títulos que YouTube no da: «Resultados» en la
+    /// búsqueda, «Más recientes» en Suscripciones (el mismo título que las tandas que llegan al bajar, ver
+    /// `mergingUntitledRows`) y los nombres de las páginas. Aquí van en el idioma de la app. Solo para esas páginas: en un
+    /// canal o una playlist, el título es de quien lo creó.
+    var localizingFixedTitles: BrowsePage {
+        func localized(_ title: String?) -> String? {
+            switch title {
+            case "Resultados": String(localized: "Resultados")
+            case "Más recientes": String(localized: "Más recientes")
+            case "Inicio": String(localized: "Inicio")
+            case "Suscripciones": String(localized: "Suscripciones")
+            case "Historial": String(localized: "Historial")
+            default: title
+            }
+        }
+        var copy = self
+        copy.title = localized(copy.title)
+        for index in copy.groups.indices { copy.groups[index].title = localized(copy.groups[index].title) }
+        return copy
+    }
+}
+
 extension MediaItem {
     /// Segunda línea de la tarjeta: "Canal · 1,2 M vistas · hace 2 días".
     var cardSubtitle: String {
@@ -62,7 +85,7 @@ extension MediaItem {
 
     /// Duración para el distintivo de la miniatura.
     var durationBadge: String? {
-        if isLive { return "EN VIVO" }
+        if isLive { return String(localized: "EN VIVO") }
         if let durationText, !durationText.isEmpty { return durationText }
         if let durationSeconds { return Format.time(Double(durationSeconds)) }
         if kind == .playlist || kind == .mix { return videoCountText }

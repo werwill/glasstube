@@ -14,15 +14,30 @@ nonisolated struct SponsorSegment: Sendable, Hashable, Identifiable {
     /// "Saltar patrocinio", "Saltar intro"… (las categorías de SmartTube).
     var skipTitle: String {
         switch category {
-        case "sponsor": "Saltar patrocinio"
-        case "selfpromo": "Saltar autopromoción"
-        case "interaction": "Saltar recordatorio"
-        case "intro": "Saltar intro"
-        case "outro": "Saltar créditos"
-        case "preview": "Saltar avance"
-        case "music_offtopic": "Saltar parte sin música"
-        case "filler": "Saltar relleno"
-        default: "Saltar segmento"
+        case "sponsor": String(localized: "Saltar patrocinio")
+        case "selfpromo": String(localized: "Saltar autopromoción")
+        case "interaction": String(localized: "Saltar recordatorio")
+        case "intro": String(localized: "Saltar intro")
+        case "outro": String(localized: "Saltar créditos")
+        case "preview": String(localized: "Saltar avance")
+        case "music_offtopic": String(localized: "Saltar parte sin música")
+        case "filler": String(localized: "Saltar relleno")
+        default: String(localized: "Saltar segmento")
+        }
+    }
+
+    /// Solo la categoría ("patrocinio"), para el aviso de lo que se saltó y Ajustes › SponsorBlock.
+    var categoryTitle: String {
+        switch category {
+        case "sponsor": String(localized: "patrocinio")
+        case "selfpromo": String(localized: "autopromoción")
+        case "interaction": String(localized: "recordatorio")
+        case "intro": String(localized: "intro")
+        case "outro": String(localized: "créditos")
+        case "preview": String(localized: "avance")
+        case "music_offtopic": String(localized: "parte sin música")
+        case "filler": String(localized: "relleno")
+        default: String(localized: "segmento")
         }
     }
 }

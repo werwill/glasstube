@@ -37,7 +37,7 @@ struct GeneralSettings: View {
                 Toggle("Agregar a Spotlight los videos que veo y sus canales", isOn: $settings.spotlightEnabled)
                 Button("Quitar todo de Spotlight") {
                     model.spotlight.removeAll()
-                    model.show(banner: "Se quitaron de Spotlight los videos y canales de Glasstube")
+                    model.show(banner: String(localized: "Se quitaron de Spotlight los videos y canales de Glasstube"))
                 }
             } header: {
                 Text("Spotlight")
@@ -57,7 +57,7 @@ struct GeneralSettings: View {
     /// La versión del `Info.plist` (la que escribe `Scripts/package-app.sh`); «desarrollo» sin empaquetar.
     static var version: String {
         let info = Bundle.main.infoDictionary
-        guard let short = info?["CFBundleShortVersionString"] as? String else { return "desarrollo" }
+        guard let short = info?["CFBundleShortVersionString"] as? String else { return String(localized: "desarrollo") }
         return (info?["CFBundleVersion"] as? String).map { "\(short) (\($0))" } ?? short
     }
 }
@@ -140,15 +140,15 @@ struct UpdateSettingsSection: View {
     }
 
     private var lastCheckText: String {
-        guard let date = model.updates.lastCheck else { return "Todavía no se ha consultado" }
-        return "Última consulta: \(date.formatted(.relative(presentation: .named)))"
+        guard let date = model.updates.lastCheck else { return String(localized: "Todavía no se ha consultado") }
+        return String(localized: "Última consulta: \(date.formatted(.relative(presentation: .named)))")
     }
 
     private var resultText: String? {
         switch result {
-        case .available(let update): "Hay una versión nueva: \(update.version)"
-        case .upToDate: "Tienes la versión más reciente"
-        case .failed: "No se pudo consultar GitHub; revisa la conexión"
+        case .available(let update): String(localized: "Hay una versión nueva: \(update.version)")
+        case .upToDate: String(localized: "Tienes la versión más reciente")
+        case .failed: String(localized: "No se pudo consultar GitHub; revisa la conexión")
         case .unconfigured, nil: nil
         }
     }
@@ -184,8 +184,8 @@ struct SparkleSettingsSection: View {
     }
 
     private var lastCheckText: String {
-        guard let date = sparkle.lastCheck else { return "Todavía no se ha buscado" }
-        return "Última búsqueda: \(date.formatted(.relative(presentation: .named)))"
+        guard let date = sparkle.lastCheck else { return String(localized: "Todavía no se ha buscado") }
+        return String(localized: "Última búsqueda: \(date.formatted(.relative(presentation: .named)))")
     }
 }
 
@@ -261,15 +261,15 @@ struct PlayerSettings: View {
                 Text("YouTube ya no publica cuántos «no me gusta» tiene un video; returnyoutubedislikeapi.com da una estimación. Se consulta con el id del video.")
             }
             Section("Teclado") {
-                LabeledContent("Pausa", value: "Espacio o K")
-                LabeledContent("Atrás y adelante 10 s", value: "J y L")
-                LabeledContent("Atrás y adelante 5 s", value: "← y →")
-                LabeledContent("Pantalla completa y subtítulos", value: "F y C")
-                LabeledContent("Velocidad", value: "Shift+. y Shift+,")
-                LabeledContent("Panel lateral (descripción, comentarios, sugeridos)", value: "D; dentro, flechas, Retorno y Esc")
-                LabeledContent("En el panel: me gusta, responder, cola", value: "G, R, Q (al final) y N (a continuación)")
+                LabeledContent("Pausa", value: String(localized: "Espacio o K"))
+                LabeledContent("Atrás y adelante 10 s", value: String(localized: "J y L"))
+                LabeledContent("Atrás y adelante 5 s", value: String(localized: "← y →"))
+                LabeledContent("Pantalla completa y subtítulos", value: String(localized: "F y C"))
+                LabeledContent("Velocidad", value: String(localized: "Shift+. y Shift+,"))
+                LabeledContent("Panel lateral (descripción, comentarios, sugeridos)", value: String(localized: "D; dentro, flechas, Retorno y Esc"))
+                LabeledContent("En el panel: me gusta, responder, cola", value: String(localized: "G, R, Q (al final) y N (a continuación)"))
                 LabeledContent("Minirreproductor", value: "I")
-                LabeledContent("Siguiente y anterior", value: "Shift+N y Shift+P")
+                LabeledContent("Siguiente y anterior", value: String(localized: "Shift+N y Shift+P"))
             }
         }
         .formStyle(.grouped)
@@ -341,7 +341,7 @@ struct SponsorBlockSettings: View {
             Section("Colores en la barra") {
                 ForEach(SponsorBlockClient.categories, id: \.self) { category in
                     let segment = SponsorSegment(start: 0, end: 1, category: category, uuid: category)
-                    LabeledContent(segment.skipTitle.replacingOccurrences(of: "Saltar ", with: "").capitalized) {
+                    LabeledContent(segment.categoryTitle.capitalized) {
                         RoundedRectangle(cornerRadius: 3).fill(segment.color).frame(width: 36, height: 8)
                     }
                 }

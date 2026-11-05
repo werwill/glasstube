@@ -77,7 +77,7 @@ struct PanelTabBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selected ? .isSelected : [])
-                .help(tab == .comments ? "Comentarios (D abre y cierra el panel)" : tab.title)
+                .help(tab == .comments ? String(localized: "Comentarios (D abre y cierra el panel)") : tab.title)
             }
             Spacer(minLength: 4)
             Button { player.closePanel() } label: {
@@ -236,7 +236,7 @@ struct CommentsTab: View {
     var body: some View {
         if let comments = player.comments {
             if !comments.isAvailable {
-                PanelMessage(symbol: "text.bubble", text: "Los comentarios están desactivados en este video.")
+                PanelMessage(symbol: "text.bubble", text: String(localized: "Los comentarios están desactivados en este video."))
             } else {
                 CommentsHeader(model: comments)
                 ForEach(comments.rows) { row in
@@ -328,7 +328,7 @@ struct CommentRow: View {
                                 .buttonStyle(.plain).font(.system(size: 12, weight: .semibold))
                         }
                         if !isReply, comment.hasReplies {
-                            Label(comment.replyCountText ?? "Respuestas", systemImage: model.threads[comment.id] == nil ? "chevron.down" : "chevron.up")
+                            Label(comment.replyCountText ?? String(localized: "Respuestas"), systemImage: model.threads[comment.id] == nil ? "chevron.down" : "chevron.up")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(Color.accentColor)
                         }
@@ -429,17 +429,17 @@ struct ChatTab: View {
             }
             Color.clear.frame(height: 1).id("chat:end")
         } else {
-            PanelMessage(symbol: "bubble.left.and.bubble.right", text: "Este video no tiene chat en vivo.")
+            PanelMessage(symbol: "bubble.left.and.bubble.right", text: String(localized: "Este video no tiene chat en vivo."))
         }
     }
 
     private func chatStatus(_ chat: LiveChatModel) -> String {
         switch chat.state {
-        case .idle: "Chat en vivo"
-        case .connecting: "Conectando con el chat…"
-        case .live: "Chat en vivo · \(chat.messages.count) mensajes"
-        case .ended: "El chat terminó"
-        case .failed(let error): "No se pudo leer el chat: \(error)"
+        case .idle: String(localized: "Chat en vivo")
+        case .connecting: String(localized: "Conectando con el chat…")
+        case .live: String(localized: "Chat en vivo · \(chat.messages.count) mensajes")
+        case .ended: String(localized: "El chat terminó")
+        case .failed(let error): String(localized: "No se pudo leer el chat: \(error)")
         }
     }
 }

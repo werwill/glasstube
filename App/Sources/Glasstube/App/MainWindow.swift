@@ -13,6 +13,12 @@ struct MainWindow: View {
     /// Un enlace arrastrado está sobre la ventana.
     @ViewState private var dropTargeted = false
 
+    /// Lo que cambia las opciones de los menús (ver `refreshMainMenu`).
+    private var menuState: [Bool] {
+        [model.navigator.canGoBack, model.navigator.canGoForward, model.player != nil, model.player?.isPlaying == true, model.tvMode != nil,
+         model.sparkle.map(\.canCheck) ?? !model.updates.isChecking]
+    }
+
     var body: some View {
         @Bindable var model = model
         ZStack {
@@ -38,6 +44,8 @@ struct MainWindow: View {
             .task(id: model.searchText) { await loadSuggestions(for: model.searchText) }
             .onChange(of: model.searchFocusRequest) { searchFocused = true }
             .onChange(of: searchFocused) { _, focused in model.searchFieldFocused = focused }
+            .onAppear { SearchFieldTab.install(model) }
+            .onChange(of: menuState, initial: true) { DispatchQueue.main.async { refreshMainMenu() } }
             .toolbarVisibility(navigationCovered ? .hidden : .automatic, for: .windowToolbar)
             .allowsHitTesting(!navigationCovered)
             .disabled(navigationCovered)
@@ -130,7 +138,7 @@ struct MainWindow: View {
         .background(WindowAccessor { Automation.shared.windowDidAppear($0) })
     }
 
-    static let keychainHint = "macOS pide permiso para leer tu sesión de YouTube: busca el aviso «Glasstube quiere usar información confidencial…» y elige «Permitir siempre». Mientras tanto, todo sale sin cuenta."
+    static let keychainHint = String(localized: "macOS pide permiso para leer tu sesión de YouTube: busca el aviso «Glasstube quiere usar información confidencial…» y elige «Permitir siempre». Mientras tanto, todo sale sin cuenta.")
 
     /// El reproductor ocupa la ventana (no en el minirreproductor ni en el PiP).
     private var playerCoversWindow: Bool { model.player != nil && model.playerPresentation == .full }
@@ -150,10 +158,10 @@ struct MainWindow: View {
         switch model.navigator.current {
         case .section(let item): item.title
         case .search(let query, _): query
-        case .channelGroup(let id): model.groups.group(id)?.title ?? "Grupo"
-        case .channel(_, let title): title ?? "Canal"
-        case .playlist(_, let title): title ?? "Playlist"
-        case .group(let group): group.title ?? "Fila"
+        case .channelGroup(let id): model.groups.group(id)?.title ?? String(localized: "Grupo")
+        case .channel(_, let title): title ?? String(localized: "Canal")
+        case .playlist(_, let title): title ?? String(localized: "Playlist")
+        case .group(let group): group.title ?? String(localized: "Fila")
         }
     }
 

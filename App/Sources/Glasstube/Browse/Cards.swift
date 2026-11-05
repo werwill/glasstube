@@ -65,7 +65,7 @@ struct VideoCard: View {
                     .font(.system(size: 14.5, weight: .semibold))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                    .help(model.deArrow.replacesTitle(of: item) ? "DeArrow · título original: \(item.title)" : item.title)
+                    .help(model.deArrow.replacesTitle(of: item) ? String(localized: "DeArrow · título original: \(item.title)") : item.title)
                 Text(item.cardSubtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
@@ -164,15 +164,15 @@ enum CardAccessibility {
     static func label(for item: MediaItem, title: String, watched: Double?) -> String {
         var parts = [title]
         switch item.kind {
-        case .channel: parts.append("canal")
-        case .playlist, .mix: parts.append("playlist")
+        case .channel: parts.append(String(localized: "canal"))
+        case .playlist, .mix: parts.append(String(localized: "playlist"))
         case .video:
-            if item.isShort { parts.append("Short") }
-            if item.isLive { parts.append("en vivo") } else if let duration = item.durationText { parts.append(duration) }
+            if item.isShort { parts.append(String(localized: "Short")) }
+            if item.isLive { parts.append(String(localized: "en vivo")) } else if let duration = item.durationText { parts.append(duration) }
         }
         let subtitle = item.cardSubtitle
         if !subtitle.isEmpty { parts.append(subtitle) }
-        if let watched, watched > 0.02 { parts.append("visto \(Int((watched * 100).rounded())) %") }
+        if let watched, watched > 0.02 { parts.append(String(localized: "visto \(Int((watched * 100).rounded())) %")) }
         return parts.joined(separator: ", ")
     }
 }
@@ -262,7 +262,7 @@ struct ItemMenu: View {
             Menu("Agregar a playlist", systemImage: "text.badge.plus") {
                 if accounts.isSignedIn, let videoId = item.videoId {
                     Button("Ver más tarde", systemImage: "clock") {
-                        model.accountAction("Se agregó a Ver más tarde") {
+                        model.accountAction(String(localized: "Se agregó a Ver más tarde")) {
                             try await $0.addToPlaylist(playlistId: YouTubeService.watchLaterPlaylistId, videoId: videoId)
                         }
                     }
@@ -275,15 +275,15 @@ struct ItemMenu: View {
                 }
             }
             if let playlistContext, let videoId = item.videoId {
-                Button("Quitar de «\(playlistContext.title ?? "esta playlist")»", systemImage: "minus.circle") {
-                    model.accountAction("Se quitó de la playlist") {
+                Button("Quitar de «\(playlistContext.title ?? String(localized: "esta playlist"))»", systemImage: "minus.circle") {
+                    model.accountAction(String(localized: "Se quitó de la playlist")) {
                         try await $0.removeFromPlaylist(playlistId: playlistContext.id, videoId: videoId)
                         playlistContext.removed(videoId)
                     }
                 }
             }
-            Button(accounts.isSignedIn ? (feedbackLabel ?? "No me interesa") : "No me interesa",
-                   systemImage: feedbackLabel == "Quitar del historial" ? "trash" : "hand.thumbsdown") {
+            Button(accounts.isSignedIn ? (feedbackLabel ?? String(localized: "No me interesa")) : String(localized: "No me interesa"),
+                   systemImage: feedbackLabel == String(localized: "Quitar del historial") ? "trash" : "hand.thumbsdown") {
                 library.hide(item)
                 // Con cuenta también se le avisa a YouTube (deja de recomendarlo, lo oculta o lo quita del historial).
                 if accounts.isSignedIn, item.feedbackToken != nil || item.menuPanel != nil {

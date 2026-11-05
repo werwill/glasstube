@@ -18,9 +18,9 @@ nonisolated enum ZipArchive {
 
         var description: String {
             switch self {
-            case .notAZip: "no es un archivo ZIP"
-            case .unsupported(let what): "el ZIP usa algo que no se admite (\(what))"
-            case .corrupt(let what): "el ZIP está dañado (\(what))"
+            case .notAZip: String(localized: "no es un archivo ZIP")
+            case .unsupported(let what): String(localized: "el ZIP usa algo que no se admite (\(what))")
+            case .corrupt(let what): String(localized: "el ZIP está dañado (\(what))")
             }
         }
     }
@@ -111,13 +111,13 @@ nonisolated enum ZipArchive {
         let centralSize = Int(u32(bytes, end + 12))
         let centralOffset = Int(u32(bytes, end + 16))
         guard count != 0xFFFF, centralOffset != 0xFFFF_FFFF else { throw Failure.unsupported("ZIP64") }
-        guard centralOffset + centralSize <= end else { throw Failure.corrupt("directorio central fuera del archivo") }
+        guard centralOffset + centralSize <= end else { throw Failure.corrupt(String(localized: "directorio central fuera del archivo")) }
 
         var entries: [Entry] = []
         var cursor = centralOffset
         for _ in 0..<count {
             guard cursor + 46 <= bytes.count, u32(bytes, cursor) == 0x0201_4b50 else {
-                throw Failure.corrupt("entrada del directorio central")
+                throw Failure.corrupt(String(localized: "entrada del directorio central"))
             }
             let flags = u16(bytes, cursor + 8)
             let method = u16(bytes, cursor + 10)
@@ -128,29 +128,29 @@ nonisolated enum ZipArchive {
             let extraLength = Int(u16(bytes, cursor + 30))
             let commentLength = Int(u16(bytes, cursor + 32))
             let localOffset = Int(u32(bytes, cursor + 42))
-            guard cursor + 46 + nameLength <= bytes.count else { throw Failure.corrupt("nombre de una entrada") }
+            guard cursor + 46 + nameLength <= bytes.count else { throw Failure.corrupt(String(localized: "nombre de una entrada")) }
             let nameBytes = bytes[(cursor + 46)..<(cursor + 46 + nameLength)]
             // Sin la marca de UTF-8, los nombres son CP437; los de SmartTube y los de este archivo son ASCII.
             let path = String(decoding: nameBytes, as: UTF8.self)
             cursor += 46 + nameLength + extraLength + commentLength
 
             if path.hasSuffix("/") { continue }
-            guard flags & 0x1 == 0 else { throw Failure.unsupported("cifrado") }
+            guard flags & 0x1 == 0 else { throw Failure.unsupported(String(localized: "cifrado")) }
             guard compressedSize != 0xFFFF_FFFF, size != 0xFFFF_FFFF else { throw Failure.unsupported("ZIP64") }
-            guard size <= maxEntrySize else { throw Failure.unsupported("una entrada de más de 256 MB") }
+            guard size <= maxEntrySize else { throw Failure.unsupported(String(localized: "una entrada de más de 256 MB")) }
             guard localOffset + 30 <= bytes.count, u32(bytes, localOffset) == 0x0403_4b50 else {
-                throw Failure.corrupt("cabecera local de \(path)")
+                throw Failure.corrupt(String(localized: "cabecera local de \(path)"))
             }
             let start = localOffset + 30 + Int(u16(bytes, localOffset + 26)) + Int(u16(bytes, localOffset + 28))
-            guard start + compressedSize <= bytes.count else { throw Failure.corrupt("datos de \(path)") }
+            guard start + compressedSize <= bytes.count else { throw Failure.corrupt(String(localized: "datos de \(path)")) }
             let body = Data(bytes[start..<(start + compressedSize)])
             let content: Data
             switch method {
             case 0: content = body
             case 8: content = try inflate(body, size: size, path: path)
-            default: throw Failure.unsupported("compresión \(method) en \(path)")
+            default: throw Failure.unsupported(String(localized: "compresión \(method) en \(path)"))
             }
-            guard content.count == size, crc32(content) == crc else { throw Failure.corrupt("CRC de \(path)") }
+            guard content.count == size, crc32(content) == crc else { throw Failure.corrupt(String(localized: "CRC de \(path)")) }
             entries.append(Entry(path: path, data: content))
         }
         return entries
@@ -174,7 +174,7 @@ nonisolated enum ZipArchive {
 
     private static func inflate(_ data: Data, size: Int, path: String) throws -> Data {
         guard size > 0 else { return Data() }
-        guard !data.isEmpty else { throw Failure.corrupt("datos de \(path)") }
+        guard !data.isEmpty else { throw Failure.corrupt(String(localized: "datos de \(path)")) }
         var output = Data(count: size)
         let written = output.withUnsafeMutableBytes { destination in
             data.withUnsafeBytes { source in
@@ -182,7 +182,7 @@ nonisolated enum ZipArchive {
                                           source.bindMemory(to: UInt8.self).baseAddress!, data.count, nil, COMPRESSION_ZLIB)
             }
         }
-        guard written == size else { throw Failure.corrupt("DEFLATE de \(path)") }
+        guard written == size else { throw Failure.corrupt(String(localized: "DEFLATE de \(path)")) }
         return output
     }
 

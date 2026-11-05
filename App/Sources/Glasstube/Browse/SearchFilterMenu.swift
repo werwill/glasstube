@@ -71,7 +71,7 @@ struct SearchFilterMenu: View {
         if let duration = filter.duration { parts.append(duration.shortTitle) }
         if filter.priority != .relevance { parts.append(filter.priority.title) }
         parts += SearchFilter.Feature.menuOrder.filter(filter.features.contains).map(\.title)
-        guard !parts.isEmpty else { return "Filtros" }
+        guard !parts.isEmpty else { return String(localized: "Filtros") }
         return parts.count > 3 ? parts.prefix(3).joined(separator: " · ") + " +\(parts.count - 3)" : parts.joined(separator: " · ")
     }
 
@@ -92,12 +92,12 @@ struct SearchFilterMenu: View {
     }
 }
 
-// Los textos del diálogo de YouTube en español (es-419).
+// Los textos del diálogo de YouTube, en cada idioma.
 extension SearchFilter.Priority {
     var title: String {
         switch self {
-        case .relevance: "Relevancia"
-        case .popularity: "Popularidad"
+        case .relevance: String(localized: "Relevancia")
+        case .popularity: String(localized: "Popularidad")
         }
     }
 }
@@ -105,10 +105,10 @@ extension SearchFilter.Priority {
 extension SearchFilter.UploadDate {
     var title: String {
         switch self {
-        case .today: "Hoy"
-        case .week: "Esta semana"
-        case .month: "Este mes"
-        case .year: "Este año"
+        case .today: String(localized: "Hoy")
+        case .week: String(localized: "Esta semana")
+        case .month: String(localized: "Este mes")
+        case .year: String(localized: "Este año")
         }
     }
 }
@@ -116,11 +116,11 @@ extension SearchFilter.UploadDate {
 extension SearchFilter.ResultType {
     var title: String {
         switch self {
-        case .video: "Videos"
-        case .shorts: "Shorts"
-        case .channel: "Canales"
-        case .playlist: "Playlists"
-        case .movie: "Películas"
+        case .video: String(localized: "Videos")
+        case .shorts: String(localized: "Shorts")
+        case .channel: String(localized: "Canales")
+        case .playlist: String(localized: "Playlists")
+        case .movie: String(localized: "Películas")
         }
     }
 }
@@ -128,17 +128,17 @@ extension SearchFilter.ResultType {
 extension SearchFilter.Duration {
     var title: String {
         switch self {
-        case .underThree: "Menos de 3 minutos"
-        case .threeToTwenty: "De 3 a 20 minutos"
-        case .overTwenty: "Más de 20 minutos"
+        case .underThree: String(localized: "Menos de 3 minutos")
+        case .threeToTwenty: String(localized: "De 3 a 20 minutos")
+        case .overTwenty: String(localized: "Más de 20 minutos")
         }
     }
 
     var shortTitle: String {
         switch self {
-        case .underThree: "< 3 min"
-        case .threeToTwenty: "3–20 min"
-        case .overTwenty: "> 20 min"
+        case .underThree: String(localized: "< 3 min")
+        case .threeToTwenty: String(localized: "3–20 min")
+        case .overTwenty: String(localized: "> 20 min")
         }
     }
 }
@@ -149,10 +149,10 @@ extension SearchFilter.Feature {
 
     var title: String {
         switch self {
-        case .live: "En vivo"
+        case .live: String(localized: "En vivo")
         case .uhd: "4K"
         case .hd: "HD"
-        case .subtitles: "Subtítulos"
+        case .subtitles: String(localized: "Subtítulos")
         case .creativeCommons: "Creative Commons"
         case .hdr: "HDR"
         }

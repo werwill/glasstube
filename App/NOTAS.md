@@ -1,4 +1,4 @@
-# Glasstube.app — notas (fase 1, interfaz; fase 2, cuentas; 15-oct-2026; fase 3, comunidad y reproductor; 16-oct-2026; fase 4, sistema y control remoto; distribución; 18-oct-2026; fase 5a, organizar y descubrir; 23-oct-2026; fase 5b, respaldo, actualizaciones, accesibilidad y modo TV; 26-oct-2026)
+# Glasstube.app — notas (fase 1, interfaz; fase 2, cuentas; 15-oct-2026; fase 3, comunidad y reproductor; 16-oct-2026; fase 4, sistema y control remoto; distribución; 18-oct-2026; fase 5a, organizar y descubrir; 23-oct-2026; fase 5b, respaldo, actualizaciones, accesibilidad y modo TV; 26-oct-2026; fase 6, interfaz en inglés y verificación; 4-nov-2026)
 
 App nativa de macOS que reimplementa SmartTube con el lenguaje Liquid Glass, sobre YTKit (catálogo, streams y cuentas)
 y PlaybackKit (libmpv LGPL propia, SABR). Hecha según `smarttube-re/BRIEF-app-swiftui.md`. Mac de prueba: M1 Pro,
@@ -12,7 +12,8 @@ YouTube del teléfono, `glasstube://`, pegar y arrastrar enlaces, el menú Servi
 La fase 5a agrega grupos de canales, suscripciones de esta Mac por RSS, bloqueos en todos los feeds, el feed de Shorts y
 los filtros de búsqueda (ver [Fase 5a](#fase-5a-organizar-y-descubrir)). La 5b cierra el plan: respaldo en ZIP (también
 el de SmartTube) e iCloud Drive, actualizaciones con Sparkle, accesibilidad y el modo TV (ver
-[Fase 5b](#fase-5b-respaldo-actualizaciones-accesibilidad-y-modo-tv)).
+[Fase 5b](#fase-5b-respaldo-actualizaciones-accesibilidad-y-modo-tv)). La fase 6 deja la interfaz en inglés y español,
+según el idioma del sistema (ver [Fase 6](#fase-6-interfaz-en-inglés-y-verificación)).
 
 ```bash
 Scripts/package-app.sh             # swift build -c release + build/Glasstube.app firmado con «Glasstube Desarrollo» (o ad hoc)
@@ -25,7 +26,9 @@ Scripts/capturas.sh vincular       # las de la fase 4: la hoja «Vincular un tel
 Scripts/capturas.sh grupo          # las de la fase 5a que dicen «grupo» (también: filtros, suscripciones-esta-mac, ajustes-bloqueos)
 Scripts/capturas.sh respaldo       # las de la fase 5b (también: tv-, y a11y con el ajuste de accesibilidad que esté activo)
 Scripts/capturas-readme.sh         # las de la portada (../docs/capturas/), solo con Big Buck Bunny
-swift test                         # 66 pruebas: cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones, minirreproductor, grupos, bloqueos y filtros (fase 5a), respaldo y modo TV (fase 5b)
+IDIOMA=en Scripts/capturas.sh      # las mismas con la interfaz en inglés, en capturas/en/ (igual capturas-readme.sh, en ../docs/capturas/en/)
+Scripts/cadenas.py revisar         # textos sin traducir o que sobran en Localization/ (ver «Fase 6»; antes, swift build)
+swift test                         # 72 pruebas, con las traducciones (fase 6): cuentas (fase 2), cola, DeArrow, comentarios y chat (fase 3), QR y Spotlight (fase 4), aviso de versiones, minirreproductor, grupos, bloqueos y filtros (fase 5a), respaldo y modo TV (fase 5b)
 CAMBIOS=cambios.md Scripts/release.sh 0.6.0   # versión para GitHub Releases: ../dist/Glasstube-0.6.0.dmg, su SHA-256, las notas y la entrada firmada de ../appcast.xml (no sube nada)
 open "glasstube://watch?v=aqz-KE-bpKQ&t=60"   # abre la app (o la que está abierta) en ese video
 ```
@@ -974,6 +977,112 @@ NO -GTSinActualizaciones` y las opciones nuevas de `Support/Automation.swift` (`
 - **Del respaldo de SmartTube no se traen** sus ajustes ni Ver más tarde (en SmartTube es de la cuenta de YouTube). Si un
   SmartTube con varios perfiles exporta historiales de varias cuentas, se juntan en el historial de esta Mac.
 
+## Fase 6: interfaz en inglés y verificación
+
+La app sigue el idioma del sistema, con español e inglés. En cualquier otro idioma sale en inglés; `(es-MX, en)` sale en
+español. Para probarla sin cambiar nada del sistema: `-AppleLanguages '(en)'`.
+
+| Pedido | Estado |
+|---|---|
+| Interfaz en inglés (SwiftUI, menús, Dock, Servicios, `InfoPlist.strings`, alertas y errores, VoiceOver, modo TV, respaldo) | Hecho: 722 claves con traducción. Los detalles técnicos de los errores siguen en español (ver «Qué falta (fase 6)»). |
+| Sparkle en inglés | El framework trae su propio inglés (`Base.lproj`) y español; no se vio en ejecución porque esta compilación no tiene clave. |
+| Fechas, números y plurales según la configuración regional | Hecho, visto en las capturas. Plurales de la app en `Localizable.stringsdict`. |
+| `hl` sigue al idioma de la interfaz, `gl` a la región | Hecho, sin cambiar lo que recibe Windows. |
+| `CFBundleLocalizations` | `en` y `es`, con `CFBundleDevelopmentRegion` = `en`. |
+| Prueba que falle si una clave no tiene inglés | `LocalizationTests`. Se comprobó quitando «Reintentar»: falla y dice `RemoteViews.swift:29: Reintentar`. |
+| Capturas en inglés | 41 en `capturas/en/`: nada cortado. |
+| Portada en inglés | `docs/capturas/en/`, solo Big Buck Bunny; `README.en.md` ya las usa. |
+| ⌘K, ⌘[, ⌘], ⌘R | Probados. ⌘[ y ⌘] no funcionaban: arreglado. |
+| Tab desde la búsqueda | Arreglado. |
+| Pantalla completa con F | Capturada. |
+| «Ahora suena», teclas multimedia, audio | Confirmados por el dueño. |
+| Ajustes de accesibilidad | Piden al dueño (ver «Qué falta (fase 6)»). |
+| Video negro en 0:00 | No se repitió. |
+
+### Cómo está armada
+
+- **`.lproj` en vez de `.xcstrings`:** SwiftPM no compila catálogos con Command Line Tools. Las traducciones viven en
+  `Localization/{en,es}.lproj/` (`Localizable.strings`, `Localizable.stringsdict`, `InfoPlist.strings` y
+  `ServicesMenu.strings`), fuera de `Sources/`. `package-app.sh` las revisa con `plutil` y las copia a
+  `Contents/Resources`; el código usa `Bundle.main`, así que hay que empaquetar la app para ver el inglés.
+- **Las claves son el texto en español.** La región de desarrollo es `en` para que un idioma sin traducción caiga en
+  inglés, y por eso `es.lproj/Localizable.strings` lleva todas las claves, aunque sea con el mismo texto.
+- **La lista de claves la da el compilador:** `Package.swift` pasa `-emit-localized-strings` y deja `.stringsdata` en
+  `.build/cadenas` (también en release). `Scripts/cadenas.py` los lee: `revisar`, `sincronizar`, `faltan`,
+  `agregar archivo` y `sueltas` (literales de `Sources/` que no pasan por la traducción).
+- **Para agregar un texto:** escribirlo en español, compilar, `Scripts/cadenas.py faltan`, traducirlo con `agregar` y
+  correr `swift test`.
+- **Lo que no se traduce solo:** un parámetro `String` o `StringProtocol` con un literal, como
+  `LabeledContent("x", value: "literal")`, y `Text(variable)`. Van con `String(localized:)`. Tampoco se emite
+  `String(localized: "…\(error)")` con `any Error`.
+- **Títulos que arma YTKit** («Resultados», «Más recientes», «Inicio», «Suscripciones», «Historial»):
+  `BrowsePage.localizingFixedTitles` los traduce en Búsqueda, Suscripciones, Historial, Inicio y el modo TV. No se aplica
+  a canales ni playlists, donde ese texto puede ser del creador.
+- **`hl` y `gl`:** `CatalogLocale(interfaceLanguage:region:)` recibe `Bundle.main.preferredLocalizations.first`, el idioma
+  en que de verdad salió la interfaz. `es` fuera de España sigue siendo `es-419`. `init(language:region:)` y `.current`,
+  que usa Windows, dan lo mismo que antes (no se compiló en Windows).
+- **Contenido de YouTube:** con `hl=en` en México llegan estantes regionales como «Éxitos del Momento» y títulos en
+  español. Es lo esperado: vienen de YouTube, y `gl` sigue siendo la región.
+
+### Arreglos que salieron al verificar
+
+- **⌘[, ⌘] y ⇧⌘W no hacían nada.** `Commands` sí se reevaluaba, pero SwiftUI llena el `NSMenuItem` hasta recibir
+  `menuNeedsUpdate:`, es decir, al abrir el menú. Un atajo no lo abre: veía la opción desactivada y sin acción, y
+  `performKeyEquivalent` devolvía `true` sin hacer nada. Ahora `MainWindow` llama a `refreshMainMenu()` cuando cambia algo
+  de lo que muestran los menús (`menuState`). Envolver los menús en una `View` o pasar a `ObservableObject` no lo arregló.
+- **Tab desde la búsqueda:** la toolbar queda fuera del foco de SwiftUI, así que `SearchFieldTab` usa un monitor local de
+  `keyDown`. Solo actúa con Tab sin modificadores, con la búsqueda enfocada, en la ventana principal y sin reproductor ni
+  modo TV. Mayús-Tab y los demás campos siguen igual.
+- **Teclado de esta Mac (Latin American):** `allowsAutomaticKeyEquivalentLocalization` convierte ⌘[ y ⌘] en **⌘{ y ⌘}**.
+  Es del sistema y se dejó así.
+
+### Verificación
+
+- `swift build`; `swift test` en `App/`: **72 pruebas en 13 suites** (antes 66). En `YTKit/`: **111 en 23 suites**.
+- `Scripts/package-app.sh`: 55 MB, firmada con «Glasstube Desarrollo», con los dos `.lproj` y el plist correcto.
+- **Atajos, con `-GTKeys` y su registro:** ⌘K pone el foco en la búsqueda; Tab pasa al contenido; ⌘R repite la búsqueda
+  (se ve el POST); ⌘{ y ⌘} van y vuelven entre Música e Inicio; ⇧⌘W cierra el reproductor y vuelve a Inicio. Son eventos
+  inyectados, no un teclado físico.
+- **F:** pantalla completa capturada a 3456×2168.
+- **Idioma:** `(en)`, `(fr)` → inglés; `(es)`, `(es-MX, en)` → español. Inicio, Cuentas y el reproductor en español se
+  compararon a ojo y siguen igual.
+- **Menús, leídos con el árbol de accesibilidad:** Glasstube, Edit, View, Playback, Window y Help en inglés, y en español
+  con `(es)`. El menú Apple es del sistema y sigue su idioma. **Dock** en inglés (Home, Subscriptions, Continue Watching).
+- **Servicios:** `pbs -dump` da `default = "Open in Glasstube"` y `es = "Abrir en Glasstube"`. No se vio en el menú de otra app.
+- **VoiceOver, con un lector del árbol desde fuera** (`AXEnhancedUserInterface`), en inglés: reproductor con controles,
+  modo TV e Inicio. Etiquetas y ayudas en inglés, salvo el contenido de YouTube. Los únicos 7 elementos sin nombre
+  en la búsqueda son 4 piezas de la barra de desplazamiento y los 3 botones de la ventana, ambos del sistema.
+- **Video negro en 0:00:** no se repitió en ninguna corrida de esta fase.
+- **Confirmado por el dueño en esta Mac (4-nov-2026), con la app en inglés:** se oye el audio; «Ahora suena» aparece en
+  el Centro de control con título e imagen; F8 pausa y reanuda; F9 pasa al siguiente video; ⌘{ y ⌘} van y vuelven entre
+  Home y Music con el teclado real.
+
+### Capturas nuevas
+
+- `IDIOMA=en Scripts/capturas.sh [filtro]` deja las capturas en `capturas/en/`. Sin `IDIOMA`, salen en el idioma del
+  sistema, como antes. `capturas/` no va al repositorio.
+- `reproductor-pantalla-completa-oscuro.png`: la nueva de F.
+- `IDIOMA=en Scripts/capturas-readme.sh` deja en `../docs/capturas/en/` `reproductor`, `busqueda`, `comentarios`,
+  `vincular-telefono` y `ajustes-sponsorblock`: Big Buck Bunny, sin caras reales, comentaristas como `@person1…`, código de
+  vinculación de prueba y sin datos de cuenta. Todas se revisaron. `README.en.md` usa las cuatro primeras.
+
+### Qué falta (fase 6)
+
+- **Accesibilidad, pendiente del dueño (lo dejó para después):** falta correr `Scripts/capturas.sh a11y` con «Reducir
+  transparencia», «Aumentar contraste» y «Reducir movimiento», uno a la vez, con la Mac desbloqueada, y comparar con las
+  `a11y-normal-*`, que se rehicieron el 4-nov-2026 con la versión de esta fase. Lo esperado está en «Qué falta (fase 5b)».
+- **Sigue en español:** los detalles técnicos que llegan de YTKit y PlaybackKit dentro de un error (`PlayerError`, SABR,
+  `HTTPError`, «no se encontró el canal…», «la fila no tiene continuación»). La frase que los envuelve sí está traducida.
+  Traducirlos implica tocar esos paquetes, que Windows comparte.
+- **Datos guardados antes:** el historial local conserva el texto con el que se guardó («20 k vistas · hace 11 meses»).
+- **Grupos de prueba de `capturas.sh`** («Software libre», «Animación 3D»): son datos de la prueba, no interfaz, y
+  aparecen en algunas capturas de `capturas/en/`.
+- **Sparkle en inglés** no se vio en ejecución: hace falta una compilación con clave o `SPARKLE=1`.
+- **⌘[ y ⌘] con distribución de EE. UU.** no se probaron, porque no se cambian ajustes del sistema.
+- **Fuera del encargo, para que lo decida el dueño:** `README.en.md` todavía dice «The app's interface is in Spanish for
+  now.» (línea 36) y menciona «"Abrir en Glasstube"» (línea 193). Las capturas en español de `docs/capturas/` están
+  viejas (la barra lateral dice «Llegan en la fase 5»), y `README.md` y esas capturas no se tocaron.
+
 ## Paso 0: un solo YTKit
 
 - La copia de `Spike/` era idéntica a YTKit salvo el `public` y el reloj (`SabrPlaybackClock` → `PlaybackClock`), así que
@@ -1122,9 +1231,9 @@ menú abierto, y los mismos controles y orden.
   `LazyVGrid` no surte efecto; el cierre de `onKeyPress` leía un `@State` viejo; y una lectura hecha dentro del cierre
   del `ForEach` no redibujaba la vista. El anillo usa el color de foco del sistema y solo aparece al usar el teclado (al
   arrancar, las flechas ya funcionan sin marcar nada a quien usa el ratón).
-- **Tab desde el campo de búsqueda** no entra al contenido (la toolbar está fuera de la jerarquía de SwiftUI del
-  contenido). Por eso, al buscar con Retorno el foco pasa al primer resultado, y la barra lateral ↔ contenido va con las
-  flechas.
+- **Tab desde el campo de búsqueda** pasa al contenido con un monitor de teclado (`SearchFieldTab`), porque la toolbar
+  está fuera de la jerarquía de SwiftUI del contenido (ver [Fase 6](#fase-6-interfaz-en-inglés-y-verificación)). Al buscar
+  con Retorno el foco pasa al primer resultado, y la barra lateral ↔ contenido va con las flechas.
 - **Storyboard y subtítulos por VISIONOS** (`/player` sin `n`, firma ni PoToken; los subtítulos se descargan sin `pot`).
   Vive en la app (`Services/PlayerExtras.swift`) usando la API pública de YTKit; es candidato a pasar a YTKit.
 - **Calidades con el nombre de YouTube:** altura equivalente en 16:9 (un 3840×1920 es «2160p», no «1920p»), una por
@@ -1149,8 +1258,8 @@ menú abierto, y los mismos controles y orden.
 - **Cuadrícula:** →, ↓×3, Tab, ← recorren 1, 5, 9, 13, 14, 13, 12; ← en la primera columna ya no mueve la selección y
   pide el foco de la barra lateral (no se comprobó que la lista lo tome, ni el → de vuelta). La página se desplaza a la
   tarjeta (`ScrollPosition`).
-- **Atajos de menú:** ⌘, abre Ajustes (probado con la automatización). ⌘K, ⌘[, ⌘] y ⌘R están en los menús pero no se
-  probaron.
+- **Atajos de menú:** ⌘, abre Ajustes (probado con la automatización). ⌘K, ⌘[, ⌘] y ⌘R se probaron en la fase 6 (ver
+  [Fase 6](#fase-6-interfaz-en-inglés-y-verificación)).
 - **Clic** en una tarjeta de «Seguir viendo» → reproductor, carga g1 en 1513,4 s, «reproduciendo» a los 0,85 s.
 - **Directo** (`p2AzyIEuFak`): HLS por `AVEngine`, reproduciendo a los 15 s.
 
@@ -1160,13 +1269,11 @@ menú abierto, y los mismos controles y orden.
   ninguna sesión puede cambiar. Todo el vidrio es del SDK (no hay `Material` ni `blur` en la app), así que debería
   adaptarse solo, pero no se vio. Quien tenga el Mac a mano: activar uno por vez en Accesibilidad > Pantalla y correr
   `Scripts/capturas.sh a11y` con cada uno (ver «Qué falta (fase 5b)»).
-- **No verificado a simple vista:** «Ahora suena» dibujado en el Centro de control y una tecla multimedia física (desde
-  la fase 4 se comprobó por MediaRemote que el sistema tiene a Glasstube como la app que suena, con sus datos y carátula,
-  y que sus comandos llegan; ver «Fase 4»), el audio (nadie escuchó) y la pantalla completa (F la alterna; no se
-  capturó).
+- **«Ahora suena», teclas multimedia y audio:** los confirmó el dueño en la fase 6; la pantalla completa con F se capturó
+  en la misma fase (ver [Fase 6](#fase-6-interfaz-en-inglés-y-verificación)).
 - **Una vez**, en el primer clic de prueba, el video quedó en negro en 0:00 a los 9 s; no se repitió (la segunda corrida
   cargó en 0,85 s). En la fase 3 se probó con la ventana tapada, oculta y minimizada sin repetirlo, y se corrigió lo que
-  da ese síntoma (ver «Fase 3», punto 6, y PlaybackKit/NOTAS.md).
+  da ese síntoma (ver «Fase 3», punto 6, y PlaybackKit/NOTAS.md). Tampoco se repitió en la fase 6.
 - **Licencias:** los textos de LGPL-2.1, LGPL-3.0 y GPL-3.0 y el MIT de SmartTube van en
   `Contents/Resources/Licenses/` (los dos de la v3 se descargaron de gnu.org con permiso). Ajustes > General menciona
   mpv y FFmpeg, y desde la distribución las notas de cada versión enlazan el código fuente (ver
@@ -1181,5 +1288,6 @@ menú abierto, y los mismos controles y orden.
   panel lateral, minirreproductor, DeArrow y la cola llegaron en la fase 3; el control remoto en la fase 4; grupos de
   canales, suscripciones sin cuenta, bloqueos, feed de Shorts y filtros de búsqueda en la 5a. Lo que queda abierto de
   cada fase está en su «Qué falta».
-- **Atajos:** Tab desde la búsqueda no llega al contenido (ver Decisiones); ⌘K, ⌘[, ⌘] y ⌘R sin probar.
-- **Solo arm64** (como PlaybackKit) y probado en una sola Mac y región (MX, `es-419`).
+- **Atajos:** ⌘K, ⌘[, ⌘], ⌘R y Tab desde la búsqueda se probaron en la fase 6 con eventos inyectados, y ⌘{ y ⌘} también
+  con el teclado físico; falta la distribución de EE. UU. (ver «Qué falta (fase 6)»).
+- **Solo arm64** (como PlaybackKit) y probado en una sola Mac y región (MX), con `es-419` y `en`.

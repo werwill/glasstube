@@ -11,9 +11,9 @@ final class AppSettings {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .system: "Sistema"
-            case .light: "Claro"
-            case .dark: "Oscuro"
+            case .system: String(localized: "Sistema")
+            case .light: String(localized: "Claro")
+            case .dark: String(localized: "Oscuro")
             }
         }
     }
@@ -39,9 +39,9 @@ final class AppSettings {
         var id: Int { rawValue }
         var title: String {
             switch self {
-            case .low: "Bajo · 15 s"
-            case .medium: "Medio · 30 s"
-            case .high: "Alto · 60 s"
+            case .low: String(localized: "Bajo · 15 s")
+            case .medium: String(localized: "Medio · 30 s")
+            case .high: String(localized: "Alto · 60 s")
             }
         }
     }

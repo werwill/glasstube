@@ -59,7 +59,7 @@ struct AccountMenu: View {
         Menu {
             if accounts.isSignedIn {
                 ForEach(Array(accounts.sessions.enumerated()), id: \.offset) { _, session in
-                    Section(session.first(where: { !$0.isBrand })?.displayByline ?? "Cuenta de Google") {
+                    Section(session.first(where: { !$0.isBrand })?.displayByline ?? String(localized: "Cuenta de Google")) {
                         ForEach(session) { account in
                             Toggle(isOn: Binding(get: { accounts.selected?.id == account.id },
                                                  set: { if $0 { accounts.select(account) } })) {
@@ -282,7 +282,7 @@ struct AccountSettings: View {
                 Text("Reporta la posición cada minuto, al pausar y al cerrar, como el reproductor de YouTube. El historial local de esta Mac se guarda siempre.")
             }
             Section {
-                LabeledContent("Dónde se guarda", value: "Llavero de macOS (mx.glasstube.cuentas)")
+                LabeledContent("Dónde se guarda", value: String(localized: "Llavero de macOS (mx.glasstube.cuentas)"))
                 Text("Cerrar sesión revoca el acceso en Google y borra la sesión del Llavero. También puedes quitar el acceso desde myaccount.google.com > Seguridad > Tus conexiones.")
                     .font(.callout)
                     .foregroundStyle(.secondary)

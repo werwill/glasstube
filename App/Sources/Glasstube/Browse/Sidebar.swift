@@ -105,7 +105,8 @@ struct Sidebar: View {
     private func groupRow(_ group: ChannelGroup) -> some View {
         Label(group.title, systemImage: "folder")
             .tag(Destination.channelGroup(group.id))
-            .help(group.channels.isEmpty ? "Grupo sin canales" : "\(group.channels.count) \(group.channels.count == 1 ? "canal" : "canales")")
+            .help(group.channels.isEmpty ? String(localized: "Grupo sin canales")
+                                : group.channels.count == 1 ? String(localized: "1 canal") : String(localized: "\(group.channels.count) canales"))
             .contextMenu {
                 Button("Canales del grupo…", systemImage: "person.2") { model.groupEditor = GroupEditorRequest(id: group.id) }
                 Button("Renombrar…", systemImage: "pencil") { model.groupPrompt = .rename(group) }
@@ -121,13 +122,13 @@ struct Sidebar: View {
 
     private func help(for item: SidebarItem) -> String {
         switch (item, accounts.isSignedIn) {
-        case (.subscriptions, false): "Los canales que sigues en esta Mac (sus videos llegan por RSS, sin cuenta)"
-        case (.history, false): "Historial local de esta Mac"
-        case (.playlists, false): "Ver más tarde (local); las playlists de YouTube requieren cuenta"
-        case (.subscriptions, true): "Videos nuevos de tus suscripciones de YouTube (y de las de esta Mac)"
-        case (.history, true): "Historial de tu cuenta de YouTube (y el de esta Mac)"
-        case (.playlists, true): "Tus playlists de YouTube, Ver más tarde y Me gusta"
-        case (.shorts, _): "Shorts que recomienda YouTube; se reproducen en el reproductor de siempre"
+        case (.subscriptions, false): String(localized: "Los canales que sigues en esta Mac (sus videos llegan por RSS, sin cuenta)")
+        case (.history, false): String(localized: "Historial local de esta Mac")
+        case (.playlists, false): String(localized: "Ver más tarde (local); las playlists de YouTube requieren cuenta")
+        case (.subscriptions, true): String(localized: "Videos nuevos de tus suscripciones de YouTube (y de las de esta Mac)")
+        case (.history, true): String(localized: "Historial de tu cuenta de YouTube (y el de esta Mac)")
+        case (.playlists, true): String(localized: "Tus playlists de YouTube, Ver más tarde y Me gusta")
+        case (.shorts, _): String(localized: "Shorts que recomienda YouTube; se reproducen en el reproductor de siempre")
         default: item.title
         }
     }

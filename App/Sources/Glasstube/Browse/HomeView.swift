@@ -106,22 +106,23 @@ struct HomeView: View {
 
     private var featuredBadge: String {
         guard let featured, let group = groups.first(where: { $0.items.contains(featured) }), let title = group.title,
-              title.localizedCaseInsensitiveCompare("Destacados") != .orderedSame else {
-            return "Destacado en Explorar"
+              // El nombre que le pone YouTube a esa fila, según `hl`.
+              !["Destacados", "Featured"].contains(where: { title.localizedCaseInsensitiveCompare($0) == .orderedSame }) else {
+            return String(localized: "Destacado en Explorar")
         }
-        return "Destacado · \(title)"
+        return String(localized: "Destacado · \(title)")
     }
 
     private var sections: [Section] {
         var result: [Section] = []
         let continuing = library.visible(library.continueWatching.map(\.item)).prefix(GridMetrics.columns(for: width))
         if !continuing.isEmpty {
-            result.append(Section(title: "Seguir viendo", items: Array(continuing), isContinue: true,
+            result.append(Section(title: String(localized: "Seguir viendo"), items: Array(continuing), isContinue: true,
                                   seeAll: { model.navigator.go(.section(.history)) }))
         }
         let picks = forYou.filter { $0 != featured }
         if !picks.isEmpty {
-            result.append(Section(title: "Para ti", items: picks))
+            result.append(Section(title: String(localized: "Para ti"), items: picks))
         }
         let used = Set(forYou.map(\.id))
         for group in groups {
@@ -139,7 +140,7 @@ struct HomeView: View {
         failure = nil
         if Log.verbose { NSLog("Glasstube: Inicio: pidiendo (recarga \(model.reloadToken))") }
         do {
-            let loaded = try await model.service.home()
+            let loaded = try await model.service.home().localizingFixedTitles
             if Log.verbose { NSLog("Glasstube: Inicio: \(loaded.groups.count) filas, \(loaded.itemCount) elementos (cancelada: \(Task.isCancelled))") }
             withAnimation(Motion.animation(.smooth)) { page = loaded }
             if !model.searchFieldFocused {
@@ -154,7 +155,7 @@ struct HomeView: View {
             if Log.verbose { NSLog("Glasstube: Inicio: cancelado") }
         } catch {
             if Log.verbose { NSLog("Glasstube: Inicio: error \(error)") }
-            if page == nil { failure = "\(error)" }
+            if page == nil { failure = AccountModel.describe(error) }
         }
     }
 }

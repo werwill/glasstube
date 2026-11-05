@@ -13,15 +13,15 @@ enum SidebarItem: String, Hashable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: "Inicio"
-        case .subscriptions: "Suscripciones"
-        case .history: "Historial"
-        case .playlists: "Playlists"
-        case .shorts: "Shorts"
-        case .music: "Música"
-        case .gaming: "Gaming"
-        case .news: "Noticias"
-        case .live: "En vivo"
+        case .home: String(localized: "Inicio")
+        case .subscriptions: String(localized: "Suscripciones")
+        case .history: String(localized: "Historial")
+        case .playlists: String(localized: "Playlists")
+        case .shorts: String(localized: "Shorts")
+        case .music: String(localized: "Música")
+        case .gaming: String(localized: "Gaming")
+        case .news: String(localized: "Noticias")
+        case .live: String(localized: "En vivo")
         }
     }
 
@@ -202,10 +202,13 @@ final class AppModel {
             // `-GTLlaveroLento N`: lo mismo, pero la lectura tarda N s (prueba del aviso del Llavero sin responder).
             let defaults = UserDefaults.standard
             let slowKeychain = defaults.double(forKey: "GTLlaveroLento")
-            let session = try AccountManager(catalog: catalog, ephemeral: defaults.bool(forKey: "GTSinLlavero") || slowKeychain > 0,
+            // El contenido de YouTube (`hl`) en el idioma en que corre la interfaz; `gl`, la región del sistema.
+            let locale = CatalogLocale(interfaceLanguage: Bundle.main.preferredLocalizations.first ?? "en")
+            let session = try AccountManager(catalog: catalog, locale: locale,
+                                             ephemeral: defaults.bool(forKey: "GTSinLlavero") || slowKeychain > 0,
                                              simulatedReadDelay: slowKeychain)
             accounts = AccountModel(manager: session)
-            service = try YouTubeService(catalog: catalog, poTokenSource: poToken, session: session)
+            service = try YouTubeService(catalog: catalog, locale: locale, poTokenSource: poToken, session: session)
         } catch {
             fatalError("No se pudo crear YouTubeService: \(error)")
         }
@@ -232,9 +235,9 @@ final class AppModel {
         Task {
             switch await updates.check() {
             case .available: break // el aviso sale abajo a la derecha
-            case .upToDate: show(banner: "Tienes la versión más reciente de Glasstube")
-            case .failed: show(banner: "No se pudo consultar GitHub; revisa la conexión")
-            case .unconfigured: show(banner: "Esta compilación no busca versiones nuevas (no se empaquetó con Scripts/package-app.sh)")
+            case .upToDate: show(banner: String(localized: "Tienes la versión más reciente de Glasstube"))
+            case .failed: show(banner: String(localized: "No se pudo consultar GitHub; revisa la conexión"))
+            case .unconfigured: show(banner: String(localized: "Esta compilación no busca versiones nuevas (no se empaquetó con Scripts/package-app.sh)"))
             }
         }
     }
@@ -281,7 +284,7 @@ final class AppModel {
                 try await work(service)
                 if let success { show(banner: success) }
             } catch {
-                show(banner: "YouTube no aceptó el cambio: \(AccountModel.describe(error))")
+                show(banner: String(localized: "YouTube no aceptó el cambio: \(AccountModel.describe(error))"))
             }
         }
     }
@@ -371,7 +374,7 @@ final class AppModel {
         }
         if next { queue.playNext(item) } else { queue.append(item) }
         let title = deArrow.title(for: item)
-        let message = next ? "A continuación: \(title)" : "Se agregó a la cola (\(queue.items.count))"
+        let message = next ? String(localized: "A continuación: \(title)") : String(localized: "Se agregó a la cola (\(queue.items.count))")
         if playerPresentation == .full, let player { player.showToast(message) } else { show(banner: message) }
     }
 
@@ -486,13 +489,13 @@ extension AppModel {
     /// Bloquea un canal: sus videos desaparecen de todos los feeds, la búsqueda y los sugeridos.
     func blockChannel(id: String, name: String) {
         library.block(channelId: id, name: name)
-        show(banner: "Bloqueaste «\(name)». Para verlo de nuevo: Ajustes › Bloqueos.", seconds: 4)
+        show(banner: String(localized: "Bloqueaste «\(name)». Para verlo de nuevo: Ajustes › Bloqueos."), seconds: 4)
     }
 
     func unblockChannel(id: String) {
         guard let channel = library.blockedChannels.first(where: { $0.id == id }) else { return }
         library.unblock(channel)
-        show(banner: "«\(channel.name)» ya no está bloqueado")
+        show(banner: String(localized: "«\(channel.name)» ya no está bloqueado"))
     }
 
     /// Agrega o quita el canal del grupo (los «✓» del menú «Agregar a un grupo»).
@@ -500,10 +503,10 @@ extension AppModel {
         guard let group = groups.group(groupId) else { return }
         if group.contains(channel.id) {
             groups.remove(channelId: channel.id, from: groupId)
-            show(banner: "Se quitó «\(channel.displayName)» de «\(group.title)»")
+            show(banner: String(localized: "Se quitó «\(channel.displayName)» de «\(group.title)»"))
         } else {
             groups.add(channel, to: groupId)
-            show(banner: "Se agregó «\(channel.displayName)» a «\(group.title)»")
+            show(banner: String(localized: "Se agregó «\(channel.displayName)» a «\(group.title)»"))
         }
     }
 
@@ -511,7 +514,7 @@ extension AppModel {
     func createGroup(named title: String, with channel: GroupChannel?) {
         let group = groups.create(title: title, channels: channel.map { [$0] } ?? [])
         if let channel {
-            show(banner: "Se creó «\(group.title)» con «\(channel.displayName)»")
+            show(banner: String(localized: "Se creó «\(group.title)» con «\(channel.displayName)»"))
         } else {
             if player != nil, playerPresentation == .full { enterMiniPlayer() }
             navigator.go(.channelGroup(group.id))
@@ -521,17 +524,17 @@ extension AppModel {
     func deleteGroup(_ group: ChannelGroup) {
         if navigator.current == .channelGroup(group.id) { navigator.go(.section(.home)) }
         groups.delete(group.id)
-        show(banner: "Se borró el grupo «\(group.title)»")
+        show(banner: String(localized: "Se borró el grupo «\(group.title)»"))
     }
 
     /// Suscripción de esta Mac (sin cuenta): sus videos llegan por RSS a Suscripciones.
     func toggleLocalSubscription(_ channel: GroupChannel) {
         if groups.isSubscribed(channel.id) {
             groups.unsubscribe(channel.id)
-            show(banner: "Ya no sigues «\(channel.displayName)» en esta Mac")
+            show(banner: String(localized: "Ya no sigues «\(channel.displayName)» en esta Mac"))
         } else {
             groups.subscribe(channel)
-            show(banner: "Te suscribiste a «\(channel.displayName)» en esta Mac")
+            show(banner: String(localized: "Te suscribiste a «\(channel.displayName)» en esta Mac"))
         }
     }
 
@@ -551,7 +554,7 @@ extension AppModel {
                 navigator.go(.channelGroup(group.id))
             }
         } else {
-            message = "«\(url.lastPathComponent)» no es un archivo de PocketTube, GrayJay ni NewPipe"
+            message = String(localized: "«\(url.lastPathComponent)» no es un archivo de PocketTube, GrayJay ni NewPipe")
         }
         show(banner: message, seconds: 5)
         return message

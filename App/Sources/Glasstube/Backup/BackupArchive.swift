@@ -46,12 +46,12 @@ enum BackupSection: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .groups: "Grupos de canales"
-        case .subscriptions: "Suscripciones de esta Mac"
-        case .blocked: "Canales bloqueados"
-        case .history: "Historial, posiciones y Ver más tarde"
-        case .queue: "Cola de reproducción"
-        case .settings: "Ajustes"
+        case .groups: String(localized: "Grupos de canales")
+        case .subscriptions: String(localized: "Suscripciones de esta Mac")
+        case .blocked: String(localized: "Canales bloqueados")
+        case .history: String(localized: "Historial, posiciones y Ver más tarde")
+        case .queue: String(localized: "Cola de reproducción")
+        case .settings: String(localized: "Ajustes")
         }
     }
 
@@ -101,9 +101,9 @@ nonisolated enum BackupArchive {
 
         var description: String {
             switch self {
-            case .unknown: "no es un respaldo de Glasstube ni de SmartTube"
-            case .newerVersion(let version): "es de una versión más nueva de Glasstube (formato \(version)); actualiza la app"
-            case .damaged(let detail): "el archivo está dañado (\(detail))"
+            case .unknown: String(localized: "no es un respaldo de Glasstube ni de SmartTube")
+            case .newerVersion(let version): String(localized: "es de una versión más nueva de Glasstube (formato \(version)); actualiza la app")
+            case .damaged(let detail): String(localized: "el archivo está dañado (\(detail))")
             }
         }
     }
@@ -188,7 +188,7 @@ nonisolated enum BackupArchive {
 
     /// Nombre sugerido: `Glasstube-respaldo-2026-10-26.zip`.
     static func fileName(for date: Date = Date()) -> String {
-        "Glasstube-respaldo-\(dayStamp(date)).zip"
+        String(localized: "Glasstube-respaldo-\(dayStamp(date)).zip")
     }
 
     static func dayStamp(_ date: Date) -> String {
@@ -249,11 +249,11 @@ nonisolated enum BackupArchive {
         let smartTube = SmartTubeBackup.parse(entries, date: date)
         let contents = BackupContents(groups: smartTube.groups, subscriptions: smartTube.subscriptions,
                                       blockedChannels: smartTube.blockedChannels, history: smartTube.history)
-        var notes = ["Los ajustes de SmartTube no se traen: son de Android TV y no corresponden uno a uno con los de Glasstube.",
-                     "Las cuentas tampoco: inicia sesión de nuevo en Ajustes › Cuentas."]
+        var notes = [String(localized: "Los ajustes de SmartTube no se traen: son de Android TV y no corresponden uno a uno con los de Glasstube."),
+                     String(localized: "Las cuentas tampoco: inicia sesión de nuevo en Ajustes › Cuentas.")]
         if smartTube.skipped > 0 {
-            notes.append(smartTube.skipped == 1 ? "1 entrada no se pudo usar (sin un id de canal o de video válido)."
-                : "\(smartTube.skipped) entradas no se pudieron usar (sin un id de canal o de video válido).")
+            notes.append(smartTube.skipped == 1 ? String(localized: "1 entrada no se pudo usar (sin un id de canal o de video válido).")
+                : String(localized: "\(smartTube.skipped) entradas no se pudieron usar (sin un id de canal o de video válido)."))
         }
         return BackupFile(source: .smartTube, contents: contents, notes: notes)
     }

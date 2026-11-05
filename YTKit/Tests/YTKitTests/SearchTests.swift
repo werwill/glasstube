@@ -77,4 +77,22 @@ import Testing
         #expect(items.first { $0.name == "q" }?.value == "lofi girl")
         #expect(items.first { $0.name == "hl" }?.value == "es-419")
     }
+
+    /// `hl` sale del idioma de la interfaz y `gl` de la región, sin mezclarlos: una Mac en inglés en México sigue en `gl=MX`.
+    @Test func catalogLocaleFromInterfaceLanguage() {
+        func pair(_ language: String, _ region: String) -> [String] {
+            let locale = CatalogLocale(interfaceLanguage: language, region: region)
+            return [locale.language, locale.region]
+        }
+        #expect(pair("en", "MX") == ["en", "MX"])
+        #expect(pair("en", "US") == ["en", "US"])
+        #expect(pair("en-GB", "GB") == ["en", "GB"])
+        #expect(pair("es", "MX") == ["es-419", "MX"])
+        #expect(pair("es-419", "US") == ["es-419", "US"])
+        #expect(pair("es_MX", "MX") == ["es-419", "MX"])
+        #expect(pair("es", "ES") == ["es", "ES"])
+        // Windows crea el locale con estos dos, y no cambian.
+        #expect(CatalogLocale(language: "es-419", region: "MX").language == "es-419")
+        #expect(CatalogLocale.current.region == CatalogLocale.systemRegion)
+    }
 }

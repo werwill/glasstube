@@ -72,7 +72,7 @@ nonisolated struct CaptionTrack: Sendable, Hashable, Identifiable {
 
     var id: String { baseURL }
     var vttURL: URL? { URL(string: baseURL + "&fmt=vtt") }
-    var title: String { isAutomatic ? "\(name) (automáticos)" : name }
+    var title: String { isAutomatic ? String(localized: "\(name) (automáticos)") : name }
 }
 
 /// Lo que la app necesita del `/player` además de los streams: storyboard, subtítulos y, en directos, el HLS.

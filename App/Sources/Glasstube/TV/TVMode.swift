@@ -102,7 +102,7 @@ final class TVMode {
     func title(of section: TVSection) -> String {
         switch section {
         case .item(let item): item.title
-        case .group(let id): app?.groups.group(id)?.title ?? "Grupo"
+        case .group(let id): app?.groups.group(id)?.title ?? String(localized: "Grupo")
         }
     }
 
@@ -261,7 +261,7 @@ final class TVMode {
             var page = TVPage(title: title)
             do {
                 page.rows = Self.rows(app.library.visible, try await load(app))
-                page.state = page.rows.isEmpty ? .empty("No hay videos aquí.") : .loaded
+                page.state = page.rows.isEmpty ? .empty(String(localized: "No hay videos aquí.")) : .loaded
             } catch {
                 page.state = .failed(Self.describe(error))
             }
@@ -299,16 +299,16 @@ final class TVMode {
                     return group
                 }
                 if !continuing.isEmpty {
-                    groups.insert(MediaGroup(kind: .history, title: "Seguir viendo", items: continuing, renderer: "glasstube"), at: 0)
+                    groups.insert(MediaGroup(kind: .history, title: String(localized: "Seguir viendo"), items: continuing, renderer: "glasstube"), at: 0)
                 }
                 page.rows = Self.rows(visible, groups)
             case .item(.subscriptions):
                 if app.accounts.isSignedIn {
-                    page.rows = Self.rows(visible, try await app.service.subscriptions().mergingUntitledRows(title: "Más recientes").groups)
+                    page.rows = Self.rows(visible, try await app.service.subscriptions().localizingFixedTitles.mergingUntitledRows(title: String(localized: "Más recientes")).groups)
                 } else {
                     page.rows = await Self.feedRows(app, channelIds: app.groups.subscriptions.map(\.id))
                     if app.groups.subscriptions.isEmpty {
-                        page.state = .empty("Sin cuenta, usa «Suscribirse» en la página de un canal: sus videos nuevos llegan aquí.")
+                        page.state = .empty(String(localized: "Sin cuenta, usa «Suscribirse» en la página de un canal: sus videos nuevos llegan aquí."))
                         return page
                     }
                 }
@@ -316,11 +316,11 @@ final class TVMode {
                 let history = visible(app.library.history.map(\.item))
                 let continuing = visible(app.library.continueWatching.map(\.item))
                 var groups: [MediaGroup] = []
-                if !continuing.isEmpty { groups.append(MediaGroup(kind: .history, title: "Seguir viendo", items: continuing, renderer: "glasstube")) }
-                if !history.isEmpty { groups.append(MediaGroup(kind: .history, title: "Visto en esta Mac", items: history, renderer: "glasstube")) }
+                if !continuing.isEmpty { groups.append(MediaGroup(kind: .history, title: String(localized: "Seguir viendo"), items: continuing, renderer: "glasstube")) }
+                if !history.isEmpty { groups.append(MediaGroup(kind: .history, title: String(localized: "Visto en esta Mac"), items: history, renderer: "glasstube")) }
                 page.rows = Self.rows(visible, groups)
                 if groups.isEmpty {
-                    page.state = .empty("Todavía no has visto nada en esta Mac.")
+                    page.state = .empty(String(localized: "Todavía no has visto nada en esta Mac."))
                     return page
                 }
             case .item(.shorts):
@@ -338,11 +338,11 @@ final class TVMode {
                 let channels = app.groups.group(id)?.channels.map(\.id) ?? []
                 page.rows = await Self.feedRows(app, channelIds: channels)
                 if channels.isEmpty {
-                    page.state = .empty("Este grupo no tiene canales todavía.")
+                    page.state = .empty(String(localized: "Este grupo no tiene canales todavía."))
                     return page
                 }
             }
-            page.state = page.rows.isEmpty ? .empty("YouTube no devolvió videos para esta sección.") : .loaded
+            page.state = page.rows.isEmpty ? .empty(String(localized: "YouTube no devolvió videos para esta sección.")) : .loaded
         } catch where error.isCancellation {
         } catch {
             page.state = .failed(Self.describe(error))
@@ -357,8 +357,8 @@ final class TVMode {
         var items = app.library.visible(feed.items)
         // Capturas: solo los videos elegidos (`GTSoloVideos`), como en el feed de la ventana.
         if let only = Automation.shared.onlyVideos { items = items.filter { $0.videoId.map(only.contains) ?? false } }
-        var groups = [MediaGroup(kind: .subscriptions, title: "Lo más nuevo", items: items.filter { !$0.isShort }, renderer: "rss")]
-        groups.append(MediaGroup(kind: .shorts, title: "Shorts", items: items.filter(\.isShort), renderer: "rss"))
+        var groups = [MediaGroup(kind: .subscriptions, title: String(localized: "Lo más nuevo"), items: items.filter { !$0.isShort }, renderer: "rss")]
+        groups.append(MediaGroup(kind: .shorts, title: String(localized: "Shorts"), items: items.filter(\.isShort), renderer: "rss"))
         return rows({ $0 }, groups)
     }
 
@@ -368,12 +368,12 @@ final class TVMode {
             var group = group
             group.items = visible(group.items)
             guard !group.items.isEmpty else { return nil }
-            return TVRow(id: "\(index)-\(group.title ?? "")", title: group.title ?? (index == 0 ? "Destacado" : "Más videos"), group: group)
+            return TVRow(id: "\(index)-\(group.title ?? "")", title: group.title ?? (index == 0 ? String(localized: "Destacado") : String(localized: "Más videos")), group: group)
         }
     }
 
     private static func describe(_ error: Error) -> String {
-        "No se pudo cargar: \(error.localizedDescription)"
+        String(localized: "No se pudo cargar: \(error.localizedDescription)")
     }
 
     /// Lo que se ve en pantalla, para la automatización y las pruebas.
@@ -446,7 +446,7 @@ final class TVGameControllers {
     }
 
     private func refreshNames() {
-        connected = GCController.controllers().map { $0.vendorName ?? "Control" }
+        connected = GCController.controllers().map { $0.vendorName ?? String(localized: "Control") }
     }
 
     private func attach(_ controller: GCController) {

@@ -324,7 +324,7 @@ final class PlayerModel {
     /// técnico del motor ("la fuente de datos se detuvo: player: LOGIN_REQUIRED …").
     private func fail(_ error: Error) {
         if let unplayable = sabrSource?.unplayable {
-            failure = unplayable.reason ?? "YouTube no dio este video (\(unplayable.status))."
+            failure = unplayable.reason ?? String(localized: "YouTube no dio este video (\(unplayable.status)).")
             failureNeedsSignIn = unplayable.needsSignIn
         } else {
             failure = (error as? PlayerError)?.message ?? "\(error)"
@@ -447,7 +447,7 @@ final class PlayerModel {
     func toggleDislike() { setLike(likeStatus == .dislike ? .indifferent : .dislike) }
 
     private func setLike(_ status: LikeStatus) {
-        guard requireAccount("dar me gusta"), let videoId = item.videoId else { return }
+        guard requireAccount(String(localized: "dar me gusta")), let videoId = item.videoId else { return }
         let previous = likeStatus
         likeStatus = status
         Task { [weak self, service = app.service] in
@@ -458,21 +458,21 @@ final class PlayerModel {
                 case (.dislike?, .indifferent): try await service.removeDislike(videoId: videoId)
                 default: try await service.removeLike(videoId: videoId)
                 }
-                self?.showToast(status == .like ? "Te gusta este video" : status == .dislike ? "No te gusta este video" : "Se quitó la valoración")
+                self?.showToast(status == .like ? String(localized: "Te gusta este video") : status == .dislike ? String(localized: "No te gusta este video") : String(localized: "Se quitó la valoración"))
             } catch {
                 guard let self, self.item.videoId == videoId else { return }
                 self.likeStatus = previous
-                self.showToast("YouTube no aceptó la valoración: \(AccountModel.describe(error))")
+                self.showToast(String(localized: "YouTube no aceptó la valoración: \(AccountModel.describe(error))"))
             }
         }
     }
 
     func toggleSubscribe() {
-        guard requireAccount("suscribirte"), let channelId = item.channelId ?? metadata?.channelId else { return }
+        guard requireAccount(String(localized: "suscribirte")), let channelId = item.channelId ?? metadata?.channelId else { return }
         let subscribe = !(isSubscribed ?? false)
         isSubscribed = subscribe
         let params = metadata?.subscribeParams
-        let channel = author ?? "el canal"
+        let channel = author ?? String(localized: "el canal")
         Task { [weak self, service = app.service] in
             do {
                 if subscribe {
@@ -480,10 +480,10 @@ final class PlayerModel {
                 } else {
                     try await service.unsubscribe(channelId: channelId)
                 }
-                self?.showToast(subscribe ? "Te suscribiste a \(channel)" : "Cancelaste la suscripción a \(channel)")
+                self?.showToast(subscribe ? String(localized: "Te suscribiste a \(channel)") : String(localized: "Cancelaste la suscripción a \(channel)"))
             } catch {
                 self?.isSubscribed = !subscribe
-                self?.showToast("YouTube no aceptó el cambio: \(AccountModel.describe(error))")
+                self?.showToast(String(localized: "YouTube no aceptó el cambio: \(AccountModel.describe(error))"))
             }
         }
     }
@@ -491,7 +491,7 @@ final class PlayerModel {
     /// Sin sesión, avisa y ofrece iniciarla.
     private func requireAccount(_ what: String) -> Bool {
         guard app.accounts.isSignedIn else {
-            showToast("Inicia sesión para \(what)")
+            showToast(String(localized: "Inicia sesión para \(what)"))
             return false
         }
         return true
@@ -562,7 +562,7 @@ final class PlayerModel {
 
     func skip(_ segment: SponsorSegment) {
         seek(to: segment.end)
-        showToast("Se saltó: \(segment.skipTitle.replacingOccurrences(of: "Saltar ", with: ""))")
+        showToast(String(localized: "Se saltó: \(segment.categoryTitle)"))
     }
 
     func skipActiveSegment() {
@@ -574,7 +574,7 @@ final class PlayerModel {
 
     func setRate(_ rate: Double) {
         engine?.setRate(min(4, max(0.25, rate)))
-        showToast("Velocidad \(Format.rate(min(4, max(0.25, rate))))")
+        showToast(String(localized: "Velocidad \(Format.rate(min(4, max(0.25, rate))))"))
     }
 
     static let rates: [Double] = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
@@ -607,7 +607,7 @@ final class PlayerModel {
             do {
                 try await engine.select(track: track)
             } catch {
-                showToast("No se pudo cambiar: \(error)")
+                showToast(String(localized: "No se pudo cambiar: \(AccountModel.describe(error))"))
             }
         }
     }
@@ -625,9 +625,9 @@ final class PlayerModel {
             ?? captions.first { $0.languageCode.hasPrefix(languageCode) }
         if let pick {
             selectCaption(pick)
-            showToast("Subtítulos: \(pick.title)")
+            showToast(String(localized: "Subtítulos: \(pick.title)"))
         } else {
-            showToast("Este video no tiene subtítulos en ese idioma")
+            showToast(String(localized: "Este video no tiene subtítulos en ese idioma"))
         }
     }
 
@@ -644,7 +644,7 @@ final class PlayerModel {
                 try await engine.addSubtitle(url: url, language: track.languageCode, title: track.title)
             } catch {
                 captionTrack = nil
-                showToast("No se pudieron cargar los subtítulos")
+                showToast(String(localized: "No se pudieron cargar los subtítulos"))
             }
         }
     }
@@ -653,7 +653,7 @@ final class PlayerModel {
     func toggleCaptions() {
         if captionTrack != nil {
             selectCaption(nil)
-            showToast("Subtítulos desactivados")
+            showToast(String(localized: "Subtítulos desactivados"))
         } else {
             Task { await enableCaptions(announce: true) }
         }
@@ -661,7 +661,7 @@ final class PlayerModel {
 
     private func enableCaptions(announce: Bool = false) async {
         guard let captions = extras?.captions, !captions.isEmpty else {
-            if announce { showToast("Este video no tiene subtítulos") }
+            if announce { showToast(String(localized: "Este video no tiene subtítulos")) }
             return
         }
         let language = settings.subtitleLanguage
@@ -669,7 +669,7 @@ final class PlayerModel {
             ?? captions.first { $0.languageCode.hasPrefix(language) }
             ?? captions.first { !$0.isAutomatic } ?? captions[0]
         selectCaption(pick)
-        if announce { showToast("Subtítulos: \(pick.title)") }
+        if announce { showToast(String(localized: "Subtítulos: \(pick.title)")) }
     }
 
     /// «Siguiente» (botón, Shift+N, tecla multimedia): lo primero de la cola o, si no hay, el sugerido.

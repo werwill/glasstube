@@ -83,7 +83,7 @@ struct ChannelView: View {
                     .clipShape(.circle)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(page?.title ?? fallbackTitle ?? "Canal")
+                    Text(page?.title ?? fallbackTitle ?? String(localized: "Canal"))
                         .font(.system(size: 30, weight: .bold))
                         .accessibilityAddTraits(.isHeader)
                     Text([page?.handle, page?.subscriberCountText, page?.videoCountText].compactMap { $0 }.joined(separator: " · "))
@@ -171,7 +171,7 @@ struct ChannelView: View {
 
     private var groupCountText: String {
         let count = groups.groups(containing: channel.id).count
-        return count == 1 ? (groups.groups(containing: channel.id).first?.title ?? "1 grupo") : "\(count) grupos"
+        return count == 1 ? (groups.groups(containing: channel.id).first?.title ?? String(localized: "1 grupo")) : String(localized: "\(count) grupos")
     }
 
     private var moreMenu: some View {
@@ -216,7 +216,7 @@ struct ChannelView: View {
         let id = page?.channelId ?? channelId
         subscribed = !current
         let params = subscribeParams
-        let name = page?.title ?? fallbackTitle ?? "el canal"
+        let name = page?.title ?? fallbackTitle ?? String(localized: "el canal")
         Task {
             do {
                 if current {
@@ -224,10 +224,10 @@ struct ChannelView: View {
                 } else {
                     try await model.service.subscribe(channelId: id, params: params)
                 }
-                model.show(banner: current ? "Cancelaste la suscripción a \(name)" : "Te suscribiste a \(name)")
+                model.show(banner: current ? String(localized: "Cancelaste la suscripción a \(name)") : String(localized: "Te suscribiste a \(name)"))
             } catch {
                 subscribed = current
-                model.show(banner: "YouTube no aceptó el cambio: \(AccountModel.describe(error))")
+                model.show(banner: String(localized: "YouTube no aceptó el cambio: \(AccountModel.describe(error))"))
             }
         }
     }
@@ -300,7 +300,7 @@ struct ChannelView: View {
             }
         } catch where error.isCancellation {
         } catch {
-            failure = "\(error)"
+            failure = AccountModel.describe(error)
         }
     }
 
@@ -333,7 +333,7 @@ struct ChannelView: View {
 enum LibraryScope: String, CaseIterable, Identifiable {
     case youtube, mac
     var id: String { rawValue }
-    var title: String { self == .youtube ? "YouTube" : "Esta Mac" }
+    var title: String { self == .youtube ? "YouTube" : String(localized: "Esta Mac") }
 }
 
 /// Selector YouTube / Esta Mac junto al título.
@@ -378,9 +378,9 @@ struct LocalHistoryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 HStack(alignment: .firstTextBaseline) {
-                    PageHeader(title: "Historial", subtitle: scope == nil
-                               ? "Lo que has visto en esta Mac. Inicia sesión para ver también el historial de tu cuenta de YouTube."
-                               : "Lo que has visto en esta Mac.")
+                    PageHeader(title: String(localized: "Historial"), subtitle: scope == nil
+                               ? String(localized: "Lo que has visto en esta Mac. Inicia sesión para ver también el historial de tu cuenta de YouTube.")
+                               : String(localized: "Lo que has visto en esta Mac."))
                     if !library.history.isEmpty {
                         Button("Borrar historial…", role: .destructive) { confirmClear = true }
                     }
@@ -436,16 +436,16 @@ struct LocalPlaylistsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 HStack(alignment: .firstTextBaseline) {
-                    PageHeader(title: "Playlists")
+                    PageHeader(title: String(localized: "Playlists"))
                     if let scope { LibraryScopePicker(scope: scope) }
                 }
-                CardSection(title: "Ver más tarde · en esta Mac", items: library.watchLater.map(\.item), section: 0, grid: grid)
+                CardSection(title: String(localized: "Ver más tarde · en esta Mac"), items: library.watchLater.map(\.item), section: 0, grid: grid)
                 if library.watchLater.isEmpty {
                     Text("Usa «Ver más tarde» en el banner o en el menú de un video para guardarlo aquí.")
                         .foregroundStyle(.secondary)
                 }
                 if scope == nil {
-                    SignInNotice(what: "Tus playlists de YouTube", symbol: "list.and.film")
+                    SignInNotice(what: String(localized: "Tus playlists de YouTube"), symbol: "list.and.film")
                 }
             }
             .padding(.horizontal, GridMetrics.pagePadding)

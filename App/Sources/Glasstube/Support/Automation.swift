@@ -83,9 +83,9 @@ final class Automation {
     /// El nombre de quien comenta tal cual o, con `GTSinPersonas`, uno de prueba (el mismo para la misma persona).
     func personName(_ name: String) -> String {
         guard masksPeople else { return name }
-        if let number = people[name] { return "@persona\(number)" }
+        if let number = people[name] { return String(localized: "@persona\(number)") }
         people[name] = people.count + 1
-        return "@persona\(people.count)"
+        return String(localized: "@persona\(people.count)")
     }
     /// Capturas con sesión: nombre, correo y avatar de la cuenta se cambian por unos de prueba.
     var masksAccount: Bool { defaults.bool(forKey: "GTAnonimo") }

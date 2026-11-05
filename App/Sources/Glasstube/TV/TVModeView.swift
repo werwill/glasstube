@@ -198,7 +198,7 @@ private struct TVHero: View {
                 Text(tv.page?.title ?? "Glasstube")
                     .font(.system(size: metrics.font(56), weight: .bold))
                     .tracking(-1)
-                Text(tv.page?.rows.isEmpty == false ? "→ o Retorno para entrar a las filas · Esc para salir del modo TV" : " ")
+                Text(tv.page?.rows.isEmpty == false ? String(localized: "→ o Retorno para entrar a las filas · Esc para salir del modo TV") : " ")
                     .font(.system(size: metrics.font(20)))
                     .foregroundStyle(.secondary)
             }
@@ -213,10 +213,10 @@ private struct TVHero: View {
     private func meta(_ item: MediaItem) -> String {
         var parts: [String] = []
         if let author = item.author { parts.append(author) }
-        if item.isLive { parts.append("En vivo") } else if let duration = item.durationBadge { parts.append(duration) }
+        if item.isLive { parts.append(String(localized: "En vivo")) } else if let duration = item.durationBadge { parts.append(duration) }
         if let text = item.publishedText ?? item.viewCountText { parts.append(text) }
-        if item.kind == .channel { parts.append("Canal") }
-        if item.kind == .playlist { parts.append(item.videoCountText ?? "Playlist") }
+        if item.kind == .channel { parts.append(String(localized: "Canal")) }
+        if item.kind == .playlist { parts.append(item.videoCountText ?? String(localized: "Playlist")) }
         return parts.joined(separator: " · ")
     }
 }
@@ -338,7 +338,7 @@ private struct TVCard: View {
                     .overlay { LateImage(url: model.deArrow.thumbnailURL(for: item)) }
                     .frame(width: width, height: thumbnailHeight)
                     .overlay(alignment: .bottomTrailing) {
-                        if let badge = item.isLive ? "EN VIVO" : item.durationBadge {
+                        if let badge = item.isLive ? String(localized: "EN VIVO") : item.durationBadge {
                             Text(badge)
                                 .font(.system(size: metrics.font(16), weight: .bold).monospacedDigit())
                                 .padding(.horizontal, 8 * metrics.scale)
@@ -390,7 +390,7 @@ private struct TVCard: View {
     }
 
     private var accessibilityText: String {
-        [model.deArrow.title(for: item), item.author, item.isLive ? "en vivo" : item.durationBadge, isShort ? "Short" : nil]
+        [model.deArrow.title(for: item), item.author, item.isLive ? String(localized: "en vivo") : item.durationBadge, isShort ? String(localized: "Short") : nil]
             .compactMap { $0 }.joined(separator: ", ")
     }
 }
@@ -412,10 +412,10 @@ private struct TVOverlay: View {
             }
             GlassEffectContainer {
                 HStack(spacing: 22 * metrics.scale) {
-                    hint("arrow.up.and.down.and.arrow.left.and.right", "Moverse")
-                    hint("return", "Abrir")
-                    hint("escape", tv.focus == .menu ? "Salir" : "Atrás")
-                    if !tv.controllers.connected.isEmpty { hint("gamecontroller", "A abrir · B atrás") }
+                    hint("arrow.up.and.down.and.arrow.left.and.right", String(localized: "Moverse"))
+                    hint("return", String(localized: "Abrir"))
+                    hint("escape", tv.focus == .menu ? String(localized: "Salir") : String(localized: "Atrás"))
+                    if !tv.controllers.connected.isEmpty { hint("gamecontroller", String(localized: "A abrir · B atrás")) }
                 }
                 .font(.system(size: metrics.font(17), weight: .medium))
                 .padding(.horizontal, 22 * metrics.scale)

@@ -11,10 +11,18 @@ public struct CatalogLocale: Sendable, Hashable {
         self.region = region
     }
 
+    /// `hl` según el idioma en que corre la interfaz de una app ("en", "es", "es-MX"), y `gl` según la región: son cosas
+    /// aparte, una Mac en inglés en México pide `en` y `MX`. La región solo decide qué español: `es` en España, `es-419`
+    /// en los demás lugares.
+    public init(interfaceLanguage: String, region: String = CatalogLocale.systemRegion) {
+        let code = interfaceLanguage.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map(String.init) ?? interfaceLanguage
+        self.init(language: code == "es" && region != "ES" ? "es-419" : code, region: region)
+    }
+
+    public static var systemRegion: String { Locale.current.region?.identifier ?? "US" }
+
     public static var current: CatalogLocale {
-        let language = Locale.current.language.languageCode?.identifier ?? "en"
-        let region = Locale.current.region?.identifier ?? "US"
-        return CatalogLocale(language: language == "es" && region != "ES" ? "es-419" : language, region: region)
+        CatalogLocale(interfaceLanguage: Locale.current.language.languageCode?.identifier ?? "en")
     }
 }
 

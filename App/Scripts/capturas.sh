@@ -6,6 +6,7 @@
 #   Scripts/capturas.sh            # todas
 #   Scripts/capturas.sh inicio     # las que contienen "inicio"
 #   CON_SESION=1 Scripts/capturas.sh sesion   # las de la cuenta (hace falta haber iniciado sesión en la app)
+#   IDIOMA=en Scripts/capturas.sh  # con la interfaz en ese idioma, en capturas/en/ (la de la Mac no cambia)
 #
 # Todas usan la bóveda en memoria (-GTSinLlavero): sin sesión y sin el aviso del Llavero tras recompilar. Solo las de
 # CON_SESION=1 leen el Llavero de verdad (CON_LLAVERO=1 en `shot`).
@@ -16,6 +17,13 @@ EXE="$APP_DIR/build/Glasstube.app/Contents/MacOS/Glasstube"
 OUT="$APP_DIR/capturas"
 TMP="$(mktemp -d)"
 FILTER="${1:-}"
+# Fase 6: otro idioma de interfaz para esta corrida (-AppleLanguages solo vale para este proceso).
+IDIOMA="${IDIOMA:-}"
+IDIOMA_ARGS=()
+if [[ -n "$IDIOMA" ]]; then
+    OUT="$OUT/$IDIOMA"
+    IDIOMA_ARGS=(-AppleLanguages "($IDIOMA)")
+fi
 mkdir -p "$OUT"
 
 shot() {
@@ -26,7 +34,7 @@ shot() {
     rm -f "$TMP/wid"
     local store=(-GTSinLlavero YES)
     [[ "${CON_LLAVERO:-0}" == 1 ]] && store=()
-    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowSize 1440x900 ${store[@]+"${store[@]}"} "$@" > "$TMP/$name.log" 2>&1 &
+    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowSize 1440x900 ${IDIOMA_ARGS[@]+"${IDIOMA_ARGS[@]}"} ${store[@]+"${store[@]}"} "$@" > "$TMP/$name.log" 2>&1 &
     if [[ "${ACTIVAR:-0}" == 1 ]]; then
         # Con una hoja abierta, la ventana sale inactiva si otra app tiene el foco: `open` trae la que ya corre al frente.
         sleep $((wait - 2)); osascript -e 'tell application id "mx.glasstube.Glasstube" to activate' >/dev/null 2>&1 || open "$APP_DIR/build/Glasstube.app"; sleep 2
@@ -43,6 +51,8 @@ PLAYER=(-GTPlay qF4vZxbSmjo -GTStartAt 404 -GTKeepControls YES -GTScrub 352 -GTP
 shot reproductor-claro 17 -appearance light "${PLAYER[@]}"
 shot reproductor-oscuro 17 -appearance dark "${PLAYER[@]}"
 shot reproductor-controles-ocultos 13 -appearance dark -GTPlay aqz-KE-bpKQ -GTStartAt 210 -GTHidden YES
+# Fase 6: pantalla completa con F (Big Buck Bunny).
+shot reproductor-pantalla-completa-oscuro 15 -appearance dark -GTPlay aqz-KE-bpKQ -GTStartAt 60 -GTKeepControls YES -GTKeys "6:f"
 shot reproductor-foco-teclado 14 -appearance dark -GTPlay rfscVS0vtbw -GTStartAt 1500 -GTKeepControls YES -GTKeys "4:down,5:right,6:right,7:right"
 # Inicio: la primera tarjeta de "Para ti" con la vista previa (el estado por omisión de la maqueta). "Seguir viendo"
 # sale del historial local que dejan las corridas del reproductor.
@@ -78,7 +88,7 @@ shot_mini() {
     pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true
     sleep 1
     rm -f "$TMP/wid" "$TMP/mwid"
-    "$EXE" -GTWindowFile "$TMP/wid" -GTMiniWindowFile "$TMP/mwid" -GTWindowSize 1440x900 -GTSinLlavero YES "$@" > "$TMP/$name.log" 2>&1 &
+    "$EXE" -GTWindowFile "$TMP/wid" -GTMiniWindowFile "$TMP/mwid" -GTWindowSize 1440x900 ${IDIOMA_ARGS[@]+"${IDIOMA_ARGS[@]}"} -GTSinLlavero YES "$@" > "$TMP/$name.log" 2>&1 &
     sleep "$wait"
     screencapture -x -o -l"$(cat "$TMP/mwid")" "$OUT/$name.png"
     echo "capturas/$name.png"
@@ -88,7 +98,9 @@ shot_mini minirreproductor 14 -appearance dark -GTKeepControls YES -GTPlay aqz-K
 # YouTube) y Ajustes > Control remoto. -GTRemotoEnMemoria: una pantalla de Lounge desechable (no toca la vinculación
 # guardada); -remoteName: un nombre sin el de la Mac. De fondo, una búsqueda de Big Buck Bunny (Blender, CC BY): ni el
 # historial de esta Mac ni caras.
-F4=(-GTRemotoEnMemoria YES -remoteEnabled YES -remoteName "Glasstube en la Mac")
+NOMBRE_REMOTO="Glasstube en la Mac"
+[[ -n "$IDIOMA" ]] && NOMBRE_REMOTO="Glasstube on Mac"
+F4=(-GTRemotoEnMemoria YES -remoteEnabled YES -remoteName "$NOMBRE_REMOTO")
 ACTIVAR=1 shot vincular-telefono-claro 10 -appearance light "${F4[@]}" -GTCodigoDePrueba YES -GTPairing 4 -GTSearch "big buck bunny blender"
 ACTIVAR=1 shot vincular-telefono-oscuro 10 -appearance dark "${F4[@]}" -GTCodigoDePrueba YES -GTPairing 4 -GTSearch "big buck bunny blender"
 ACTIVAR=1 shot ajustes-control-remoto-claro 9 -appearance light "${F4[@]}" -GTOpenSettings YES -settingsTab remote
@@ -115,7 +127,7 @@ shot_rect() {
     pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true
     sleep 1
     rm -f "$TMP/wid" "$TMP/frame"
-    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowFrameFile "$TMP/frame" -GTWindowSize 1440x900 -GTSinLlavero YES "$@" > "$TMP/$name.log" 2>&1 &
+    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowFrameFile "$TMP/frame" -GTWindowSize 1440x900 ${IDIOMA_ARGS[@]+"${IDIOMA_ARGS[@]}"} -GTSinLlavero YES "$@" > "$TMP/$name.log" 2>&1 &
     sleep "$wait"
     # -R captura lo que haya en pantalla en ese rectángulo: solo si Glasstube quedó al frente (la app se trae sola con
     # -GTWindowFrameFile, pero si se usa otra app mientras tanto, saldría esa).
@@ -158,7 +170,7 @@ shot_a11y() {
     pkill -f "Glasstube.app/Contents/MacOS/Glasstube" || true
     sleep 1
     rm -f "$TMP/wid"
-    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowSize 1440x900 -GTSinLlavero YES -GTRegistroAccesibilidad YES "$@" > "$TMP/a11y-$name.log" 2>&1 &
+    "$EXE" -GTWindowFile "$TMP/wid" -GTWindowSize 1440x900 ${IDIOMA_ARGS[@]+"${IDIOMA_ARGS[@]}"} -GTSinLlavero YES -GTRegistroAccesibilidad YES "$@" > "$TMP/a11y-$name.log" 2>&1 &
     sleep "$wait"
     local state
     state="$(sed -n 's/.*Glasstube accesibilidad: estado=//p' "$TMP/a11y-$name.log" | head -1)"

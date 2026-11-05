@@ -17,13 +17,13 @@ enum BrowseSource: Hashable {
     var title: String {
         switch self {
         case .topic(_, let title): title
-        case .search(let query, _): "Resultados para «\(query)»"
-        case .playlist(_, let title): title ?? "Playlist"
-        case .group(let group): group.title ?? "Más videos"
-        case .shorts: "Shorts"
-        case .subscriptions: "Suscripciones"
-        case .history: "Historial"
-        case .library: "Playlists"
+        case .search(let query, _): String(localized: "Resultados para «\(query)»")
+        case .playlist(_, let title): title ?? String(localized: "Playlist")
+        case .group(let group): group.title ?? String(localized: "Más videos")
+        case .shorts: String(localized: "Shorts")
+        case .subscriptions: String(localized: "Suscripciones")
+        case .history: String(localized: "Historial")
+        case .library: String(localized: "Playlists")
         }
     }
 }
@@ -73,9 +73,9 @@ struct BrowseView: View {
 
     private var subtitle: String? {
         switch source {
-        case .shorts: "Los que recomienda YouTube (sin usar tu cuenta). Se abren en el reproductor de siempre."
-        case .topic: page?.isFallback == true ? "Contenido sustituto de YouTube" : nil
-        case .subscriptions, .history, .library: model.accounts.selected.map { "De tu cuenta de YouTube · \($0.displayName)" }
+        case .shorts: String(localized: "Los que recomienda YouTube (sin usar tu cuenta). Se abren en el reproductor de siempre.")
+        case .topic: page?.isFallback == true ? String(localized: "Contenido sustituto de YouTube") : nil
+        case .subscriptions, .history, .library: model.accounts.selected.map { String(localized: "De tu cuenta de YouTube · \($0.displayName)") }
         default: nil
         }
     }
@@ -95,7 +95,7 @@ struct BrowseView: View {
                 .frame(minHeight: 300)
             } else if groups.isEmpty {
                 ContentUnavailableView("Nada que mostrar", systemImage: "rectangle.on.rectangle.slash",
-                                       description: Text(page?.notice ?? "YouTube no devolvió videos para esta página."))
+                                       description: Text(page?.notice ?? String(localized: "YouTube no devolvió videos para esta página.")))
                     .frame(minHeight: 300)
             }
             ForEach(groups.indices, id: \.self) { index in
@@ -149,15 +149,15 @@ struct BrowseView: View {
             case .topic(let topic, _):
                 loaded = try await model.service.topic(topic)
             case .search(let query, let filter):
-                loaded = try await model.service.search(query, filter: filter)
+                loaded = try await model.service.search(query, filter: filter).localizingFixedTitles
             case .playlist(let id, _):
                 loaded = try await model.service.playlist(id)
             case .group(let group):
                 loaded = BrowsePage(title: group.title, groups: [group], surface: group.continuation?.surface ?? .web)
             case .subscriptions:
-                loaded = try await model.service.subscriptions()
+                loaded = try await model.service.subscriptions().localizingFixedTitles
             case .history:
-                loaded = try await model.service.history()
+                loaded = try await model.service.history().localizingFixedTitles
             case .library:
                 loaded = try await model.service.playlists()
             case .shorts:
@@ -176,7 +176,7 @@ struct BrowseView: View {
             }
         } catch where error.isCancellation {
         } catch {
-            if page == nil { failure = "\(error)" }
+            if page == nil { failure = AccountModel.describe(error) }
         }
     }
 
@@ -194,7 +194,7 @@ struct BrowseView: View {
                 current.groups += more.groups
                 current.continuation = more.groups.isEmpty ? nil : more.continuation
                 // Suscripciones de TV llegan de tres en tres sin título: se suman a "Más recientes".
-                if source == .subscriptions { current = current.mergingUntitledRows(title: "Más recientes") }
+                if source == .subscriptions { current = current.mergingUntitledRows(title: String(localized: "Más recientes")) }
             }
             page = current
         } catch {
@@ -239,8 +239,8 @@ extension BrowseView {
     /// historial" en Historial y "Ocultar" en Suscripciones.
     fileprivate var feedbackLabel: String? {
         switch source {
-        case .history: "Quitar del historial"
-        case .subscriptions: "Ocultar"
+        case .history: String(localized: "Quitar del historial")
+        case .subscriptions: String(localized: "Ocultar")
         default: nil
         }
     }

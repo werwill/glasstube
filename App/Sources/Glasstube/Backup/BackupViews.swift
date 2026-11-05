@@ -31,7 +31,7 @@ struct BackupSettings: View {
                     }
                 } label: {
                     Text("Archivo de respaldo")
-                    Text(backup.lastMessage ?? "Un ZIP de Glasstube o un respaldo de SmartTube")
+                    Text(backup.lastMessage ?? String(localized: "Un ZIP de Glasstube o un respaldo de SmartTube"))
                 }
             } header: {
                 Text("Respaldo de Glasstube")
@@ -65,14 +65,15 @@ struct BackupSettings: View {
                     Button("Importar…") { importingGroups = true }
                 } label: {
                     Text("Importar grupos de canales")
-                    Text(lastImport ?? "Un archivo de PocketTube (.json), de GrayJay (subscription_groups) o de NewPipe (suscripciones .json)")
+                    Text(lastImport ?? String(localized: "Un archivo de PocketTube (.json), de GrayJay (subscription_groups) o de NewPipe (suscripciones .json)"))
                 }
                 LabeledContent {
                     Button("Exportar…") { exportPocketTube() }
                         .disabled(groups.groups.isEmpty)
                 } label: {
                     Text("Grupos para PocketTube")
-                    Text(groups.groups.isEmpty ? "No hay grupos todavía" : "\(groups.groups.count) \(groups.groups.count == 1 ? "grupo" : "grupos"), en el formato de PocketTube")
+                    Text(groups.groups.isEmpty ? "No hay grupos todavía"
+                         : groups.groups.count == 1 ? "1 grupo, en el formato de PocketTube" : "\(groups.groups.count) grupos, en el formato de PocketTube")
                 }
                 LabeledContent {
                     Menu("Exportar…") {
@@ -84,7 +85,7 @@ struct BackupSettings: View {
                     .disabled(groups.subscriptions.isEmpty && groups.groups.allSatisfy(\.channels.isEmpty))
                 } label: {
                     Text("Suscripciones para NewPipe")
-                    Text("\(groups.subscriptions.count) \(groups.subscriptions.count == 1 ? "canal" : "canales") en esta Mac")
+                    Text(groups.subscriptions.count == 1 ? "1 canal en esta Mac" : "\(groups.subscriptions.count) canales en esta Mac")
                 }
             } header: {
                 Text("Otras apps")
@@ -126,20 +127,20 @@ struct BackupSettings: View {
 
     private var includedText: String {
         let watchLater = library.watchLater.count
-        var parts = ["\(groups.groups.count) \(groups.groups.count == 1 ? "grupo" : "grupos")",
-                     "\(groups.subscriptions.count) \(groups.subscriptions.count == 1 ? "suscripción" : "suscripciones")",
-                     "\(library.blockedChannels.count) \(library.blockedChannels.count == 1 ? "bloqueado" : "bloqueados")",
-                     "\(library.history.count) en el historial"]
-        if watchLater > 0 { parts.append("\(watchLater) en Ver más tarde") }
-        if !model.queue.isEmpty { parts.append("\(model.queue.items.count) en la cola") }
-        parts.append("ajustes")
+        var parts = [groups.groups.count == 1 ? String(localized: "1 grupo") : String(localized: "\(groups.groups.count) grupos"),
+                     groups.subscriptions.count == 1 ? String(localized: "1 suscripción") : String(localized: "\(groups.subscriptions.count) suscripciones"),
+                     library.blockedChannels.count == 1 ? String(localized: "1 bloqueado") : String(localized: "\(library.blockedChannels.count) bloqueados"),
+                     String(localized: "\(library.history.count) en el historial")]
+        if watchLater > 0 { parts.append(String(localized: "\(watchLater) en Ver más tarde")) }
+        if !model.queue.isEmpty { parts.append(String(localized: "\(model.queue.items.count) en la cola")) }
+        parts.append(String(localized: "ajustes"))
         return parts.joined(separator: " · ")
     }
 
     private var iCloudStatus: String {
-        guard model.backup.isICloudAvailable else { return "iCloud Drive no disponible" }
-        guard let date = model.backup.lastICloudBackup else { return "Todavía no hay respaldos en iCloud Drive" }
-        return "Último respaldo: \(date.formatted(.relative(presentation: .named)))"
+        guard model.backup.isICloudAvailable else { return String(localized: "iCloud Drive no disponible") }
+        guard let date = model.backup.lastICloudBackup else { return String(localized: "Todavía no hay respaldos en iCloud Drive") }
+        return String(localized: "Último respaldo: \(date.formatted(.relative(presentation: .named)))")
     }
 
     private var exportPresented: Binding<Bool> {
@@ -157,12 +158,12 @@ struct BackupSettings: View {
 
     private func exportPocketTube() {
         guard let data = model.backup.pocketTubeData() else { return }
-        export = ExportRequest(document: ExportDocument(data: data), type: .json, name: "Glasstube-grupos-pockettube.json")
+        export = ExportRequest(document: ExportDocument(data: data), type: .json, name: String(localized: "Glasstube-grupos-pockettube.json"))
     }
 
     private func exportNewPipe(includeGroups: Bool) {
         guard let data = model.backup.newPipeData(includeGroups: includeGroups) else { return }
-        export = ExportRequest(document: ExportDocument(data: data), type: .json, name: "Glasstube-suscripciones-newpipe.json")
+        export = ExportRequest(document: ExportDocument(data: data), type: .json, name: String(localized: "Glasstube-suscripciones-newpipe.json"))
     }
 
     private func revealDataFolder() {
@@ -244,7 +245,7 @@ struct BackupRestoreSheet: View {
             .frame(height: CGFloat(contents.sections.count) * 53 + 28)
             .padding(.horizontal, -20)
             // Lo que no se trae va en un párrafo y no en otra sección: la hoja cabe en la ventana de Ajustes.
-            Text((["Se combina con lo que hay en esta Mac: lo que falte se agrega y nada se borra; de un video que esté en los dos queda la posición más reciente."] + pending.file.notes).joined(separator: " "))
+            Text(([String(localized: "Se combina con lo que hay en esta Mac: lo que falte se agrega y nada se borra; de un video que esté en los dos queda la posición más reciente.")] + pending.file.notes).joined(separator: " "))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -270,10 +271,13 @@ struct BackupRestoreSheet: View {
     private var sourceText: String {
         switch pending.file.source {
         case .glasstube(let app, let created):
-            let date = created.map { " del \($0.formatted(date: .long, time: .shortened))" } ?? ""
-            return "Respaldo de Glasstube\(app.map { " \($0)" } ?? "")\(date)"
+            let version = app.map { " \($0)" } ?? ""
+            if let created {
+                return String(localized: "Respaldo de Glasstube\(version) del \(created.formatted(date: .long, time: .shortened))")
+            }
+            return String(localized: "Respaldo de Glasstube\(version)")
         case .smartTube:
-            return "Respaldo de SmartTube: lo que tiene equivalente en Glasstube"
+            return String(localized: "Respaldo de SmartTube: lo que tiene equivalente en Glasstube")
         }
     }
 
@@ -282,16 +286,16 @@ struct BackupRestoreSheet: View {
         switch section {
         case .groups:
             let channels = Set(contents.groups.flatMap { $0.channels.map(\.id) }).count
-            return "\(count) \(count == 1 ? "grupo" : "grupos") con \(channels) \(channels == 1 ? "canal" : "canales")"
-        case .subscriptions: return "\(count) \(count == 1 ? "canal" : "canales")"
-        case .blocked: return "\(count) \(count == 1 ? "canal" : "canales")"
+            return String(localized: "\(count) grupos con \(channels) canales")
+        case .subscriptions, .blocked: return count == 1 ? String(localized: "1 canal") : String(localized: "\(count) canales")
         case .history:
-            var parts = ["\(contents.history.count) \(contents.history.count == 1 ? "video" : "videos")"]
-            if !contents.watchLater.isEmpty { parts.append("\(contents.watchLater.count) en Ver más tarde") }
-            if !contents.hiddenVideos.isEmpty { parts.append("\(contents.hiddenVideos.count) ocultos") }
+            var parts = [contents.history.count == 1 ? String(localized: "1 video") : String(localized: "\(contents.history.count) videos")]
+            if !contents.watchLater.isEmpty { parts.append(String(localized: "\(contents.watchLater.count) en Ver más tarde")) }
+            if !contents.hiddenVideos.isEmpty { parts.append(String(localized: "\(contents.hiddenVideos.count) ocultos")) }
             return parts.joined(separator: " · ")
-        case .queue: return "\(count) \(count == 1 ? "video" : "videos")"
-        case .settings: return "\(count) \(count == 1 ? "ajuste" : "ajustes") (reemplazan los de esta Mac)"
+        case .queue: return count == 1 ? String(localized: "1 video") : String(localized: "\(count) videos")
+        case .settings:
+            return count == 1 ? String(localized: "1 ajuste (reemplaza los de esta Mac)") : String(localized: "\(count) ajustes (reemplazan los de esta Mac)")
         }
     }
 

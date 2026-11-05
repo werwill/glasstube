@@ -52,7 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         let texts = [NSPasteboard.PasteboardType.string, .URL].compactMap { pasteboard.string(forType: $0) }
         guard let model = AppModel.current, let text = texts.first(where: { YouTubeLink.parse($0) != nil }) else {
             if Automation.shared.logsLinks { NSLog("Glasstube enlaces: servicios: no es de YouTube (tipos \(pasteboard.types?.map(\.rawValue) ?? []))") }
-            error.pointee = "El texto no tiene un enlace de YouTube" as NSString
+            error.pointee = String(localized: "El texto no tiene un enlace de YouTube") as NSString
             return
         }
         model.openExternal(text, from: "servicios")
@@ -163,7 +163,7 @@ extension AppModel {
         let pasteboard = NSPasteboard.general
         let texts = [NSPasteboard.PasteboardType.URL, .string].compactMap { pasteboard.string(forType: $0) }
         if !openExternal(texts.first(where: { YouTubeLink.parse($0) != nil }) ?? texts.first ?? "", from: "pegar") {
-            show(banner: "Para abrirlo aquí, copia un enlace de YouTube (youtube.com o youtu.be)")
+            show(banner: String(localized: "Para abrirlo aquí, copia un enlace de YouTube (youtube.com o youtu.be)"))
         }
     }
 
@@ -187,7 +187,7 @@ extension AppModel {
 
     private func droppedText(_ text: String) {
         if !openExternal(text, from: "arrastrar") {
-            show(banner: "Eso no es un enlace de YouTube")
+            show(banner: String(localized: "Eso no es un enlace de YouTube"))
         }
     }
 
@@ -195,28 +195,28 @@ extension AppModel {
 
     func dockMenu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(ActionMenuItem.make("Inicio", symbol: "house") { [weak self] in self?.goToSection(.home) })
-        menu.addItem(ActionMenuItem.make("Suscripciones", symbol: "play.rectangle.on.rectangle") { [weak self] in self?.goToSection(.subscriptions) })
-        let continueWatching = NSMenuItem(title: "Seguir viendo", action: nil, keyEquivalent: "")
+        menu.addItem(ActionMenuItem.make(String(localized: "Inicio"), symbol: "house") { [weak self] in self?.goToSection(.home) })
+        menu.addItem(ActionMenuItem.make(String(localized: "Suscripciones"), symbol: "play.rectangle.on.rectangle") { [weak self] in self?.goToSection(.subscriptions) })
+        let continueWatching = NSMenuItem(title: String(localized: "Seguir viendo"), action: nil, keyEquivalent: "")
         continueWatching.image = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
         let submenu = NSMenu()
         let videos = library.continueWatching.prefix(6)
         if videos.isEmpty {
-            let empty = NSMenuItem(title: "Nada a medias", action: nil, keyEquivalent: "")
+            let empty = NSMenuItem(title: String(localized: "Nada a medias"), action: nil, keyEquivalent: "")
             empty.isEnabled = false
             submenu.addItem(empty)
         }
         for saved in videos {
             let left = saved.duration.map { max(0, $0 - saved.position) }
             let title = deArrow.title(for: saved.item)
-            let label = left.map { "\(title.count > 60 ? String(title.prefix(58)) + "…" : title) — quedan \(Format.time($0))" } ?? title
+            let label = left.map { String(localized: "\(title.count > 60 ? String(title.prefix(58)) + "…" : title) — quedan \(Format.time($0))") } ?? title
             submenu.addItem(ActionMenuItem.make(label) { [weak self] in
                 self?.bringToFront()
                 self?.play(saved.item)
             })
         }
         submenu.addItem(.separator())
-        submenu.addItem(ActionMenuItem.make("Todo el historial", symbol: "clock.arrow.circlepath") { [weak self] in self?.goToSection(.history) })
+        submenu.addItem(ActionMenuItem.make(String(localized: "Todo el historial"), symbol: "clock.arrow.circlepath") { [weak self] in self?.goToSection(.history) })
         continueWatching.submenu = submenu
         menu.addItem(continueWatching)
         return menu
@@ -235,4 +235,31 @@ extension AppModel {
 /// Lo que se puede soltar en la ventana: un enlace o texto con uno.
 enum DropTypes {
     static let accepted: [UTType] = [.url, .plainText]
+}
+
+// MARK: - Fase 6: Tab desde la búsqueda
+
+/// Tab en el campo de búsqueda pasa al contenido, como Retorno al buscar. El campo vive en la toolbar, fuera de la jerarquía
+/// de foco de SwiftUI, y AppKit solo pasaría a otro campo de texto (sin «Navegación con teclado» del sistema, a ninguno):
+/// hay que atender la tecla antes de que llegue a él. Shift+Tab y el resto de los campos (hojas, Ajustes) siguen igual.
+@MainActor
+enum SearchFieldTab {
+    private static var monitor: Any?
+
+    static func install(_ model: AppModel) {
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak model] event in
+            let isPlainTab = event.keyCode == 48 && event.modifierFlags.intersection([.shift, .command, .option, .control]).isEmpty
+            guard isPlainTab else { return event }
+            let windowNumber = event.windowNumber
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard let model, model.searchFieldFocused, model.player == nil, model.tvMode == nil,
+                      let window = model.mainWindow, window.windowNumber == windowNumber, window.firstResponder is NSText else { return false }
+                if Automation.shared.logsKeys { NSLog("Glasstube automation: Tab: de la búsqueda al contenido") }
+                model.focusContent(fromKeyboard: true)
+                return true
+            }
+            return handled ? nil : event
+        }
+    }
 }

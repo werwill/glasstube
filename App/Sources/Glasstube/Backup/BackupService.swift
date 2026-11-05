@@ -46,14 +46,15 @@ struct BackupRestoreSummary: Equatable {
 
     var message: String {
         var parts: [String] = []
-        if groupsCreated > 0 { parts.append(groupsCreated == 1 ? "1 grupo nuevo" : "\(groupsCreated) grupos nuevos") }
-        if groupsUpdated > 0 { parts.append(groupsUpdated == 1 ? "1 grupo con canales nuevos" : "\(groupsUpdated) grupos con canales nuevos") }
-        if subscriptions > 0 { parts.append(subscriptions == 1 ? "1 suscripción" : "\(subscriptions) suscripciones") }
-        if blocked > 0 { parts.append(blocked == 1 ? "1 canal bloqueado" : "\(blocked) canales bloqueados") }
-        if history > 0 { parts.append(history == 1 ? "1 video del historial" : "\(history) videos del historial") }
-        if queue > 0 { parts.append(queue == 1 ? "1 video en la cola" : "\(queue) videos en la cola") }
-        if settings > 0 { parts.append(settings == 1 ? "1 ajuste" : "\(settings) ajustes") }
-        return parts.isEmpty ? "No había nada nuevo: todo lo del respaldo ya estaba en esta Mac" : "Se restauró: " + parts.joined(separator: ", ")
+        if groupsCreated > 0 { parts.append(groupsCreated == 1 ? String(localized: "1 grupo nuevo") : String(localized: "\(groupsCreated) grupos nuevos")) }
+        if groupsUpdated > 0 { parts.append(groupsUpdated == 1 ? String(localized: "1 grupo con canales nuevos") : String(localized: "\(groupsUpdated) grupos con canales nuevos")) }
+        if subscriptions > 0 { parts.append(subscriptions == 1 ? String(localized: "1 suscripción") : String(localized: "\(subscriptions) suscripciones")) }
+        if blocked > 0 { parts.append(blocked == 1 ? String(localized: "1 canal bloqueado") : String(localized: "\(blocked) canales bloqueados")) }
+        if history > 0 { parts.append(history == 1 ? String(localized: "1 video del historial") : String(localized: "\(history) videos del historial")) }
+        if queue > 0 { parts.append(queue == 1 ? String(localized: "1 video en la cola") : String(localized: "\(queue) videos en la cola")) }
+        if settings > 0 { parts.append(settings == 1 ? String(localized: "1 ajuste") : String(localized: "\(settings) ajustes")) }
+        return parts.isEmpty ? String(localized: "No había nada nuevo: todo lo del respaldo ya estaba en esta Mac")
+                             : String(localized: "Se restauró: \(parts.joined(separator: ", "))")
     }
 }
 
@@ -108,9 +109,9 @@ final class BackupService {
 
     func didExport(to url: URL?, error: Error?) {
         if let error {
-            report("No se pudo guardar el respaldo: \(error.localizedDescription)")
+            report(String(localized: "No se pudo guardar el respaldo: \(error.localizedDescription)"))
         } else if let url {
-            report("Respaldo guardado en «\(url.lastPathComponent)»")
+            report(String(localized: "Respaldo guardado en «\(url.lastPathComponent)»"))
         }
     }
 
@@ -124,14 +125,14 @@ final class BackupService {
             let data = try Data(contentsOf: url)
             let file = try BackupArchive.read(data)
             guard !file.contents.sections.isEmpty else {
-                report("«\(url.lastPathComponent)» no trae nada que se pueda restaurar")
+                report(String(localized: "«\(url.lastPathComponent)» no trae nada que se pueda restaurar"))
                 return
             }
             pending = PendingBackup(name: url.lastPathComponent, file: file)
         } catch let failure as BackupArchive.Failure {
             report("«\(url.lastPathComponent)»: \(failure.description)")
         } catch {
-            report("No se pudo leer «\(url.lastPathComponent)»: \(error.localizedDescription)")
+            report(String(localized: "No se pudo leer «\(url.lastPathComponent)»: \(error.localizedDescription)"))
         }
     }
 
@@ -163,7 +164,7 @@ final class BackupService {
     @discardableResult
     func backupToICloud(now: Date = Date()) -> URL? {
         guard let folder = iCloudFolder else {
-            report("iCloud Drive no está activado en esta Mac (Ajustes del Sistema › Apple ID › iCloud)")
+            report(String(localized: "iCloud Drive no está activado en esta Mac (Ajustes del Sistema › Apple ID › iCloud)"))
             return nil
         }
         isWorking = true
@@ -185,10 +186,10 @@ final class BackupService {
             pruneICloud(folder)
             lastICloudBackup = now
             defaults.set(now, forKey: Self.lastICloudKey)
-            report("Respaldo guardado en iCloud Drive › Glasstube › \(target.lastPathComponent)")
+            report(String(localized: "Respaldo guardado en iCloud Drive › Glasstube › \(target.lastPathComponent)"))
             return target
         } catch {
-            report("No se pudo guardar en iCloud Drive: \(error.localizedDescription)")
+            report(String(localized: "No se pudo guardar en iCloud Drive: \(error.localizedDescription)"))
             return nil
         }
     }
@@ -210,7 +211,7 @@ final class BackupService {
     func iCloudBackups() -> [URL] {
         guard let folder = iCloudFolder else { return [] }
         let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
-        return files.filter { $0.lastPathComponent.hasPrefix("Glasstube-respaldo-") && $0.pathExtension == "zip" }
+        return files.filter { ["Glasstube-respaldo-", "Glasstube-backup-"].contains(where: $0.lastPathComponent.hasPrefix) && $0.pathExtension == "zip" }
             .sorted { $0.lastPathComponent > $1.lastPathComponent }
     }
 

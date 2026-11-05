@@ -1,0 +1,3 @@
+/* El menú Servicios. La clave es NSMenuItem.default del Info.plist. */
+
+"Open in Glasstube" = "Abrir en Glasstube";

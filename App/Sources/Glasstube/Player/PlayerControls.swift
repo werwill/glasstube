@@ -99,8 +99,8 @@ struct PlayerTopBar: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             HStack(spacing: 8) {
-                PlayerIconButton(control: .back, symbol: "chevron.backward", label: "Volver", iconSize: 17, filled: true,
-                                 help: "Volver (Esc)") { app.closePlayer() }
+                PlayerIconButton(control: .back, symbol: "chevron.backward", label: String(localized: "Volver"), iconSize: 17, filled: true,
+                                 help: String(localized: "Volver (Esc)")) { app.closePlayer() }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(player.title)
                         .font(.system(size: 15, weight: .semibold))
@@ -112,8 +112,9 @@ struct PlayerTopBar: View {
                 }
                 .padding(.trailing, accounts.isSignedIn && channelId != nil ? 4 : 16)
                 if accounts.isSignedIn, channelId != nil {
-                    PlayerTextButton(control: .subscribe, title: player.isSubscribed == true ? "Suscrito" : "Suscribirse",
-                                     label: player.isSubscribed == true ? "Cancelar la suscripción a \(player.author ?? "el canal")" : "Suscribirse a \(player.author ?? "el canal")",
+                    PlayerTextButton(control: .subscribe, title: player.isSubscribed == true ? String(localized: "Suscrito") : String(localized: "Suscribirse"),
+                                     label: player.isSubscribed == true ? String(localized: "Cancelar la suscripción a \(player.author ?? String(localized: "el canal"))")
+                                                     : String(localized: "Suscribirse a \(player.author ?? String(localized: "el canal"))"),
                                      highlighted: player.isSubscribed != true) { player.toggleSubscribe() }
                         .disabled(player.isSubscribed == nil && player.metadata == nil)
                 }
@@ -127,26 +128,26 @@ struct PlayerTopBar: View {
 
             HStack(spacing: 2) {
                 PlayerIconButton(control: .like, symbol: player.likeStatus == .like ? "hand.thumbsup.fill" : "hand.thumbsup",
-                                 label: player.likeStatus == .like ? "Quitar me gusta" : "Me gusta",
-                                 help: accounts.isSignedIn ? nil : "Me gusta (inicia sesión)", count: player.likeCountText) { player.toggleLike() }
+                                 label: player.likeStatus == .like ? String(localized: "Quitar me gusta") : String(localized: "Me gusta"),
+                                 help: accounts.isSignedIn ? nil : String(localized: "Me gusta (inicia sesión)"), count: player.likeCountText) { player.toggleLike() }
                 if accounts.isSignedIn || player.votes != nil {
                     PlayerIconButton(control: .dislike, symbol: player.likeStatus == .dislike ? "hand.thumbsdown.fill" : "hand.thumbsdown",
-                                     label: player.likeStatus == .dislike ? "Quitar no me gusta" : "No me gusta",
-                                     help: player.votes != nil ? "No me gusta (estimación de Return YouTube Dislike)" : nil,
+                                     label: player.likeStatus == .dislike ? String(localized: "Quitar no me gusta") : String(localized: "No me gusta"),
+                                     help: player.votes != nil ? String(localized: "No me gusta (estimación de Return YouTube Dislike)") : nil,
                                      count: player.votes.map { DislikeClient.compact($0.dislikes) }) { player.toggleDislike() }
                 }
                 PlayerIconButton(control: .comments, symbol: player.chat != nil ? "bubble.left.and.text.bubble.right" : "text.bubble",
-                                 label: player.chat != nil ? "Chat en vivo" : "Comentarios",
+                                 label: player.chat != nil ? String(localized: "Chat en vivo") : String(localized: "Comentarios"),
                                  filled: player.panelTab == .comments || player.panelTab == .chat,
-                                 help: player.chat != nil ? "Chat en vivo (panel lateral, D)" : "Comentarios (panel lateral, D)") {
+                                 help: player.chat != nil ? String(localized: "Chat en vivo (panel lateral, D)") : String(localized: "Comentarios (panel lateral, D)")) {
                     player.togglePanel(player.chat != nil ? .chat : .comments)
                 }
-                PlayerIconButton(control: .info, symbol: "info.circle", label: "Descripción, capítulos y sugeridos",
+                PlayerIconButton(control: .info, symbol: "info.circle", label: String(localized: "Descripción, capítulos y sugeridos"),
                                  filled: player.panelTab == .description || player.panelTab == .chapters || player.panelTab == .suggestions,
-                                 help: "Descripción, capítulos y sugeridos (D)") {
+                                 help: String(localized: "Descripción, capítulos y sugeridos (D)")) {
                     if let tab = player.panelTab, tab != .comments, tab != .chat { player.closePanel() } else { player.togglePanel(.description) }
                 }
-                PlayerIconButton(control: .more, symbol: "ellipsis", label: "Más acciones") { player.popover = .more }
+                PlayerIconButton(control: .more, symbol: "ellipsis", label: String(localized: "Más acciones")) { player.popover = .more }
                     .popover(isPresented: popoverBinding(.more), arrowEdge: .bottom) { MoreActionsMenu().playerPopover() }
             }
             .padding(4)
@@ -157,7 +158,7 @@ struct PlayerTopBar: View {
     private var subtitle: String {
         let chapter = player.chapter(at: player.position).map { chapter in
             let number = (player.chapters.firstIndex(of: chapter) ?? 0) + 1
-            return "Capítulo \(number): \(chapter.title)"
+            return String(localized: "Capítulo \(number): \(chapter.title)")
         }
         return [player.author, chapter].compactMap { $0 }.joined(separator: " · ")
     }
@@ -175,7 +176,7 @@ struct PlayerControlsCapsule: View {
 
     /// Con AVPlayer (directos) es el PiP del sistema; con mpv, la ventana flotante propia.
     private var pipLabel: String {
-        player.engine is AVEngine && PictureInPicture.isSupported ? "Imagen en imagen" : "Minirreproductor flotante"
+        player.engine is AVEngine && PictureInPicture.isSupported ? String(localized: "Imagen en imagen") : String(localized: "Minirreproductor flotante")
     }
 
     var body: some View {
@@ -201,20 +202,20 @@ struct PlayerControlsCapsule: View {
 
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
-                    PlayerIconButton(control: .previous, symbol: "backward.end.fill", label: "Video anterior", iconSize: 18) {
+                    PlayerIconButton(control: .previous, symbol: "backward.end.fill", label: String(localized: "Video anterior"), iconSize: 18) {
                         player.playPrevious()
                     }
                     PlayerIconButton(control: .playPause, symbol: player.isPlaying ? "pause.fill" : "play.fill",
-                                     label: player.isPlaying ? "Pausar" : "Reproducir", size: 52, iconSize: 24, filled: true,
-                                     help: player.isPlaying ? "Pausar (espacio o K)" : "Reproducir (espacio o K)") {
+                                     label: player.isPlaying ? String(localized: "Pausar") : String(localized: "Reproducir"), size: 52, iconSize: 24, filled: true,
+                                     help: player.isPlaying ? String(localized: "Pausar (espacio o K)") : String(localized: "Reproducir (espacio o K)")) {
                         player.togglePause()
                     }
-                    PlayerIconButton(control: .next, symbol: "forward.end.fill", label: "Siguiente video", iconSize: 18) {
+                    PlayerIconButton(control: .next, symbol: "forward.end.fill", label: String(localized: "Siguiente video"), iconSize: 18) {
                         player.playNext()
                     }
                     .disabled(player.nextItem == nil)
-                    PlayerIconButton(control: .mute, symbol: volumeSymbol, label: player.status?.isMuted == true ? "Activar sonido" : "Silenciar",
-                                     iconSize: 18, help: "Volumen (M silencia)") {
+                    PlayerIconButton(control: .mute, symbol: volumeSymbol, label: player.status?.isMuted == true ? String(localized: "Activar sonido") : String(localized: "Silenciar"),
+                                     iconSize: 18, help: String(localized: "Volumen (M silencia)")) {
                         player.toggleMute()
                     }
                     VolumeSlider()
@@ -222,15 +223,15 @@ struct PlayerControlsCapsule: View {
                 Spacer(minLength: 8)
                 HStack(spacing: 4) {
                     PlayerTextButton(control: .speed, title: Format.rate(player.status?.rate ?? 1),
-                                     label: "Velocidad de reproducción: \(Format.rate(player.status?.rate ?? 1))",
+                                     label: String(localized: "Velocidad de reproducción: \(Format.rate(player.status?.rate ?? 1))"),
                                      highlighted: player.popover == .speed) { player.popover = .speed }
                         .popover(isPresented: binding(.speed), arrowEdge: .top) { SpeedMenu().playerPopover() }
                     PlayerIconButton(control: .captions, symbol: "captions.bubble", label: captionsLabel, iconSize: 18,
-                                     filled: player.captionTrack != nil, help: "Subtítulos (C activa o quita)") { player.popover = .captions }
+                                     filled: player.captionTrack != nil, help: String(localized: "Subtítulos (C activa o quita)")) { player.popover = .captions }
                         .popover(isPresented: binding(.captions), arrowEdge: .top) { CaptionsMenu().playerPopover() }
-                    PlayerIconButton(control: .audio, symbol: "waveform", label: "Pista de audio", iconSize: 18) { player.popover = .audio }
+                    PlayerIconButton(control: .audio, symbol: "waveform", label: String(localized: "Pista de audio"), iconSize: 18) { player.popover = .audio }
                         .popover(isPresented: binding(.audio), arrowEdge: .top) { AudioMenu().playerPopover() }
-                    PlayerTextButton(control: .quality, title: qualityTitle, label: "Calidad de video: \(qualityTitle)",
+                    PlayerTextButton(control: .quality, title: qualityTitle, label: String(localized: "Calidad de video: \(qualityTitle)"),
                                      showsChevron: true, highlighted: player.popover == .quality) { player.popover = .quality }
                         .popover(isPresented: binding(.quality), arrowEdge: .top) { QualityMenu().playerPopover() }
                     Rectangle().fill(.white.opacity(0.3)).frame(width: 1, height: 22).padding(.horizontal, 6)
@@ -238,8 +239,8 @@ struct PlayerControlsCapsule: View {
                     PlayerIconButton(control: .pip, symbol: player.engine is AVEngine ? "pip.enter" : "pip", label: pipLabel, iconSize: 18,
                                      help: "\(pipLabel) (I)") { app.enterMiniPlayer() }
                     PlayerIconButton(control: .fullscreen, symbol: player.isFullScreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
-                                     label: player.isFullScreen ? "Salir de pantalla completa" : "Pantalla completa", iconSize: 18,
-                                     help: "Pantalla completa (F)") { player.toggleFullScreen() }
+                                     label: player.isFullScreen ? String(localized: "Salir de pantalla completa") : String(localized: "Pantalla completa"), iconSize: 18,
+                                     help: String(localized: "Pantalla completa (F)")) { player.toggleFullScreen() }
                 }
             }
         }
@@ -254,11 +255,11 @@ struct PlayerControlsCapsule: View {
     }
 
     private var captionsLabel: String {
-        player.captionTrack.map { "Subtítulos: \($0.title)" } ?? "Subtítulos: desactivados"
+        player.captionTrack.map { String(localized: "Subtítulos: \($0.title)") } ?? String(localized: "Subtítulos: desactivados")
     }
 
     private var qualityTitle: String {
-        guard let track = player.status?.selectedVideoTrack else { return "Auto" }
+        guard let track = player.status?.selectedVideoTrack else { return String(localized: "Auto") }
         return Format.quality(track)
     }
 
@@ -478,7 +479,7 @@ struct QualityMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            MenuHeader(title: "Calidad")
+            MenuHeader(title: String(localized: "Calidad"))
             let tracks = player.qualityOptions
             if tracks.isEmpty {
                 Text(player.item.isLive ? "Automática (HLS)" : "Cargando…").foregroundStyle(.secondary).padding(12)
@@ -492,10 +493,10 @@ struct QualityMenu: View {
                 }
             }
             Divider().padding(.horizontal, 10).padding(.vertical, 4)
-            MenuInfoRow(title: "Códec preferido", value: player.settings.codec.title)
-            MenuInfoRow(title: "Búfer", value: player.settings.buffer.title)
+            MenuInfoRow(title: String(localized: "Códec preferido"), value: player.settings.codec.title)
+            MenuInfoRow(title: String(localized: "Búfer"), value: player.settings.buffer.title)
             if let decoder = player.status?.hardwareDecoder {
-                MenuInfoRow(title: "Decodificación", value: decoder == "videotoolbox" ? "Hardware" : decoder)
+                MenuInfoRow(title: String(localized: "Decodificación"), value: decoder == "videotoolbox" ? String(localized: "Hardware") : decoder)
             }
         }
         .padding(8)
@@ -508,9 +509,9 @@ struct SpeedMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            MenuHeader(title: "Velocidad")
+            MenuHeader(title: String(localized: "Velocidad"))
             ForEach(PlayerModel.rates, id: \.self) { rate in
-                MenuRow(title: rate == 1 ? "Normal" : Format.rate(rate), isSelected: abs((player.status?.rate ?? 1) - rate) < 0.01) {
+                MenuRow(title: rate == 1 ? String(localized: "Normal") : Format.rate(rate), isSelected: abs((player.status?.rate ?? 1) - rate) < 0.01) {
                     player.setRate(rate)
                     player.popover = nil
                 }
@@ -528,8 +529,8 @@ struct CaptionsMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            MenuHeader(title: "Subtítulos")
-            MenuRow(title: "Desactivados", isSelected: player.captionTrack == nil) {
+            MenuHeader(title: String(localized: "Subtítulos"))
+            MenuRow(title: String(localized: "Desactivados"), isSelected: player.captionTrack == nil) {
                 player.selectCaption(nil)
                 player.popover = nil
             }
@@ -541,7 +542,7 @@ struct CaptionsMenu: View {
             ScrollView {
                 VStack(spacing: 2) {
                     ForEach(captions) { track in
-                        MenuRow(title: track.name, detail: track.isAutomatic ? "automáticos" : nil,
+                        MenuRow(title: track.name, detail: track.isAutomatic ? String(localized: "automáticos") : nil,
                                 isSelected: player.captionTrack == track) {
                             player.selectCaption(track)
                             player.popover = nil
@@ -572,7 +573,7 @@ struct AudioMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            MenuHeader(title: "Pista de audio")
+            MenuHeader(title: String(localized: "Pista de audio"))
             let tracks = player.status?.audioTracks ?? []
             if tracks.isEmpty {
                 Text("Cargando…").foregroundStyle(.secondary).padding(12)
@@ -596,39 +597,39 @@ struct MoreActionsMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            MenuHeader(title: "Más acciones")
+            MenuHeader(title: String(localized: "Más acciones"))
             if player.item.channelId != nil || player.metadata?.channelId != nil {
-                MenuRow(title: "Abrir canal", detail: player.engine is MPVEngine ? "el video sigue en el minirreproductor" : nil) {
+                MenuRow(title: String(localized: "Abrir canal"), detail: player.engine is MPVEngine ? String(localized: "el video sigue en el minirreproductor") : nil) {
                     player.openChannel()
                 }
             }
-            MenuRow(title: "Minirreproductor", detail: "I") {
+            MenuRow(title: String(localized: "Minirreproductor"), detail: "I") {
                 player.popover = nil
                 app.enterMiniPlayer()
             }
-            MenuRow(title: library.isInWatchLater(player.item) ? "Quitar de Ver más tarde" : "Ver más tarde") {
+            MenuRow(title: library.isInWatchLater(player.item) ? String(localized: "Quitar de Ver más tarde") : String(localized: "Ver más tarde")) {
                 library.toggleWatchLater(player.item)
                 player.popover = nil
             }
             if let url = AppModel.webURL(for: player.item) {
-                MenuRow(title: "Copiar enlace") {
+                MenuRow(title: String(localized: "Copiar enlace")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(url.absoluteString, forType: .string)
                     player.popover = nil
-                    player.showToast("Enlace copiado")
+                    player.showToast(String(localized: "Enlace copiado"))
                 }
-                MenuRow(title: "Copiar enlace en este momento") {
+                MenuRow(title: String(localized: "Copiar enlace en este momento")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(url.absoluteString + "&t=\(Int(player.position))s", forType: .string)
                     player.popover = nil
-                    player.showToast("Enlace copiado")
+                    player.showToast(String(localized: "Enlace copiado"))
                 }
             }
             Divider().padding(.horizontal, 10).padding(.vertical, 4)
             if let status = player.status {
-                MenuInfoRow(title: "Video", value: status.videoDescription ?? "—")
-                MenuInfoRow(title: "Cuadros descartados", value: "\(status.droppedFrames)")
-                MenuInfoRow(title: "Búfer por delante", value: status.buffer.ahead.map { String(format: "%.0f s", $0) } ?? "—")
+                MenuInfoRow(title: String(localized: "Video"), value: status.videoDescription ?? "—")
+                MenuInfoRow(title: String(localized: "Cuadros descartados"), value: "\(status.droppedFrames)")
+                MenuInfoRow(title: String(localized: "Búfer por delante"), value: status.buffer.ahead.map { String(format: "%.0f s", $0) } ?? "—")
             }
         }
         .padding(8)

@@ -279,17 +279,17 @@ struct MiniPlayerView: View {
                     .lineLimit(2)
                     .shadow(color: .black.opacity(0.5), radius: 2)
                 Spacer(minLength: 6)
-                MiniButton(symbol: "arrow.up.left.and.arrow.down.right", label: "Volver a la ventana (Retorno)") { app.expandPlayer() }
-                MiniButton(symbol: "xmark", label: "Cerrar (Esc)") { app.closePlayer() }
+                MiniButton(symbol: "arrow.up.left.and.arrow.down.right", label: String(localized: "Volver a la ventana (Retorno)")) { app.expandPlayer() }
+                MiniButton(symbol: "xmark", label: String(localized: "Cerrar (Esc)")) { app.closePlayer() }
             }
             Spacer(minLength: 0)
             HStack(spacing: 6) {
-                MiniButton(symbol: "gobackward.10", label: "Atrás 10 s") { player.seek(by: -10) }
-                MiniButton(symbol: player.isPlaying ? "pause.fill" : "play.fill", label: player.isPlaying ? "Pausar" : "Reproducir",
+                MiniButton(symbol: "gobackward.10", label: String(localized: "Atrás 10 s")) { player.seek(by: -10) }
+                MiniButton(symbol: player.isPlaying ? "pause.fill" : "play.fill", label: player.isPlaying ? String(localized: "Pausar") : String(localized: "Reproducir"),
                            size: 40) { player.togglePause() }
-                MiniButton(symbol: "goforward.10", label: "Adelante 10 s") { player.seek(by: 10) }
+                MiniButton(symbol: "goforward.10", label: String(localized: "Adelante 10 s")) { player.seek(by: 10) }
                 if player.nextItem != nil {
-                    MiniButton(symbol: "forward.end.fill", label: "Siguiente") { player.playNext() }
+                    MiniButton(symbol: "forward.end.fill", label: String(localized: "Siguiente")) { player.playNext() }
                 }
             }
             Spacer(minLength: 0)
@@ -334,7 +334,7 @@ struct MiniProgress: View {
                 }
             }
             .frame(height: 4)
-            Text(player.item.isLive ? "EN VIVO" : Format.time(player.duration)).font(.system(size: 10.5, weight: .semibold)).monospacedDigit()
+            Text(player.item.isLive ? String(localized: "EN VIVO") : Format.time(player.duration)).font(.system(size: 10.5, weight: .semibold)).monospacedDigit()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

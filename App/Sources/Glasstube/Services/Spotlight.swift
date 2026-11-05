@@ -77,8 +77,8 @@ final class SpotlightIndex {
         let attributes = CSSearchableItemAttributeSet(contentType: .content)
         attributes.title = name
         attributes.displayName = name
-        attributes.contentDescription = ["Canal de YouTube", detail].compactMap { $0 }.joined(separator: " · ")
-        attributes.keywords = ["YouTube", "Glasstube", "canal", name]
+        attributes.contentDescription = [String(localized: "Canal de YouTube"), detail].compactMap { $0 }.joined(separator: " · ")
+        attributes.keywords = ["YouTube", "Glasstube", String(localized: "canal"), name]
         attributes.lastUsedDate = Date()
         attributes.identifier = channelId
         let urls = MediaItemImages.avatar(avatar)

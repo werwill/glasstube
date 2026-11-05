@@ -115,6 +115,13 @@ for bundle in "$BIN"/*.bundle; do
     ditto "$bundle" "$APP/Contents/Resources/$(basename "$bundle")"
 done
 
+# Idiomas de la interfaz (fase 6). `Text("…")` y `String(localized:)` buscan en Bundle.main, o sea aquí; también
+# InfoPlist.strings y ServicesMenu.strings. Las claves las revisa Scripts/cadenas.py y `swift test`.
+for lproj in "$APP_DIR"/Localization/*.lproj; do
+    plutil -lint -s "$lproj"/*
+    ditto "$lproj" "$APP/Contents/Resources/$(basename "$lproj")"
+done
+
 # Licencias.
 cp "$APP_DIR"/Licenses/* "$APP/Contents/Resources/Licenses/"
 for required in LGPL-2.1.txt LGPL-3.0.txt GPL-3.0.txt SmartTube-MIT.txt Sparkle-MIT.txt libmpv-sources.txt; do
@@ -158,7 +165,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key><string>es</string>
+    <!-- Fase 6: un sistema en otro idioma cae en inglés. El español lo trae es.lproj. -->
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key><array><string>en</string><string>es</string></array>
     <key>CFBundleDisplayName</key><string>Glasstube</string>
     <key>CFBundleExecutable</key><string>Glasstube</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
@@ -174,7 +183,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>NSSupportsAutomaticTermination</key><false/>
     <key>NSSupportsSuddenTermination</key><false/>
-    <key>NSHumanReadableCopyright</key><string>Reimplementación de SmartTube (MIT). Usa mpv y FFmpeg bajo LGPL.</string>
+    <key>NSHumanReadableCopyright</key><string>A reimplementation of SmartTube (MIT). Uses mpv and FFmpeg under the LGPL.</string>
 $REPO_PLIST$SPARKLE_PLIST    <!-- Fase 4: glasstube://watch?v=…, ://channel/…, ://playlist?list=…, ://search?q=…, ://open?url=… -->
     <key>CFBundleURLTypes</key>
     <array>
@@ -184,11 +193,11 @@ $REPO_PLIST$SPARKLE_PLIST    <!-- Fase 4: glasstube://watch?v=…, ://channel/�
             <key>CFBundleTypeRole</key><string>Viewer</string>
         </dict>
     </array>
-    <!-- Fase 4: «Abrir en Glasstube» en el menú Servicios para texto o enlaces seleccionados. -->
+    <!-- Fase 4: «Abrir en Glasstube» en el menú Servicios para texto o enlaces seleccionados (el español, en es.lproj/ServicesMenu.strings). -->
     <key>NSServices</key>
     <array>
         <dict>
-            <key>NSMenuItem</key><dict><key>default</key><string>Abrir en Glasstube</string></dict>
+            <key>NSMenuItem</key><dict><key>default</key><string>Open in Glasstube</string></dict>
             <key>NSMessage</key><string>openInGlasstube</string>
             <key>NSPortName</key><string>Glasstube</string>
             <key>NSSendTypes</key>

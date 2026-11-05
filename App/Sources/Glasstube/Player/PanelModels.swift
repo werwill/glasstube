@@ -11,11 +11,11 @@ enum SidePanelTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .description: "Descripción"
-        case .chapters: "Capítulos"
-        case .comments: "Comentarios"
-        case .chat: "Chat"
-        case .suggestions: "Sugeridos"
+        case .description: String(localized: "Descripción")
+        case .chapters: String(localized: "Capítulos")
+        case .comments: String(localized: "Comentarios")
+        case .chat: String(localized: "Chat")
+        case .suggestions: String(localized: "Sugeridos")
         }
     }
 
@@ -136,7 +136,7 @@ final class CommentsModel {
             comments += page.comments.filter { !known.contains($0.id) }
             continuation = page.comments.isEmpty ? nil : page.continuation
         } catch {
-            failure = "No se pudieron cargar los comentarios: \(AccountModel.describe(error))"
+            failure = String(localized: "No se pudieron cargar los comentarios: \(AccountModel.describe(error))")
         }
     }
 
@@ -186,7 +186,7 @@ final class CommentsModel {
                 try await service.setCommentLiked(comment, liked: liked)
             } catch {
                 update(comment.id) { $0.isLiked = !liked }
-                onError("YouTube no aceptó el me gusta: \(AccountModel.describe(error))")
+                onError(String(localized: "YouTube no aceptó el me gusta: \(AccountModel.describe(error))"))
             }
         }
     }
@@ -211,9 +211,9 @@ final class CommentsModel {
                     if threads[comment.id] == nil { threads[comment.id] = Thread() }
                     threads[comment.id]?.replies.insert(posted, at: 0)
                 }
-                onDone("Se publicó tu respuesta")
+                onDone(String(localized: "Se publicó tu respuesta"))
             } catch {
-                onDone("YouTube no aceptó la respuesta: \(AccountModel.describe(error))")
+                onDone(String(localized: "YouTube no aceptó la respuesta: \(AccountModel.describe(error))"))
             }
         }
     }

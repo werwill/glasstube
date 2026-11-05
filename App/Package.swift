@@ -29,6 +29,9 @@ let package = Package(
             swiftSettings: [
                 .swiftLanguageMode(.v6),
                 .defaultIsolation(MainActor.self),
+                // Fase 6: el compilador deja aquí las claves localizables, con sus especificadores (`%lld`, `%@`). Las
+                // leen Scripts/cadenas.py y la prueba de que todas tienen traducción. No necesita Xcode.
+                .unsafeFlags(["-emit-localized-strings", "-emit-localized-strings-path", Context.packageDirectory + "/.build/cadenas"]),
             ],
             linkerSettings: [
                 // Dentro de Glasstube.app, Libmpv.framework va en Contents/Frameworks.

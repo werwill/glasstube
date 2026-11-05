@@ -50,7 +50,7 @@ final class AccountModel {
             do {
                 try await manager.load()
             } catch {
-                self?.notice = "No se pudieron leer las cuentas del Llavero: \(error)"
+                self?.notice = String(localized: "No se pudieron leer las cuentas del Llavero: \(Self.describe(error))")
             }
             slow.cancel()
             self?.waitingForKeychain = false
@@ -73,7 +73,7 @@ final class AccountModel {
         let lostSession = snapshot.isSignedIn && !new.isSignedIn && signIn == nil
         snapshot = new
         if changed { generation += 1 }
-        if lostSession, notice == nil { notice = "Se cerró la sesión de YouTube." }
+        if lostSession, notice == nil { notice = String(localized: "Se cerró la sesión de YouTube.") }
     }
 
     // MARK: - Inicio de sesión por código
@@ -89,7 +89,7 @@ final class AccountModel {
                 self?.signIn = .waiting(code: code.userCode, url: code.verificationURL, expiresAt: code.expiresAt)
                 let snapshot = try await manager.completeSignIn(code)
                 guard !Task.isCancelled else { return }
-                self?.signIn = .done(name: snapshot.selected?.displayName ?? "tu cuenta")
+                self?.signIn = .done(name: snapshot.selected?.displayName ?? String(localized: "tu cuenta"))
                 self?.apply(snapshot)
             } catch is CancellationError {
             } catch {
@@ -150,9 +150,29 @@ final class AccountModel {
     }
 
     static func describe(_ error: Error) -> String {
-        if let auth = error as? AuthError { return auth.description.prefix(1).uppercased() + auth.description.dropFirst() + "." }
-        if let keychain = error as? KeychainError { return keychain.description }
-        if let urlError = error as? URLError { return "Sin conexión con YouTube (\(urlError.code.rawValue))." }
+        // Los textos de YTKit van en español (los comparte la app de Windows): aquí, en el idioma de la interfaz.
+        if let auth = error as? AuthError {
+            switch auth {
+            case .codeExpired: return String(localized: "El código venció antes de autorizarlo.")
+            case .accessDenied: return String(localized: "Se rechazó el acceso en la página de activación.")
+            case .revoked: return String(localized: "Google ya no acepta esta sesión; hay que volver a iniciarla.")
+            case .clientNotFound: return String(localized: "No se encontró el client_id de la app de TV de YouTube.")
+            case .rejected(let code): return String(localized: "Google rechazó la petición (\(code)).")
+            case .notSignedIn: return String(localized: "No hay ninguna sesión iniciada.")
+            }
+        }
+        if let keychain = error as? KeychainError {
+            let message = SecCopyErrorMessageString(keychain.status, nil) as String? ?? "\(keychain.status)"
+            return String(localized: "Llavero: \(message) (\(keychain.status))")
+        }
+        if let urlError = error as? URLError { return String(localized: "Sin conexión con YouTube (\(urlError.code.rawValue)).") }
+        if let ytkit = error as? YTKitError {
+            switch ytkit {
+            case .signInRequired(let what): return String(localized: "\(what) requiere iniciar sesión.")
+            case .notAvailable(let what): return String(localized: "No disponible: \(what)")
+            case .badResponse(let what): return String(localized: "Respuesta inesperada: \(what)")
+            }
+        }
         return "\(error)"
     }
 }
@@ -165,12 +185,12 @@ extension Account {
     }
 
     /// "Personal" o "Cuenta de marca", para la segunda línea de los menús.
-    var kindLabel: String { isBrand ? "Cuenta de marca" : "Cuenta personal" }
+    var kindLabel: String { isBrand ? String(localized: "Cuenta de marca") : String(localized: "Cuenta personal") }
 
     /// Nombre en pantalla (con `-GTAnonimo`, uno de prueba para las capturas).
     var displayName: String {
         guard Automation.shared.masksAccount else { return name }
-        return isBrand ? "Marca de prueba" : "Cuenta de prueba"
+        return isBrand ? String(localized: "Marca de prueba") : String(localized: "Cuenta de prueba")
     }
 
     /// Segunda línea en pantalla (correo de la cuenta personal o @identificador de la de marca).

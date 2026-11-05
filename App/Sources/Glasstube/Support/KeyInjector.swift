@@ -4,8 +4,8 @@ import AppKit
 /// `onKeyPress` de la vista con foco. Las usan la automatización de pruebas (`-GTKeys`) y la cruceta del teléfono
 /// (control remoto: flechas, Retorno y Esc).
 enum KeyInjector {
-    /// `space`, `return`, `tab`, `escape`, `left`, `right`, `up`, `down`, un carácter (`j`, `>`) o `cmd+<carácter>`
-    /// (atajo de menú).
+    /// `space`, `return`, `tab`, `escape`, `left`, `right`, `up`, `down`, un carácter (`j`, `>`), `cmd+<carácter>` o
+    /// `cmd+shift+<carácter>` (atajos de menú; `[` y `]` son `{` y `}` con un teclado latinoamericano: macOS los adapta).
     static func press(_ key: String, in window: NSWindow?) {
         guard let window = window ?? NSApp.keyWindow else { return }
         let special: [String: (String, UInt16)] = [
@@ -18,13 +18,21 @@ enum KeyInjector {
         let code: UInt16
         if key.hasPrefix("cmd+") {
             // Atajo de menú (p. ej. `cmd+,` abre Ajustes): va por el menú principal, como un equivalente de teclado.
-            let character = String(key.dropFirst(4))
-            if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+            let withShift = key.hasPrefix("cmd+shift+")
+            let character = String(key.dropFirst(withShift ? 10 : 4))
+            let modifiers: NSEvent.ModifierFlags = withShift ? [.command, .shift] : .command
+            if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
                                             timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
                                             context: nil, characters: character, charactersIgnoringModifiers: character,
                                             isARepeat: false, keyCode: 0) {
                 let handled = NSApp.mainMenu?.performKeyEquivalent(with: event) == true
-                if Automation.shared.logsKeys { NSLog("Glasstube automation: atajo \(key) → \(handled ? "atendido" : "sin atender")") }
+                if Automation.shared.logsKeys {
+                    // Qué opción del menú tiene ese atajo y si estaba activa: la diferencia entre un atajo que falta y uno apagado.
+                    func items(_ menu: NSMenu?) -> [NSMenuItem] { (menu?.items ?? []).flatMap { [$0] + items($0.submenu) } }
+                    let item = items(NSApp.mainMenu).first { $0.keyEquivalent == character && $0.keyEquivalentModifierMask == modifiers }
+                    let state = item.map { "«\($0.title)», \($0.isEnabled ? "activa" : "desactivada")" } ?? "sin opción en el menú"
+                    NSLog("Glasstube automation: atajo \(key) → \(handled ? "atendido" : "sin atender") (\(state))")
+                }
             }
             return
         }

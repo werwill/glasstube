@@ -51,7 +51,7 @@ final class RemoteControl {
     /// Nombre por omisión: «Glasstube en <nombre de la Mac>» (como SmartTube: «<dispositivo> (<app>)»).
     static var defaultName: String {
         let computer = SCDynamicStoreCopyComputerName(nil, nil) as String? ?? "Mac"
-        return "Glasstube en \(computer)"
+        return String(localized: "Glasstube en \(computer)")
     }
 
     // MARK: - Encender y apagar
@@ -97,7 +97,7 @@ final class RemoteControl {
         remotePlaylist = nil
         remotes = []
         Task { [screen] in await screen.unlinkAll() }
-        app.show(banner: "Se desvincularon todos los teléfonos. Para usar uno, vincúlalo otra vez.")
+        app.show(banner: String(localized: "Se desvincularon todos los teléfonos. Para usar uno, vincúlalo otra vez."))
     }
 
     // MARK: - Vincular
@@ -137,9 +137,9 @@ final class RemoteControl {
 
     static func describe(_ error: Error) -> String {
         switch error {
-        case let url as URLError where url.code == .notConnectedToInternet: "No hay conexión a internet."
+        case let url as URLError where url.code == .notConnectedToInternet: String(localized: "No hay conexión a internet.")
         case let url as URLError: url.localizedDescription
-        case let http as LoungeHTTPError: "YouTube respondió HTTP \(http.status)."
+        case let http as LoungeHTTPError: String(localized: "YouTube respondió HTTP \(http.status).")
         default: "\(error)"
         }
     }
@@ -147,7 +147,7 @@ final class RemoteControl {
     /// Nombre de un teléfono para mostrar (en las capturas con `-GTAnonimo`, uno de prueba).
     func displayName(_ remote: LoungeRemote) -> String {
         guard Automation.shared.masksAccount else { return remote.name }
-        return "Teléfono de prueba \((remotes.firstIndex(of: remote) ?? 0) + 1)"
+        return String(localized: "Teléfono de prueba \((remotes.firstIndex(of: remote) ?? 0) + 1)")
     }
 
     // MARK: - Eventos
@@ -269,7 +269,7 @@ final class RemoteControl {
         // El teléfono repite `remoteConnected` al volver a la app: un aviso por minuto como mucho.
         if let last = announced[remote.id], Date().timeIntervalSince(last) < 60 { return }
         announced[remote.id] = Date()
-        app.show(banner: "«\(displayName(remote))» se conectó: ya puedes controlar Glasstube desde el teléfono", seconds: 5)
+        app.show(banner: String(localized: "«\(displayName(remote))» se conectó: ya puedes controlar Glasstube desde el teléfono"), seconds: 5)
     }
 
     /// La cruceta del teléfono como las flechas, Retorno y Esc del teclado (la navegación de la app ya funciona así).

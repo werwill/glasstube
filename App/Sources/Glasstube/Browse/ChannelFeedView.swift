@@ -41,17 +41,17 @@ struct ChannelFeedView: View {
 
     private var title: String {
         switch source {
-        case .group: group?.title ?? "Grupo"
-        case .subscriptions: "Suscripciones"
+        case .group: group?.title ?? String(localized: "Grupo")
+        case .subscriptions: String(localized: "Suscripciones")
         }
     }
 
     private var subtitle: String {
         let count = channels.count
-        let channelsText = count == 1 ? "1 canal" : "\(count) canales"
+        let channelsText = count == 1 ? String(localized: "1 canal") : String(localized: "\(count) canales")
         switch source {
-        case .group: return "\(channelsText) · lo nuevo de cada uno, por RSS"
-        case .subscriptions: return "\(channelsText) que sigues en esta Mac · sus videos nuevos llegan por RSS, sin cuenta"
+        case .group: return String(localized: "\(channelsText) · lo nuevo de cada uno, por RSS")
+        case .subscriptions: return String(localized: "\(channelsText) que sigues en esta Mac · sus videos nuevos llegan por RSS, sin cuenta")
         }
     }
 
@@ -131,8 +131,8 @@ struct ChannelFeedView: View {
         let videos = visible.filter { !$0.isShort }
         let shorts = visible.filter(\.isShort)
         var sections: [Section] = []
-        if !videos.isEmpty { sections.append(Section(title: shorts.isEmpty ? nil : "Videos", items: videos)) }
-        if !shorts.isEmpty { sections.append(Section(title: "Shorts", items: shorts)) }
+        if !videos.isEmpty { sections.append(Section(title: shorts.isEmpty ? nil : String(localized: "Videos"), items: videos)) }
+        if !shorts.isEmpty { sections.append(Section(title: String(localized: "Shorts"), items: shorts)) }
         return sections
     }
 
@@ -167,7 +167,8 @@ struct ChannelFeedView: View {
         if !names.isEmpty || result.skipped > 0 {
             VStack(alignment: .leading, spacing: 4) {
                 if !names.isEmpty {
-                    Label("Sin respuesta de \(names.count == 1 ? "un canal" : "\(names.count) canales"): \(names.prefix(5).joined(separator: ", "))\(names.count > 5 ? "…" : "")",
+                    let list = names.prefix(5).joined(separator: ", ") + (names.count > 5 ? "…" : "")
+                    Label(names.count == 1 ? "Sin respuesta de un canal: \(list)" : "Sin respuesta de \(names.count) canales: \(list)",
                           systemImage: "exclamationmark.triangle")
                 }
                 if result.skipped > 0 {
@@ -435,7 +436,7 @@ struct GroupChannelsSheet: View {
             groups.add(channel, to: groupId)
             newChannel = ""
         } catch {
-            addError = "No se encontró ese canal"
+            addError = String(localized: "No se encontró ese canal")
         }
     }
 }
@@ -478,13 +479,13 @@ struct GroupDialogs: ViewModifier {
     }
 
     private var promptTitle: String {
-        if case .rename = model.groupPrompt { return "Renombrar el grupo" }
-        return "Nuevo grupo de canales"
+        if case .rename = model.groupPrompt { return String(localized: "Renombrar el grupo") }
+        return String(localized: "Nuevo grupo de canales")
     }
 
     private var promptAction: String {
-        if case .rename = model.groupPrompt { return "Renombrar" }
-        return "Crear"
+        if case .rename = model.groupPrompt { return String(localized: "Renombrar") }
+        return String(localized: "Crear")
     }
 
     private var promptPresented: Binding<Bool> {

@@ -85,3 +85,11 @@ struct GlasstubeCommands: Commands {
         }
     }
 }
+
+/// SwiftUI llena las opciones de un menú hasta que se abre (`menuNeedsUpdate`). Un atajo no lo abre, así que ve la opción
+/// como quedó la última vez: «Atrás», «Adelante» y «Cerrar el reproductor» seguían desactivadas, sin acción y sin hacer
+/// nada, aunque ya se pudiera (comprobado en la fase 6). `MainWindow` pide esto cuando cambia algo de lo que muestran.
+@MainActor
+func refreshMainMenu() {
+    for menu in NSApp.mainMenu?.items.compactMap(\.submenu) ?? [] { menu.delegate?.menuNeedsUpdate?(menu) }
+}

@@ -36,11 +36,11 @@ The app's interface is in Spanish for now.
 
 | | |
 |---|---|
-| ![Player with the quality menu and "Skip sponsor"](docs/capturas/reproductor.png) | ![Search results](docs/capturas/busqueda.png) |
-| ![Side panel with comments](docs/capturas/comentarios.png) | ![Pairing a phone with a TV code](docs/capturas/vincular-telefono.png) |
+| ![Player with the quality menu and "Skip sponsor"](docs/capturas/en/reproductor.png) | ![Search results](docs/capturas/en/busqueda.png) |
+| ![Side panel with comments](docs/capturas/en/comentarios.png) | ![Pairing a phone with a TV code](docs/capturas/en/vincular-telefono.png) |
 
 <sub>Screenshots show *Big Buck Bunny* © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
-Commenters appear as @persona1, @persona2…, and the pairing code is a test code.</sub>
+Commenters appear as @person1, @person2…, and the pairing code is a test code.</sub>
 
 - [How it works](#how-it-works)
 - [Download](#download)

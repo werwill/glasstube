@@ -50,13 +50,21 @@ struct GroupImportSummary: Equatable {
     var message: String {
         var parts: [String] = []
         if format == .newPipe {
-            parts.append(subscriptionsAdded == 1 ? "1 suscripción nueva en esta Mac" : "\(subscriptionsAdded) suscripciones nuevas en esta Mac")
+            parts.append(subscriptionsAdded == 1 ? String(localized: "1 suscripción nueva en esta Mac") : String(localized: "\(subscriptionsAdded) suscripciones nuevas en esta Mac"))
         } else {
-            if !created.isEmpty { parts.append(created.count == 1 ? "grupo «\(created[0])»" : "\(created.count) grupos nuevos") }
-            if !updated.isEmpty { parts.append(updated.count == 1 ? "«\(updated[0])» actualizado" : "\(updated.count) grupos actualizados") }
-            parts.append(channelsAdded == 1 ? "1 canal" : "\(channelsAdded) canales")
+            if !created.isEmpty {
+                parts.append(created.count == 1 ? String(localized: "grupo «\(created[0])»") : String(localized: "\(created.count) grupos nuevos"))
+            }
+            if !updated.isEmpty {
+                parts.append(updated.count == 1 ? String(localized: "«\(updated[0])» actualizado")
+                                                : String(localized: "\(updated.count) grupos actualizados"))
+            }
+            parts.append(channelsAdded == 1 ? String(localized: "1 canal") : String(localized: "\(channelsAdded) canales"))
         }
-        if skipped > 0 { parts.append("\(skipped) \(skipped == 1 ? "entrada omitida" : "entradas omitidas") (no son canales de YouTube)") }
+        if skipped > 0 {
+            parts.append(skipped == 1 ? String(localized: "1 entrada omitida (no son canales de YouTube)")
+                                      : String(localized: "\(skipped) entradas omitidas (no son canales de YouTube)"))
+        }
         return "\(format.rawValue): " + parts.joined(separator: ", ")
     }
 }
@@ -101,7 +109,7 @@ final class ChannelGroupStore {
     @discardableResult
     func create(title: String, channels: [GroupChannel] = [], iconURL: String? = nil) -> ChannelGroup {
         var seen = Set<String>()
-        let group = ChannelGroup(id: UUID().uuidString, title: uniqueTitle(Self.clean(title) ?? "Grupo nuevo"), iconURL: iconURL,
+        let group = ChannelGroup(id: UUID().uuidString, title: uniqueTitle(Self.clean(title) ?? String(localized: "Grupo nuevo")), iconURL: iconURL,
                                  channels: channels.filter { seen.insert($0.id).inserted })
         groups.append(group)
         scheduleSave()
@@ -208,7 +216,7 @@ final class ChannelGroupStore {
                 }
                 continue
             }
-            let title = Self.clean(imported.title) ?? "Grupo importado"
+            let title = Self.clean(imported.title) ?? String(localized: "Grupo importado")
             if let index = groups.firstIndex(where: { $0.title.localizedCaseInsensitiveCompare(title) == .orderedSame }) {
                 let fresh = channels.filter { !groups[index].contains($0.id) }
                 guard !fresh.isEmpty else { continue }

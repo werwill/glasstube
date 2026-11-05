@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>%lld grupos con %lld canales</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key><string>%1$#@grupos@ with %2$#@canales@</string>
+        <key>grupos</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key><string>lld</string>
+            <key>one</key><string>%lld group</string>
+            <key>other</key><string>%lld groups</string>
+        </dict>
+        <key>canales</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key><string>lld</string>
+            <key>one</key><string>%lld channel</string>
+            <key>other</key><string>%lld channels</string>
+        </dict>
+    </dict>
+    <key>Chat en vivo · %lld mensajes</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key><string>Live Chat · %#@mensajes@</string>
+        <key>mensajes</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key><string>lld</string>
+            <key>one</key><string>%lld message</string>
+            <key>other</key><string>%lld messages</string>
+        </dict>
+    </dict>
+</dict>
+</plist>

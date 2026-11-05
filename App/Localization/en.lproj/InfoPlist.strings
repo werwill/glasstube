@@ -1,0 +1,5 @@
+/* Los textos del Info.plist que muestra macOS. */
+
+"CFBundleDisplayName" = "Glasstube";
+"CFBundleName" = "Glasstube";
+"NSHumanReadableCopyright" = "A reimplementation of SmartTube (MIT). Uses mpv and FFmpeg under the LGPL.";

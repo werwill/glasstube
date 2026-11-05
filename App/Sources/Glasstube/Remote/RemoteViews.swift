@@ -106,7 +106,7 @@ struct PairingSheet: View {
                     Text("Conectando con YouTube…")
                 case .retrying(let after, let reason):
                     Image(systemName: "wifi.exclamationmark").foregroundStyle(.orange)
-                    Text("Sin conexión con YouTube (\(reason)). Reintento en \(Int(after)) s.")
+                    Text("Sin conexión con YouTube (\(Self.localized(reason: reason))). Reintento en \(Int(after)) s.")
                 case .stopped:
                     Image(systemName: "pause.circle").foregroundStyle(.secondary)
                     Text("El control remoto está apagado.")
@@ -143,6 +143,17 @@ struct PairingSheet: View {
 
 /// QR generado en la Mac (CoreImage) con lo mismo que el de la app de TV: `https://youtube.com/pair/<código>?qr=1`.
 /// Sobre blanco, con su margen, para que la cámara lo lea también en modo oscuro.
+extension PairingSheet {
+    /// Los dos motivos que escribe YTKit en español (`LoungeScreen.describe`); lo demás ya viene del sistema o es técnico.
+    fileprivate static func localized(reason: String) -> String {
+        switch reason {
+        case "sin noticias del servidor en 65 s": String(localized: "sin noticias del servidor en 65 s")
+        case "sin conexión a internet": String(localized: "sin conexión a internet")
+        default: reason
+        }
+    }
+}
+
 struct QRCodeView: View {
     let text: String
 
@@ -223,10 +234,13 @@ struct RemoteSettings: View {
 
     private var statusText: String {
         switch remote.state {
-        case .stopped: "Apagado"
-        case .connecting: "Conectando con YouTube…"
-        case .connected: remote.remotes.isEmpty ? "Listo; ningún teléfono conectado" : "Conectado con \(remote.remotes.count == 1 ? "un teléfono" : "\(remote.remotes.count) teléfonos")"
-        case .retrying(let after, _): "Sin conexión; reintento en \(Int(after)) s"
+        case .stopped: String(localized: "Apagado")
+        case .connecting: String(localized: "Conectando con YouTube…")
+        case .connected:
+            remote.remotes.isEmpty ? String(localized: "Listo; ningún teléfono conectado")
+                : remote.remotes.count == 1 ? String(localized: "Conectado con un teléfono")
+                : String(localized: "Conectado con \(remote.remotes.count) teléfonos")
+        case .retrying(let after, _): String(localized: "Sin conexión; reintento en \(Int(after)) s")
         }
     }
 
