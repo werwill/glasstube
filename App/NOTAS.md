@@ -956,10 +956,9 @@ NO -GTSinActualizaciones` y las opciones nuevas de `Support/Automation.swift` (`
   con los dos primeros debería volverse opaco o con borde sin cambiar nada en la app; con «Aumentar contraste» el anillo
   del modo TV pasa a 7 pt; con «Reducir movimiento» los deslizamientos pasan a fundidos y la tarjeta enfocada del modo
   TV no crece. `-GTReducirMovimiento YES` simula el tercero dentro de la app, pero no lo que cambia el sistema.
-- **Sin clave de Sparkle todavía**: falta que el dueño corra `generate_keys` y pegue la clave pública en
-  `Packaging/sparkle-clave-publica.txt`; hasta entonces `release.sh` arma la versión sin appcast (con aviso). La
-  primera versión con Sparkle la instala a mano quien venga de la 0.5 (el aviso viejo la anuncia si queda como «Latest»).
-- **Sparkle contra GitHub de verdad** no se probó (no se publica nada sin aprobación): raw.githubusercontent.com sirve
+- **Clave de Sparkle:** la generó el dueño para la 0.6.0 (ver «Fase 6»); sin ella, `release.sh` arma la versión sin
+  appcast (con aviso). La primera versión con Sparkle la instala a mano quien venga de la 0.5 (el aviso viejo la anuncia si queda como «Latest»).
+- **Sparkle contra GitHub de verdad** se probó al publicar la 0.6.0 (ver «Fase 6»). Lo que se temía: raw.githubusercontent.com sirve
   el appcast como `text/plain` y con unos minutos de caché, y la descarga del DMG redirige a `objects.githubusercontent.com`;
   ninguna de las dos cosas debería importarle a Sparkle, pero la primera versión conviene revisarla.
 - **iCloud Drive real**: se probó con `-GTiCloudCarpeta` (otra carpeta) para no escribir en el iCloud del dueño ni
@@ -985,7 +984,7 @@ español. Para probarla sin cambiar nada del sistema: `-AppleLanguages '(en)'`.
 | Pedido | Estado |
 |---|---|
 | Interfaz en inglés (SwiftUI, menús, Dock, Servicios, `InfoPlist.strings`, alertas y errores, VoiceOver, modo TV, respaldo) | Hecho: 722 claves con traducción. Los detalles técnicos de los errores siguen en español (ver «Qué falta (fase 6)»). |
-| Sparkle en inglés | El framework trae su propio inglés (`Base.lproj`) y español; no se vio en ejecución porque esta compilación no tiene clave. |
+| Sparkle en inglés | Visto en ejecución contra GitHub al publicar la 0.6.0 (ver «Versión 0.6.0», abajo). |
 | Fechas, números y plurales según la configuración regional | Hecho, visto en las capturas. Plurales de la app en `Localizable.stringsdict`. |
 | `hl` sigue al idioma de la interfaz, `gl` a la región | Hecho, sin cambiar lo que recibe Windows. |
 | `CFBundleLocalizations` | `en` y `es`, con `CFBundleDevelopmentRegion` = `en`. |
@@ -1066,6 +1065,22 @@ español. Para probarla sin cambiar nada del sistema: `-AppleLanguages '(en)'`.
   `vincular-telefono` y `ajustes-sponsorblock`: Big Buck Bunny, sin caras reales, comentaristas como `@person1…`, código de
   vinculación de prueba y sin datos de cuenta. Todas se revisaron. `README.en.md` usa las cuatro primeras.
 
+### Versión 0.6.0
+
+Publicada el 4-nov-2026, con aprobación del dueño: [v0.6.0](https://github.com/werwill/glasstube/releases/tag/v0.6.0),
+`Glasstube-0.6.0.dmg` de 17,7 MB, firmada con «Glasstube Desarrollo» y sin notarizar. Lleva la fase 5b y la 6.
+
+- **Clave de Sparkle:** la generó el dueño con `generate_keys`. La privada está solo en su Llavero; la pública, en
+  `Packaging/sparkle-clave-publica.txt`.
+- **Orden:** `CAMBIOS=… release.sh 0.6.0`; commit de la clave y la versión; `gh release create … --latest`; y hasta que el
+  DMG está en GitHub, commit de `appcast.xml`.
+- **Lo publicado:** el DMG descargado de `releases/latest/download/` da la misma SHA-256; `releases/latest` responde
+  `v0.6.0`; el appcast de raw.githubusercontent.com responde 200 (`text/plain`) e igual al local.
+- **Del DMG:** la firma se verifica y la app reproduce Big Buck Bunny a 1080p60 en inglés.
+- **Sparkle de verdad, con `-AppleLanguages '(en)'`:** la 0.6.0 dice «You're up to date!». Una copia con la versión
+  cambiada a 0.5.99 muestra «A new version of Glasstube is available!», con las notas, e «Install Update» la descarga de
+  GitHub, la instala en su lugar y la vuelve a abrir como 0.6.0, con el mismo ejecutable y la firma válida.
+
 ### Qué falta (fase 6)
 
 - **Accesibilidad, pendiente del dueño (lo dejó para después):** falta correr `Scripts/capturas.sh a11y` con «Reducir
@@ -1077,7 +1092,10 @@ español. Para probarla sin cambiar nada del sistema: `-AppleLanguages '(en)'`.
 - **Datos guardados antes:** el historial local conserva el texto con el que se guardó («20 k vistas · hace 11 meses»).
 - **Grupos de prueba de `capturas.sh`** («Software libre», «Animación 3D»): son datos de la prueba, no interfaz, y
   aparecen en algunas capturas de `capturas/en/`.
-- **Sparkle en inglés** no se vio en ejecución: hace falta una compilación con clave o `SPARKLE=1`.
+- **Primera apertura de la 0.6.0 descargada:** los pasos de Gatekeeper de las notas (sin notarizar, con la marca de
+  cuarentena) no se probaron en esta fase. Pide al dueño, o a otra Mac, instalarla desde la descarga.
+- **Respaldo de la clave privada de Sparkle:** está solo en el Llavero del dueño. Si se pierde, las versiones nuevas no
+  se pueden firmar para quien ya la tiene. `generate_keys -x <archivo>` la exporta.
 - **⌘[ y ⌘] con distribución de EE. UU.** no se probaron, porque no se cambian ajustes del sistema.
 - **Fuera del encargo, para que lo decida el dueño:** las capturas en español de `docs/capturas/` están viejas (la barra
   lateral dice «Llegan en la fase 5»), y `README.md` y esas capturas no se tocaron. `README.en.md` todavía nombra los
