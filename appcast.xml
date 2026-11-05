@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Glasstube para macOS</title>
+    <description>Versiones de Glasstube para Mac. Lo escribe App/Scripts/release.sh; no lo edites a mano (va firmado).</description>
+    <language>es</language>
+    <item>
+      <title>Glasstube 0.6.0</title>
+      <pubDate>Wed, 04 Nov 2026 22:27:56 -0600</pubDate>
+      <sparkle:version>202611042225</sparkle:version>
+      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+      <description sparkle:format="markdown"><![CDATA[Interfaz en español e inglés, respaldo, actualizaciones desde la app y modo TV.
+
+- **Español e inglés:** la app sigue el idioma del sistema. En cualquier otro idioma sale en inglés.
+- **Respaldo** (Ajustes › Respaldo): exporta grupos, biblioteca, cola y ajustes a un ZIP, sin tokens ni nada del Llavero.
+  Importa también un respaldo de SmartTube, puede hacer uno diario en iCloud Drive y exporta para PocketTube y NewPipe.
+- **Actualizaciones desde la app** con Sparkle, con firma EdDSA.
+- **Modo TV** (⌃⌘T): pantalla completa con filas que se recorren con flechas, Retorno y Esc, o con un control de juego.
+- **Accesibilidad:** etiquetas para VoiceOver y más controles con el teclado.
+- **Atajos:** ⌘[ y ⌘] (⌘{ y ⌘} en teclado latinoamericano) ya funcionan, y Tab pasa de la búsqueda al contenido.
+
+**In English:** an English interface, backups, in-app updates and TV mode.
+
+- **English and Spanish:** the app follows your system language. Any other language falls back to English.
+- **Backups** (Settings › Backup): export groups, library, queue and settings to a ZIP, with no tokens or Keychain data.
+  You can also import a SmartTube backup, keep a daily one in iCloud Drive and export for PocketTube and NewPipe.
+- **In-app updates** with Sparkle, signed with EdDSA.
+- **TV mode** (⌃⌘T): full screen with rows you move through with the arrow keys, Return and Esc, or a game controller.
+- **Accessibility:** VoiceOver labels and more keyboard control.
+- **Shortcuts:** ⌘[ and ⌘] now work, and Tab moves from search to the content.
+
+[Notas completas y descarga en GitHub](https://github.com/werwill/glasstube/releases/tag/v0.6.0)]]></description>
+      <enclosure url="https://github.com/werwill/glasstube/releases/download/v0.6.0/Glasstube-0.6.0.dmg" type="application/octet-stream" sparkle:edSignature="3owmsgh7RCKuFjQ6I89jPffSv4j1ltXGq9qQgKjOWrz13gk/VY/6yTjP2X5CvQjLZTUWWjpQIm1E+zlqf3+ZCQ==" length="18589160"></enclosure>
+    </item>
+  </channel>
+</rss><!-- sparkle-signatures:
+edSignature: 4Ki1sl4dQXj9VSGs7Iy4pOTt1UmD6jbQkgh7W4sRK4584FaT+aM8weVJ8NDUpkg4qsGyJFur6SDTjZTyjRNCCA==
+length: 3012
+-->
