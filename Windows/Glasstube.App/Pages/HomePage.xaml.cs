@@ -97,7 +97,7 @@ public sealed partial class HomePage : Page, IFullBleedPage
         {
             LoadingPanel.Visibility = Visibility.Collapsed;
             RefreshButton.IsEnabled = true;
-            App.Window?.SetTitleBarStyle(InitialTitleBar);
+            App.Window?.SetTitleBarStyle(this, InitialTitleBar);
         }
     }
 
@@ -173,7 +173,7 @@ public sealed partial class HomePage : Page, IFullBleedPage
         var past = Hero.Visibility != Visibility.Visible || scroller.VerticalOffset > Hero.ActualHeight - 120;
         if (past == pastHero) return;
         pastHero = past;
-        App.Window?.SetTitleBarStyle(InitialTitleBar);
+        App.Window?.SetTitleBarStyle(this, InitialTitleBar);
     }
 
     void ShowNotice(InfoBarSeverity severity, string message)

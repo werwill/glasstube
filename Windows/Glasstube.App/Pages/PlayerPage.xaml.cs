@@ -32,13 +32,16 @@ public sealed partial class PlayerPage : Page, IFullBleedPage
     bool controlsVisible = true;
     bool overCapsule;
     int ticks;
-    double volumeBeforeMute = 100;
+    static double volumeBeforeMute = 100;
 
     public bool HidesChrome => true;
 
     public PlayerPage()
     {
+        // El Value="100" del XAML pasa por OnVolumeChanged y pisaría el volumen (o el silencio) del video anterior.
+        var volume = lastVolume;
         InitializeComponent();
+        lastVolume = volume;
         // El arrastre de la barra de progreso: mientras se arrastra no la mueve mpv, y al soltar se busca.
         Progress.AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => dragging = true), true);
         Progress.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, _) => EndDrag()), true);
